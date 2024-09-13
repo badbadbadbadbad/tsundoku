@@ -13,10 +13,7 @@ target/
 hs_err_pid*
 
 ### IntelliJ IDEA ###
-.idea/modules.xml
-.idea/jarRepositories.xml
-.idea/compiler.xml
-.idea/libraries/
+.idea/
 .idea_modules/
 *.iws
 *.iml
