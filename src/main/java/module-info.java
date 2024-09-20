@@ -9,4 +9,6 @@ module com.github.badbadbadbadbad.tsundoku {
 
     opens com.github.badbadbadbadbad.tsundoku to javafx.fxml;
     exports com.github.badbadbadbadbad.tsundoku;
+    exports com.github.badbadbadbadbad.tsundoku.views;
+    opens com.github.badbadbadbadbad.tsundoku.views to javafx.fxml;
 }

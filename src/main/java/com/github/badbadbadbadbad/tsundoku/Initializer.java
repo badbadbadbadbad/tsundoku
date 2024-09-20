@@ -11,11 +11,11 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
 
-public class Initiator {
+public class Initializer {
     private static final String appName = "tsundoku";
     private static String appDataPath;
 
-    public static void initialize() throws IOException {
+    public static void init() throws IOException {
         verifyFileIntegrity();
     }
 
@@ -80,7 +80,6 @@ public class Initiator {
         String databaseFilePath = Paths.get(appDataPath, "profiles", "Default.db").toString();
 
         // DB stuff
-        // File dbFile = new File(databaseFilePath);
         String url = "jdbc:sqlite:" + databaseFilePath;
 
         String sqlCreateGamesTable = "CREATE TABLE IF NOT EXISTS games ("

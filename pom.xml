@@ -14,6 +14,7 @@
         <junit.version>5.10.2</junit.version>
     </properties>
 
+
     <dependencies>
         <dependency>
             <groupId>org.openjfx</groupId>
@@ -82,7 +83,7 @@
                         <id>default-cli</id>
                         <configuration>
                             <mainClass>
-                                com.github.badbadbadbadbad.tsundoku/com.github.badbadbadbadbad.tsundoku.HelloApplication
+                                com.github.badbadbadbadbad.tsundoku/com.github.badbadbadbadbad.tsundoku.TsundokuApplication
                             </mainClass>
                             <launcher>app</launcher>
                             <jlinkZipName>app</jlinkZipName>
@@ -90,6 +91,58 @@
                             <noManPages>true</noManPages>
                             <stripDebug>true</stripDebug>
                             <noHeaderFiles>true</noHeaderFiles>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- PACKAGING: https://github.com/fvarrui/JavaPackager -->
+            <plugin>
+                <groupId>io.github.fvarrui</groupId>
+                <artifactId>javapackager</artifactId>
+                <version>1.7.6</version>
+                <executions>
+                    <execution>
+                        <!-- LINUX PACKAGING COMMAND: mvn package -->
+                        <id>bundling-for-linux</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>package</goal>
+                        </goals>
+                        <configuration>
+                            <!-- mandatory -->
+                            <mainClass>com.github.badbadbadbadbad.tsundoku.TsundokuApplication</mainClass>
+                            <!-- optional -->
+                            <bundleJre>true</bundleJre>
+                            <customizedJre>false</customizedJre>
+                            <administratorRequired>false</administratorRequired>
+                            <createTarball>true</createTarball>
+                            <vmArgs>
+                                <vmArg>--module-path=libs</vmArg>
+                                <vmArg>--add-modules=javafx.controls,javafx.fxml</vmArg>
+                            </vmArgs>
+                            <jdkPath>/home/bad/Desktop/jdk-21.0.4-linux</jdkPath>
+                            <platform>linux</platform>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <!-- WINDOWS PACKAGING COMMAND: mvn package -Djavafx.platform=win -->
+                        <id>bundling-for-windows</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>package</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>com.github.badbadbadbadbad.tsundoku.TsundokuApplication</mainClass>
+                            <bundleJre>true</bundleJre>
+                            <customizedJre>false</customizedJre>
+                            <administratorRequired>false</administratorRequired>
+                            <createZipball>true</createZipball>
+                            <vmArgs>
+                                <vmArg>--module-path=libs</vmArg>
+                                <vmArg>--add-modules=javafx.controls,javafx.fxml</vmArg>
+                            </vmArgs>
+                            <jdkPath>/home/bad/Desktop/jdk-21.0.4-windows</jdkPath>
+                            <platform>windows</platform>
                         </configuration>
                     </execution>
                 </executions>
