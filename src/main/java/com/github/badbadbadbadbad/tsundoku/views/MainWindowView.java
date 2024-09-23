@@ -44,16 +44,6 @@ public class MainWindowView {
         System.out.println("Loading " + contentName);
     }
 
-    /*
-    private Region createSidebar(double windowWidth) {
-        Region sidebar = new Region();
-        double adjustedSidebarWidth = windowWidth * SIDEBAR_WIDTH;
-        sidebar.setMinWidth(adjustedSidebarWidth);
-        sidebar.setMaxWidth(adjustedSidebarWidth);
-        sidebar.setBackground(new Background(new BackgroundFill(Color.rgb(35, 36, 42), CornerRadii.EMPTY, Insets.EMPTY)));
-        return sidebar;
-    }
-    */
 
 
     private Region createMainContent() {

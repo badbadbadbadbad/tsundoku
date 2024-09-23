@@ -1,5 +1,6 @@
 package com.github.badbadbadbadbad.tsundoku.views;
 
+import javafx.animation.FadeTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -8,6 +9,7 @@ import javafx.scene.control.Separator;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.Screen;
+import javafx.util.Duration;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,8 +20,9 @@ public class SidebarView {
 
     private static final double SIDEBAR_WIDTH = 0.15;
     private static final Color SIDEBAR_COLOR = Color.rgb(35, 36, 42);
-    
-    private List<Button> modeButtons;
+
+    private Button activeButton = null;
+    private final List<Button> modeButtons;
     private Consumer<String> contentChangeListener;
     
     public SidebarView() {
@@ -72,6 +75,22 @@ public class SidebarView {
         button.setMaxWidth(Double.MAX_VALUE);
         button.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-font-size: 18px;");
 
+        button.setOnMouseEntered(e -> {
+            if (!button.equals(activeButton)) {
+                button.setStyle("-fx-background-color: #353538; -fx-text-fill: white; -fx-font-size: 18px;");
+            } else {
+                button.setStyle("-fx-background-color: #57575e; -fx-text-fill: white; -fx-font-size: 18px;");
+            }
+        });
+
+        button.setOnMouseExited(e -> {
+            if (!button.equals(activeButton)) {
+                button.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-font-size: 18px;");
+            } else {
+                button.setStyle("-fx-background-color: #45454A; -fx-text-fill: white; -fx-font-size: 18px;");
+            }
+        });
+
         button.setOnAction(e -> {
             setActiveButton(button);
             contentChangeListener.accept(label);
@@ -80,11 +99,12 @@ public class SidebarView {
         return button;
     }
 
-    private void setActiveButton(Button activeButton) {
-        // DO NOT FORGET THE ON HOVER STUFF
+    private void setActiveButton(Button selectedButton) {
         for (Button button : modeButtons) {
             button.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-font-size: 18px;");
         }
-        activeButton.setStyle("-fx-background-color: #45454A; -fx-text-fill: white; -fx-font-size: 18px;");
+        selectedButton.setStyle("-fx-background-color: #57575e; -fx-text-fill: white; -fx-font-size: 18px;");
+        activeButton = selectedButton;
     }
+
 }
