@@ -22,7 +22,7 @@ public class TsundokuApplication extends Application {
         // EVENT LISTENERS are all part of VIEW and notify CONTROLLER for improved platform portability
 
         AnimeAPIModel model = new AnimeAPIModel();
-        model.getCurrentSeason();
+        // model.getCurrentSeason();
 
         MainWindowView mainWindowView = new MainWindowView(stage);
         stage.setTitle("tsundoku.");

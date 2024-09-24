@@ -18,8 +18,9 @@ import java.util.function.Consumer;
 
 public class SidebarView {
 
-    private static final double SIDEBAR_WIDTH = 0.15;
-    private static final Color SIDEBAR_COLOR = Color.rgb(35, 36, 42);
+    private static final double SIDEBAR_WIDTH = 0.166;
+    // private static final Color SIDEBAR_COLOR = Color.rgb(35, 36, 42);
+    private static final Color SIDEBAR_COLOR = Color.rgb(45, 47, 56);
 
     private Button activeButton = null;
     private final List<Button> modeButtons;

@@ -24,12 +24,19 @@ public class MainWindowView {
         SidebarView sidebarView = new SidebarView();
         Region sidebar = sidebarView.createSidebar(this::loadSidebarContent);
 
-        Region mainContent = createMainContent();
+        // Region mainContent = createMainContent();
+        AnimeGridView animeGridView = new AnimeGridView();
+        Region gridView = animeGridView.createGridView(stage);
 
-        root.getChildren().addAll(sidebar, createSeparator(), mainContent);
+        HBox.setHgrow(gridView, Priority.ALWAYS);
+
+        root.getChildren().addAll(sidebar, createSeparator(), gridView);
 
         Scene scene = new Scene(root);
-        root.setBackground(new Background(new BackgroundFill(Color.rgb(45, 47, 56), CornerRadii.EMPTY, Insets.EMPTY)));
+        //root.setBackground(new Background(new BackgroundFill(Color.rgb(45, 47, 56), CornerRadii.EMPTY, Insets.EMPTY)));
+        root.setBackground(new Background(new BackgroundFill(Color.rgb(35, 36, 42), CornerRadii.EMPTY, Insets.EMPTY)));
+        scene.setFill(Color.rgb(35, 36, 42)); // To prevent white flicker on expanding resize
+
 
         stage.setWidth(screenWidth / 1.5);
         stage.setHeight(screenHeight / 1.5);
