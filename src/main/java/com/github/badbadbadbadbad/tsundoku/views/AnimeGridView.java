@@ -1,6 +1,7 @@
 package com.github.badbadbadbadbad.tsundoku.views;
 
 import com.github.badbadbadbadbad.tsundoku.util.FlowGridPane;
+import javafx.animation.*;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -13,6 +14,8 @@ import javafx.scene.Node;
 import javafx.scene.layout.Region;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import javafx.util.Duration;
+
 
 public class AnimeGridView {
 
@@ -25,17 +28,18 @@ public class AnimeGridView {
         root.setSpacing(15);
         root.setStyle("-fx-background-color: #1e1e1e;");
 
-        HBox searchAndModeBox = createSearchAndModeSelector();
+
         FlowGridPane filters = createFilters(stage);
         HBox buttonBox = createButtons();
 
-        root.getChildren().addAll(searchAndModeBox, filters, buttonBox);
+        HBox searchAndFilterToggleBox = createSearchAndFilterToggle(filters);
+        root.getChildren().addAll(searchAndFilterToggleBox, filters, buttonBox);
 
         return root;
     }
 
 
-    private HBox createSearchAndModeSelector() {
+    private HBox createSearchAndFilterToggle(FlowGridPane filters) {
         HBox searchAndModeBox = new HBox();
         searchAndModeBox.setSpacing(10);
 
@@ -46,50 +50,24 @@ public class AnimeGridView {
         searchBar.setPrefHeight(35);
         HBox.setHgrow(searchBar, Priority.ALWAYS);
 
-        // Mode selector
-        ToggleButton browseButton = new ToggleButton("Browse");
-        ToggleButton logButton = new ToggleButton("Log");
+        // Filter toggle button
+        ToggleButton toggleFiltersButton = new ToggleButton("Hide filters");
+        toggleFiltersButton.setStyle("-fx-background-color: #444; -fx-text-fill: white;");
 
-        // Style the mode selector buttons for dark mode
-        browseButton.setStyle("-fx-background-color: #444; -fx-text-fill: white; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
-        logButton.setStyle("-fx-background-color: #444; -fx-text-fill: white; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
+        // Filter toggle logic
+        toggleFiltersButton.setOnAction(e -> {
+            toggleFiltersButton.setDisable(true);
 
-        browseButton.setPrefHeight(35);
-        logButton.setPrefHeight(35);
-
-        // Create ToggleGroup to ensure only one can be selected at a time
-        ToggleGroup modeGroup = new ToggleGroup();
-        browseButton.setToggleGroup(modeGroup);
-        logButton.setToggleGroup(modeGroup);
-
-        // Needed to prevent button jumping upon toggling to active.
-        browseButton.setFocusTraversable(false);
-        logButton.setFocusTraversable(false);
-
-        // Change later
-        browseButton.setSelected(true);
-
-        // toggling styles
-        modeGroup.selectedToggleProperty().addListener((observable, oldToggle, newToggle) -> {
-            if (newToggle == browseButton) {
-                browseButton.setStyle("-fx-background-color: #666; -fx-text-fill: white;");
-                logButton.setStyle("-fx-background-color: #444; -fx-text-fill: white;");
-                browseButton.setFocusTraversable(false);
-                logButton.setFocusTraversable(false);
-            } else if (newToggle == logButton) {
-                logButton.setStyle("-fx-background-color: #666; -fx-text-fill: white;");
-                browseButton.setStyle("-fx-background-color: #444; -fx-text-fill: white;");
-                browseButton.setFocusTraversable(false);
-                logButton.setFocusTraversable(false);
+            if (toggleFiltersButton.isSelected()) {
+                toggleFiltersButton.setText("Show filters");
+                hideFilters(filters, toggleFiltersButton);
+            } else {
+                toggleFiltersButton.setText("Hide filters");
+                showFilters(filters, toggleFiltersButton);
             }
         });
 
-
-        HBox modeSelectorBox = new HBox(browseButton, logButton);
-        modeSelectorBox.setSpacing(2);
-
-
-        searchAndModeBox.getChildren().addAll(searchBar, modeSelectorBox);
+        searchAndModeBox.getChildren().addAll(searchBar, toggleFiltersButton);
         return searchAndModeBox;
     }
 
@@ -100,7 +78,7 @@ public class AnimeGridView {
         filtersGrid.setVgap(10);
 
         filtersGrid.setMaxWidth(Double.MAX_VALUE);
-        VBox.setVgrow(filtersGrid, Priority.ALWAYS);
+        filtersGrid.setMinHeight(0); // Necessary for fade animation
 
         Screen screen = Screen.getPrimary();
         double screenWidth = screen.getBounds().getWidth();
@@ -149,12 +127,6 @@ public class AnimeGridView {
 
 
         filtersGrid.getChildren().addAll(orderByFilter, startYearFilter, endYearFilter, sfwFilter, statusFilter);
-
-        VBox.setVgrow(filtersGrid, Priority.NEVER);
-        filtersGrid.setPrefHeight(Region.USE_COMPUTED_SIZE);
-
-
-
         return filtersGrid;
     }
 
@@ -202,7 +174,94 @@ public class AnimeGridView {
     }
 
 
+    private void hideFilters(FlowGridPane filters, ToggleButton button) {
+
+        // Fade animation
+        FadeTransition fade = new FadeTransition(Duration.millis(150), filters);
+        fade.setFromValue(1.0);
+        fade.setToValue(0.0);
+
+        // Move animation
+        KeyFrame visible = new KeyFrame(Duration.ZERO, new KeyValue(filters.maxHeightProperty(), filters.getHeight()));
+        KeyFrame hidden = new KeyFrame(Duration.millis(100), new KeyValue(filters.maxHeightProperty(), 0));
+        Timeline move = new Timeline(visible, hidden);
+
+        // Cooldown
+        PauseTransition cooldown = new PauseTransition(Duration.millis(200));
+        cooldown.setOnFinished(event -> button.setDisable(false));
+
+        // Gather animations
+        SequentialTransition st = new SequentialTransition(fade, move);
+        ParallelTransition pt = new ParallelTransition(cooldown, st);
+
+        pt.play();
+    }
+
+
+    private void showFilters(FlowGridPane filters, ToggleButton button) {
+
+        // Fade animation
+        FadeTransition fade = new FadeTransition(Duration.millis(150), filters);
+        fade.setFromValue(0.0);
+        fade.setToValue(1.0);
+
+        // Move animation
+        KeyFrame hidden = new KeyFrame(Duration.ZERO, new KeyValue(filters.maxHeightProperty(), 0));
+        KeyFrame visible = new KeyFrame(Duration.millis(100), new KeyValue(filters.maxHeightProperty(), filters.prefHeight(filters.getWidth())));
+        Timeline move = new Timeline(hidden, visible);
+
+        // Cooldown
+        PauseTransition cooldown = new PauseTransition(Duration.millis(200));
+        cooldown.setOnFinished(event -> button.setDisable(false));
+
+        // Gather animations
+        SequentialTransition st = new SequentialTransition(move, fade);
+        ParallelTransition pt = new ParallelTransition(cooldown, st);
+
+        pt.play();
+    }
+
+
     private HBox createButtons() {
+
+        // Mode selector buttons
+        ToggleButton browseButton = new ToggleButton("Browse");
+        ToggleButton logButton = new ToggleButton("Log");
+
+        browseButton.setStyle("-fx-background-color: #444; -fx-text-fill: white; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
+        logButton.setStyle("-fx-background-color: #444; -fx-text-fill: white; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
+        browseButton.setPrefHeight(35);
+        logButton.setPrefHeight(35);
+
+        // Create ToggleGroup to ensure only one can be selected at a time
+        ToggleGroup modeGroup = new ToggleGroup();
+        browseButton.setToggleGroup(modeGroup);
+        logButton.setToggleGroup(modeGroup);
+
+        // toggling styles
+        modeGroup.selectedToggleProperty().addListener((observable, oldToggle, newToggle) -> {
+            if (newToggle == browseButton) {
+                browseButton.setStyle("-fx-background-color: #666; -fx-text-fill: white;");
+                logButton.setStyle("-fx-background-color: #444; -fx-text-fill: white;");
+            } else if (newToggle == logButton) {
+                logButton.setStyle("-fx-background-color: #666; -fx-text-fill: white;");
+                browseButton.setStyle("-fx-background-color: #444; -fx-text-fill: white;");
+            }
+        });
+
+        // Needed to prevent button jumping upon toggling to active.
+        browseButton.setFocusTraversable(false);
+        logButton.setFocusTraversable(false);
+
+        // Change later
+        // browseButton.setSelected(true);
+
+        // Treat them as one component
+        HBox leftButtonBox = new HBox(browseButton, logButton);
+        leftButtonBox.setAlignment(Pos.CENTER_LEFT);
+
+
+        // Right buttons
         Button seasonButton = new Button("Season");
         Button topButton = new Button("Top");
         Button searchButton = new Button("Search");
@@ -217,15 +276,16 @@ public class AnimeGridView {
         topButton.setPrefSize(100, 30);
         searchButton.setPrefSize(100, 30);
 
+        HBox rightButtonBox = new HBox(10, seasonButton, topButton, searchButton);
+        rightButtonBox.setAlignment(Pos.CENTER_RIGHT);
 
-        HBox buttonBox = new HBox(10, seasonButton, topButton, searchButton);
-        buttonBox.setAlignment(Pos.CENTER_RIGHT);  // Align buttons to the right
+        // Fill middle region with empty space
+        Region space = new Region();
+        HBox.setHgrow(space, Priority.ALWAYS);
 
 
-        HBox.setHgrow(seasonButton, Priority.ALWAYS);
-        HBox.setHgrow(topButton, Priority.ALWAYS);
-        HBox.setHgrow(searchButton, Priority.ALWAYS);
-
+        HBox buttonBox = new HBox(leftButtonBox, space, rightButtonBox);
+        HBox.setHgrow(buttonBox, Priority.ALWAYS);
 
         return buttonBox;
     }
