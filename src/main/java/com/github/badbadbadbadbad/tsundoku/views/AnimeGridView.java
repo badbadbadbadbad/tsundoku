@@ -20,6 +20,7 @@ import javafx.util.Duration;
 public class AnimeGridView {
 
     private static final int VGAP = 10;
+    private static boolean filtersHidden = false;
 
     public Region createGridView(Stage stage) {
 
@@ -107,6 +108,10 @@ public class AnimeGridView {
 
             filtersGrid.setColsCount(cols);
             filtersGrid.setRowsCount(rows);
+
+            if (!filtersHidden) {
+                filtersGrid.setMaxHeight(filtersGrid.prefHeight(filtersGrid.getWidth()));
+            }
         });
 
 
@@ -176,6 +181,8 @@ public class AnimeGridView {
 
     private void hideFilters(FlowGridPane filters, ToggleButton button) {
 
+        filtersHidden = true;
+
         // Fade animation
         FadeTransition fade = new FadeTransition(Duration.millis(150), filters);
         fade.setFromValue(1.0);
@@ -199,6 +206,8 @@ public class AnimeGridView {
 
 
     private void showFilters(FlowGridPane filters, ToggleButton button) {
+
+        filtersHidden = false;
 
         // Fade animation
         FadeTransition fade = new FadeTransition(Duration.millis(150), filters);
