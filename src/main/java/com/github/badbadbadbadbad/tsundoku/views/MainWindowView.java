@@ -1,6 +1,6 @@
 package com.github.badbadbadbadbad.tsundoku.views;
 
-import com.github.badbadbadbadbad.tsundoku.views.SidebarView;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -13,7 +13,7 @@ public class MainWindowView {
 
     private static final double SIDEBAR_WIDTH = 0.15;
 
-    public MainWindowView(Stage stage) {
+    public MainWindowView(Stage stage, JsonNode mediaData) {
 
         HBox root = new HBox();
 
@@ -25,10 +25,8 @@ public class MainWindowView {
         Region sidebar = sidebarView.createSidebar(this::loadSidebarContent);
 
         // Region mainContent = createMainContent();
-        AnimeGridView animeGridView = new AnimeGridView();
+        AnimeGridView animeGridView = new AnimeGridView(mediaData);
         Region gridView = animeGridView.createGridView(stage);
-
-        HBox.setHgrow(gridView, Priority.ALWAYS);
 
         root.getChildren().addAll(sidebar, createSeparator(), gridView);
 

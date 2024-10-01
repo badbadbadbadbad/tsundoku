@@ -1,5 +1,6 @@
 package com.github.badbadbadbadbad.tsundoku.views;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.github.badbadbadbadbad.tsundoku.util.FlowGridPane;
 import javafx.animation.*;
 import javafx.application.Platform;
@@ -7,35 +8,55 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
-import javafx.scene.Node;
 import javafx.scene.layout.Region;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class AnimeGridView {
 
     private static final int VGAP = 10;
     private static boolean filtersHidden = false;
+    private JsonNode data;
+    private List<Anime> animeList;
+
+    public AnimeGridView(JsonNode animeData) {
+        this.data = animeData;
+        this.animeList = parseAnimeData(animeData);
+    }
 
     public Region createGridView(Stage stage) {
 
         VBox root = new VBox();
-        root.setPadding(new Insets(20));
-        root.setSpacing(15);
         root.setStyle("-fx-background-color: #1e1e1e;");
+        VBox.setVgrow(root, Priority.ALWAYS);
+        HBox.setHgrow(root, Priority.ALWAYS);
 
+        // WRAP THE TOP STUFF IN A "CONTROLS" CONTAINER AND PAD TOP, LEFT, RIGHT
+        // MAKE THE SCROLLPANE ITS OWN CONTAINER FOR THE FLOWGRID SO THE SCROLLBAR CAN BE AT THE VERY RIGHT
+        // NO PADDING FOR SCROLLPANE, PADDING FOR FLOWGRID (THAT IS DIFFERENT THAN CONTROLS PADDING)?
+        // CHECK FOLLOWING POST TO MAKE SCROLLPANE NOT OVERFLOW TO CONTROLS:
+        // https://stackoverflow.com/questions/75695060/make-scrollpane-use-remaining-space
 
         FlowGridPane filters = createFilters(stage);
         HBox buttonBox = createButtons();
-
         HBox searchAndFilterToggleBox = createSearchAndFilterToggle(filters);
-        root.getChildren().addAll(searchAndFilterToggleBox, filters, buttonBox);
+        ScrollPane animeGrid = createAnimeGrid(stage);
 
+
+        VBox controls = new VBox();
+        controls.setPadding(new Insets(20));
+        controls.setSpacing(15);
+        controls.setStyle("-fx-background-color: #1e1e1e; -fx-border-color: #FFFFFF;");
+        controls.setMinHeight(Control.USE_PREF_SIZE);
+
+
+        controls.getChildren().addAll(searchAndFilterToggleBox, filters, buttonBox);
+        root.getChildren().addAll(controls, animeGrid);
         return root;
     }
 
@@ -297,5 +318,113 @@ public class AnimeGridView {
         HBox.setHgrow(buttonBox, Priority.ALWAYS);
 
         return buttonBox;
+    }
+
+
+    private ScrollPane createAnimeGrid(Stage stage) {
+        FlowGridPane animeGrid = new FlowGridPane(2, 3);
+        animeGrid.setHgap(20);
+        animeGrid.setVgap(20);
+
+        animeGrid.setMaxWidth(Double.MAX_VALUE);
+
+        for (Anime anime : animeList) {
+            VBox animeBox = createAnimeBox(anime);
+            animeGrid.getChildren().add(animeBox);
+        }
+
+        Screen screen = Screen.getPrimary();
+        double screenWidth = screen.getBounds().getWidth();
+
+        stage.widthProperty().addListener((obs, oldWidth, newWidth) -> {
+            double windowWidth = newWidth.doubleValue();
+
+            int cols, rows;
+
+            // Column amount
+            // Row amount needs to scale too for FlowGridPane to not have extra bottom padding.
+            // Hardcoded for now
+            if (windowWidth < screenWidth * 0.6) {
+                cols = 3;  // Minimum 2 columns
+                rows = 9;
+            } else if (windowWidth < screenWidth * 0.7) {
+                cols = 4;
+                rows = 7;
+            } else if (windowWidth < screenWidth * 0.8) {
+                cols = 5;
+                rows = 5;
+            } else if (windowWidth < screenWidth * 0.9) {
+                cols = 6;  // Maximum 5 columns
+                rows = 5;
+            } else {
+                cols = 7;  // Maximum 5 columns
+                rows = 4;
+            }
+
+            animeGrid.setColsCount(cols);
+            animeGrid.setRowsCount(rows);
+        });
+
+        ScrollPane scrollPane = new ScrollPane(animeGrid);
+        scrollPane.setFitToWidth(true);
+        // scrollPane.setFitToHeight(true);
+        scrollPane.setStyle("-fx-background: #1e1e1e; -fx-border-color: #1e1e1e;");
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        VBox.setVgrow(scrollPane, Priority.NEVER);
+
+        // return animeGrid;
+        return scrollPane;
+    }
+
+
+    private List<Anime> parseAnimeData(JsonNode animeData) {
+        List<Anime> animeList = new ArrayList<>();
+        JsonNode dataArray = animeData.get("data");
+
+        if (dataArray.isArray()) {
+            for (JsonNode animeNode : dataArray) {
+                int id = animeNode.get("mal_id").asInt();
+                String title = animeNode.get("title").asText();
+                // String imageUrl = animeNode.get("images").get("jpg").get("large_image_url").asText();
+                String imageUrl = animeNode.get("images").get("jpg").get("image_url").asText();
+
+                Anime anime = new Anime(id, title, imageUrl);
+                animeList.add(anime);
+            }
+        }
+
+        return animeList;
+    }
+
+
+    private VBox createAnimeBox(Anime anime) {
+        // Anime covers on MAL have _slightly_ different image sizes.
+        // This seems to be the most common? We force all images to be this size
+        double RATIO = 318.0 / 225.0;
+
+        // Make image into VBox background, CSS cover sizing to look okay
+        VBox animeBox = new VBox();
+        animeBox.setAlignment(Pos.CENTER);
+        animeBox.setStyle(
+                "-fx-background-image: url('" + anime.getImageUrl() + "');" +
+                "-fx-background-size: cover;" +  // Image covers entire box and cuts off what hangs out
+                "-fx-background-position: center;" +
+                "-fx-background-repeat: no-repeat;"
+        );
+
+
+        animeBox.widthProperty().addListener((obs, oldWidth, newWidth) -> {
+            // Platform.runLater needed to trigger layout update post-resizing
+            // Has a chance to get a bit wonky on window snaps otherwise
+            Platform.runLater(() -> {
+                double newHeight = newWidth.doubleValue() * RATIO;
+                animeBox.setMinHeight(newHeight);
+                animeBox.setPrefHeight(newHeight);
+                animeBox.setMaxHeight(newHeight);
+            });
+        });
+
+        return animeBox;
     }
 }

@@ -16,7 +16,7 @@ public class AnimeAPIModel {
     // Jikan API
     private static final String BASE_URL = "https://api.jikan.moe/v4";
 
-    public void getCurrentSeason() {
+    public JsonNode getCurrentSeason() {
         try {
             String urlString = BASE_URL + "/seasons/now";
             URL url = new URL(urlString);
@@ -41,10 +41,13 @@ public class AnimeAPIModel {
             ObjectMapper mapper = new ObjectMapper();
             JsonNode rootNode = mapper.readTree(response.toString());
 
-            System.out.println(rootNode.toPrettyString());
+            return rootNode;
+
+            // System.out.println(rootNode.toPrettyString());
 
         } catch (Exception e) {
             System.out.println("getCurrentSeason() error: " + e);
+            return null;
         }
     }
 }

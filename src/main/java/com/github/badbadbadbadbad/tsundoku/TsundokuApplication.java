@@ -1,5 +1,6 @@
 package com.github.badbadbadbadbad.tsundoku;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeAPIModel;
 import com.github.badbadbadbadbad.tsundoku.views.MainWindowView;
 import javafx.application.Application;
@@ -22,9 +23,10 @@ public class TsundokuApplication extends Application {
         // EVENT LISTENERS are all part of VIEW and notify CONTROLLER for improved platform portability
 
         AnimeAPIModel model = new AnimeAPIModel();
+        JsonNode currentSeasonData = model.getCurrentSeason();
         // model.getCurrentSeason();
 
-        MainWindowView mainWindowView = new MainWindowView(stage);
+        MainWindowView mainWindowView = new MainWindowView(stage, currentSeasonData);
         stage.setTitle("tsundoku.");
         stage.show();
 
