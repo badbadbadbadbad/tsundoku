@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.github.badbadbadbadbad.tsundoku.util.FlowGridPane;
 import javafx.animation.*;
 import javafx.application.Platform;
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.layout.Region;
@@ -14,33 +14,25 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 
 public class AnimeGridView {
 
-    private static final int VGAP = 10;
     private static boolean filtersHidden = false;
-    private JsonNode data;
-    private List<Anime> animeList;
+    private List<Anime> animeList = new ArrayList<>();
+    private final List<Button> browseModeButtons = new ArrayList<>();
 
     public AnimeGridView(JsonNode animeData) {
-        this.data = animeData;
         this.animeList = parseAnimeData(animeData);
     }
 
     public Region createGridView(Stage stage) {
-
         VBox root = new VBox();
-        root.setStyle("-fx-background-color: #1e1e1e;");
         VBox.setVgrow(root, Priority.ALWAYS);
         HBox.setHgrow(root, Priority.ALWAYS);
 
-        // WRAP THE TOP STUFF IN A "CONTROLS" CONTAINER AND PAD TOP, LEFT, RIGHT
-        // MAKE THE SCROLLPANE ITS OWN CONTAINER FOR THE FLOWGRID SO THE SCROLLBAR CAN BE AT THE VERY RIGHT
-        // NO PADDING FOR SCROLLPANE, PADDING FOR FLOWGRID (THAT IS DIFFERENT THAN CONTROLS PADDING)?
-        // CHECK FOLLOWING POST TO MAKE SCROLLPANE NOT OVERFLOW TO CONTROLS:
-        // https://stackoverflow.com/questions/75695060/make-scrollpane-use-remaining-space
 
         FlowGridPane filters = createFilters(stage);
         HBox buttonBox = createButtons();
@@ -49,9 +41,7 @@ public class AnimeGridView {
 
 
         VBox controls = new VBox();
-        controls.setPadding(new Insets(20));
-        controls.setSpacing(15);
-        controls.setStyle("-fx-background-color: #1e1e1e; -fx-border-color: #FFFFFF;");
+        controls.getStyleClass().add("content-pane-controls");
         controls.setMinHeight(Control.USE_PREF_SIZE);
 
 
@@ -67,14 +57,13 @@ public class AnimeGridView {
 
         // Search bar
         TextField searchBar = new TextField();
+        searchBar.setId("search-bar");
         searchBar.setPromptText("Enter query..");
-        searchBar.setStyle("-fx-background-color: #333; -fx-text-fill: white; -fx-prompt-text-fill: rgba(255,255,255,0.5);");
-        searchBar.setPrefHeight(35);
         HBox.setHgrow(searchBar, Priority.ALWAYS);
 
         // Filter toggle button
         ToggleButton toggleFiltersButton = new ToggleButton("Hide filters");
-        toggleFiltersButton.setStyle("-fx-background-color: #444; -fx-text-fill: white;");
+        toggleFiltersButton.getStyleClass().add("controls-button");
 
         // Filter toggle logic
         toggleFiltersButton.setOnAction(e -> {
@@ -98,45 +87,13 @@ public class AnimeGridView {
         FlowGridPane filtersGrid = new FlowGridPane(2, 3);
         filtersGrid.setHgap(10);
         filtersGrid.setVgap(10);
-
         filtersGrid.setMaxWidth(Double.MAX_VALUE);
         filtersGrid.setMinHeight(0); // Necessary for fade animation
 
         Screen screen = Screen.getPrimary();
         double screenWidth = screen.getBounds().getWidth();
 
-        stage.widthProperty().addListener((obs, oldWidth, newWidth) -> {
-            double windowWidth = newWidth.doubleValue();
-
-            int cols, rows;
-
-            // Column amount
-            // Row amount needs to scale too for FlowGridPane to not have extra bottom padding.
-            // Hardcoded for now
-            if (windowWidth < screenWidth * 0.625) {
-                cols = 2;  // Minimum 2 columns
-                rows = 3;
-            } else if (windowWidth < screenWidth * 0.75) {
-                cols = 3;
-                rows = 2;
-            } else if (windowWidth < screenWidth * 0.875) {
-                cols = 4;
-                rows = 2;
-            } else {
-                cols = 5;  // Maximum 5 columns
-                rows = 1;
-            }
-
-            filtersGrid.setColsCount(cols);
-            filtersGrid.setRowsCount(rows);
-
-            if (!filtersHidden) {
-                filtersGrid.setMaxHeight(filtersGrid.prefHeight(filtersGrid.getWidth()));
-            }
-        });
-
-
-
+        // Filters
         VBox orderByFilter = createDropdownFilter("Order by", new String[]{
                 "Title: Ascending", "Title: Descending",
                 "Rating: Highest", "Rating: Lowest",
@@ -151,37 +108,63 @@ public class AnimeGridView {
         VBox statusFilter = createDropdownFilter("Status",
                 new String[]{"Any", "Complete", "Airing", "Upcoming"}, "Any");
 
-
         filtersGrid.getChildren().addAll(orderByFilter, startYearFilter, endYearFilter, sfwFilter, statusFilter);
+
+
+        // Dynamically adjust column amount based on window size
+        int filtersAmount = filtersGrid.getChildren().size();
+        stage.widthProperty().addListener((obs, oldWidth, newWidth) -> {
+            double windowWidth = newWidth.doubleValue();
+            int cols, rows;
+
+            if (windowWidth < screenWidth * 0.625) {
+                cols = 2;  // Minimum 2 columns
+            } else if (windowWidth < screenWidth * 0.75) {
+                cols = 3;
+            } else if (windowWidth < screenWidth * 0.875) {
+                cols = 4;
+            } else {
+                cols = 5;  // Maximum 5 columns
+            }
+
+            rows = (int) Math.ceil((double) filtersAmount / cols); // Need an int value, but need float division, hence ugly casting..
+
+            filtersGrid.setColsCount(cols);
+            filtersGrid.setRowsCount(rows);
+
+            // Necessary for the fade animation to work
+            if (!filtersHidden) {
+                filtersGrid.setMaxHeight(filtersGrid.prefHeight(filtersGrid.getWidth()));
+            }
+        });
+
         return filtersGrid;
     }
 
 
     private VBox createDropdownFilter(String labelText, String[] options, String defaultValue) {
         Label label = new Label(labelText);
-        label.setStyle("-fx-text-fill: white;");
+        label.getStyleClass().add("filter-label");
 
         ComboBox<String> comboBox = new ComboBox<>();
         comboBox.getItems().addAll(options);
         comboBox.setValue(defaultValue);
-        comboBox.setPrefHeight(30);
-
+        comboBox.getStyleClass().add("filter-box");
         comboBox.setMaxWidth(Double.MAX_VALUE);
         VBox.setVgrow(comboBox, Priority.ALWAYS);
 
-        VBox filterBox = new VBox(5, label, comboBox);
-        filterBox.setPrefWidth(200);
-
-        return filterBox;
+        return new VBox(5, label, comboBox);
     }
 
 
     private VBox createNumberFilter(String labelText) {
         Label label = new Label(labelText);
-        label.setStyle("-fx-text-fill: white;");
+        label.getStyleClass().add("filter-label");
 
         TextField textField = new TextField("");
-        textField.setPrefHeight(30);
+        textField.getStyleClass().add("filter-box");
+        textField.setMaxWidth(Double.MAX_VALUE);
+        VBox.setVgrow(textField, Priority.ALWAYS);
 
         // Numeric input regex filter
         textField.textProperty().addListener((observable, oldValue, newValue) -> {
@@ -190,13 +173,7 @@ public class AnimeGridView {
             }
         });
 
-        textField.setMaxWidth(Double.MAX_VALUE);
-        VBox.setVgrow(textField, Priority.ALWAYS);
-
-        VBox filterBox = new VBox(5, label, textField);
-        filterBox.setPrefWidth(200);
-
-        return filterBox;
+        return new VBox(5, label, textField);
     }
 
 
@@ -255,33 +232,18 @@ public class AnimeGridView {
     private HBox createButtons() {
 
         // Mode selector buttons
-        ToggleButton browseButton = new ToggleButton("Browse");
-        ToggleButton logButton = new ToggleButton("Log");
+        Button browseButton = createModeButton("Browse");
+        Button logButton = createModeButton("Log");
 
-        browseButton.setStyle("-fx-background-color: #444; -fx-text-fill: white; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
-        logButton.setStyle("-fx-background-color: #444; -fx-text-fill: white; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
-        browseButton.setPrefHeight(35);
-        logButton.setPrefHeight(35);
+        browseButton.setId("browse-mode-browse-button");
+        logButton.setId("browse-mode-log-button");
 
-        // Create ToggleGroup to ensure only one can be selected at a time
-        ToggleGroup modeGroup = new ToggleGroup();
-        browseButton.setToggleGroup(modeGroup);
-        logButton.setToggleGroup(modeGroup);
 
-        // toggling styles
-        modeGroup.selectedToggleProperty().addListener((observable, oldToggle, newToggle) -> {
-            if (newToggle == browseButton) {
-                browseButton.setStyle("-fx-background-color: #666; -fx-text-fill: white;");
-                logButton.setStyle("-fx-background-color: #444; -fx-text-fill: white;");
-            } else if (newToggle == logButton) {
-                logButton.setStyle("-fx-background-color: #666; -fx-text-fill: white;");
-                browseButton.setStyle("-fx-background-color: #444; -fx-text-fill: white;");
-            }
-        });
+        Collections.addAll(browseModeButtons, browseButton, logButton);
 
         // Needed to prevent button jumping upon toggling to active.
-        browseButton.setFocusTraversable(false);
-        logButton.setFocusTraversable(false);
+        // browseButton.setFocusTraversable(false);
+        // logButton.setFocusTraversable(false);
 
         // Change later
         // browseButton.setSelected(true);
@@ -290,21 +252,14 @@ public class AnimeGridView {
         HBox leftButtonBox = new HBox(browseButton, logButton);
         leftButtonBox.setAlignment(Pos.CENTER_LEFT);
 
-
         // Right buttons
         Button seasonButton = new Button("Season");
         Button topButton = new Button("Top");
         Button searchButton = new Button("Search");
 
-        String buttonStyle = "-fx-background-color: #333; -fx-text-fill: white;";
-
-        seasonButton.setStyle(buttonStyle);
-        topButton.setStyle(buttonStyle);
-        searchButton.setStyle(buttonStyle);
-
-        seasonButton.setPrefSize(100, 30);
-        topButton.setPrefSize(100, 30);
-        searchButton.setPrefSize(100, 30);
+        seasonButton.getStyleClass().add("controls-button");
+        topButton.getStyleClass().add("controls-button");
+        searchButton.getStyleClass().add("controls-button");
 
         HBox rightButtonBox = new HBox(10, seasonButton, topButton, searchButton);
         rightButtonBox.setAlignment(Pos.CENTER_RIGHT);
@@ -313,7 +268,6 @@ public class AnimeGridView {
         Region space = new Region();
         HBox.setHgrow(space, Priority.ALWAYS);
 
-
         HBox buttonBox = new HBox(leftButtonBox, space, rightButtonBox);
         HBox.setHgrow(buttonBox, Priority.ALWAYS);
 
@@ -321,11 +275,31 @@ public class AnimeGridView {
     }
 
 
+    private Button createModeButton(String label) {
+        Button button = new Button(label);
+        // button.setMaxWidth(Double.MAX_VALUE);
+        button.getStyleClass().addAll("controls-button", "browse-mode-button");
+
+        button.setOnAction(e -> {
+            setActiveButton(button);
+        });
+
+        return button;
+    }
+
+
+    private void setActiveButton(Button selectedButton) {
+        for (Button button : browseModeButtons) {
+            button.getStyleClass().removeAll("browse-mode-button-active");
+        }
+        selectedButton.getStyleClass().add("browse-mode-button-active");
+    }
+
+
     private ScrollPane createAnimeGrid(Stage stage) {
         FlowGridPane animeGrid = new FlowGridPane(2, 3);
         animeGrid.setHgap(20);
         animeGrid.setVgap(20);
-
         animeGrid.setMaxWidth(Double.MAX_VALUE);
 
         for (Anime anime : animeList) {
@@ -336,44 +310,37 @@ public class AnimeGridView {
         Screen screen = Screen.getPrimary();
         double screenWidth = screen.getBounds().getWidth();
 
+        int animesAmount = animeGrid.getChildren().size();
         stage.widthProperty().addListener((obs, oldWidth, newWidth) -> {
             double windowWidth = newWidth.doubleValue();
 
             int cols, rows;
 
-            // Column amount
-            // Row amount needs to scale too for FlowGridPane to not have extra bottom padding.
-            // Hardcoded for now
             if (windowWidth < screenWidth * 0.6) {
                 cols = 3;  // Minimum 2 columns
-                rows = 9;
             } else if (windowWidth < screenWidth * 0.7) {
                 cols = 4;
-                rows = 7;
             } else if (windowWidth < screenWidth * 0.8) {
                 cols = 5;
-                rows = 5;
             } else if (windowWidth < screenWidth * 0.9) {
-                cols = 6;  // Maximum 5 columns
-                rows = 5;
+                cols = 6;
             } else {
-                cols = 7;  // Maximum 5 columns
-                rows = 4;
+                cols = 7;
             }
+
+            rows = (int) Math.ceil((double) animesAmount / cols);
 
             animeGrid.setColsCount(cols);
             animeGrid.setRowsCount(rows);
         });
 
         ScrollPane scrollPane = new ScrollPane(animeGrid);
+        scrollPane.getStyleClass().add("grid-scroll-pane");
         scrollPane.setFitToWidth(true);
-        // scrollPane.setFitToHeight(true);
-        scrollPane.setStyle("-fx-background: #1e1e1e; -fx-border-color: #1e1e1e;");
         scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         VBox.setVgrow(scrollPane, Priority.NEVER);
 
-        // return animeGrid;
         return scrollPane;
     }
 
@@ -386,8 +353,8 @@ public class AnimeGridView {
             for (JsonNode animeNode : dataArray) {
                 int id = animeNode.get("mal_id").asInt();
                 String title = animeNode.get("title").asText();
-                // String imageUrl = animeNode.get("images").get("jpg").get("large_image_url").asText();
-                String imageUrl = animeNode.get("images").get("jpg").get("image_url").asText();
+                String imageUrl = animeNode.get("images").get("jpg").get("large_image_url").asText();
+                // String imageUrl = animeNode.get("images").get("jpg").get("image_url").asText();
 
                 Anime anime = new Anime(id, title, imageUrl);
                 animeList.add(anime);
@@ -406,12 +373,22 @@ public class AnimeGridView {
         // Make image into VBox background, CSS cover sizing to look okay
         VBox animeBox = new VBox();
         animeBox.setAlignment(Pos.CENTER);
-        animeBox.setStyle(
-                "-fx-background-image: url('" + anime.getImageUrl() + "');" +
-                "-fx-background-size: cover;" +  // Image covers entire box and cuts off what hangs out
-                "-fx-background-position: center;" +
-                "-fx-background-repeat: no-repeat;"
-        );
+        animeBox.setStyle("-fx-background-image: url('" + anime.getImageUrl() + "');");
+        animeBox.getStyleClass().add("grid-media-box");
+
+
+        // TEST THIS NEXT TIME TO ACHIEVE ROUNDED BORDERS?
+        /*
+        // new Image(url)
+        Image image = new Image(CurrentClass.class.getResource("/path/to/package/bg.jpg"));
+        // new BackgroundSize(width, height, widthAsPercentage, heightAsPercentage, contain, cover)
+        BackgroundSize backgroundSize = new BackgroundSize(100, 100, true, true, true, false);
+        // new BackgroundImage(image, repeatX, repeatY, position, size)
+        BackgroundImage backgroundImage = new BackgroundImage(image, BackgroundRepeat.REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.CENTER, backgroundSize);
+        // new Background(images...)
+        Background background = new Background(backgroundImage);
+
+         */
 
 
         animeBox.widthProperty().addListener((obs, oldWidth, newWidth) -> {

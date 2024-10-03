@@ -11,11 +11,10 @@ import javafx.stage.Stage;
 
 public class MainWindowView {
 
-    private static final double SIDEBAR_WIDTH = 0.15;
-
     public MainWindowView(Stage stage, JsonNode mediaData) {
 
         HBox root = new HBox();
+        root.setId("main-root");
 
         Screen screen = Screen.getPrimary();
         double screenWidth = screen.getBounds().getWidth();
@@ -24,17 +23,14 @@ public class MainWindowView {
         SidebarView sidebarView = new SidebarView();
         Region sidebar = sidebarView.createSidebar(this::loadSidebarContent);
 
-        // Region mainContent = createMainContent();
         AnimeGridView animeGridView = new AnimeGridView(mediaData);
         Region gridView = animeGridView.createGridView(stage);
 
         root.getChildren().addAll(sidebar, createSeparator(), gridView);
 
         Scene scene = new Scene(root);
-        //root.setBackground(new Background(new BackgroundFill(Color.rgb(45, 47, 56), CornerRadii.EMPTY, Insets.EMPTY)));
-        root.setBackground(new Background(new BackgroundFill(Color.rgb(35, 36, 42), CornerRadii.EMPTY, Insets.EMPTY)));
+        scene.getStylesheets().add(getClass().getResource("/CSS/styles.css").toExternalForm());
         scene.setFill(Color.rgb(35, 36, 42)); // To prevent white flicker on expanding resize
-
 
         stage.setWidth(screenWidth / 1.5);
         stage.setHeight(screenHeight / 1.5);
@@ -42,21 +38,12 @@ public class MainWindowView {
         stage.setMinHeight(screenHeight / 2);
 
         stage.setScene(scene);
-
     }
 
     private void loadSidebarContent(String contentName) {
-        System.out.println("Loading " + contentName);
+        // System.out.println("Loading " + contentName);
     }
 
-
-
-    private Region createMainContent() {
-        Region mainContent = new Region();
-        mainContent.setBackground(new Background(new BackgroundFill(Color.TRANSPARENT, CornerRadii.EMPTY, Insets.EMPTY)));
-        HBox.setHgrow(mainContent, Priority.ALWAYS);
-        return mainContent;
-    }
 
     private Region createSeparator() {
         Region separator = new Region();

@@ -1,0 +1,155 @@
+.root {
+    -main-background-color: #23242A;
+    -sidebar-color: #2d2f38;
+    -content-color: #1e1e1e;
+}
+
+#main-root {
+    -fx-background-color: -main-background-color;
+}
+
+#sidebar {
+    -fx-background-color: -sidebar-color;
+    -fx-padding: 10px;
+    -fx-spacing: 10px;
+    -fx-alignment: center;
+}
+
+#main-label {
+    -fx-text-fill: white;
+    -fx-font-size: 32px;
+    -fx-font-weight: bold;
+}
+
+.separator {
+    -fx-pref-height: 1px;
+    -fx-background-color: orange;
+}
+
+.separator-text {
+}
+
+.sidebar-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-font-size: 18px;
+}
+
+.sidebar-button:hover {
+    -fx-background-color: #353538;
+}
+
+.sidebar-button-active {
+    -fx-background-color: #45454A;
+}
+
+.sidebar-button-active:hover {
+    -fx-background-color: #57575e;
+}
+
+.content-pane {
+    -fx-background-color: -content-color;
+}
+
+.content-pane-controls {
+    -fx-background-color: -content-color;
+    -fx-padding: 20px;
+    -fx-spacing: 15px;
+    -fx-alignment: center;
+}
+
+#search-bar {
+    -fx-background-color: #333;
+    -fx-text-fill: white;
+    -fx-prompt-text-fill: rgba(255, 255, 255, 0.5);
+    -fx-pref-height: 35px;
+}
+
+.controls-button {
+    -fx-background-color: #444;
+    -fx-text-fill: white;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+    -fx-pref-height: 35px;
+    -fx-pref-width: 100px;
+    -fx-background-insets: 0; /* Override default JavaFX styling that makes buttons larger than desired */
+}
+
+
+/* No pseudo selectors in JavaFX, yay.. */
+#browse-mode-browse-button {
+    -fx-border-radius: 10px 0 0 10px;
+    -fx-background-radius: 10px 0 0 10px;
+}
+
+#browse-mode-log-button {
+    -fx-border-radius: 0 10px 10px 0;
+    -fx-background-radius: 0 10px 10px 0;
+}
+
+
+.browse-mode-button:hover {
+    -fx-background-color: #555;
+}
+
+.browse-mode-button-active {
+    -fx-background-color: #666;
+}
+
+.browse-mode-button-active:hover {
+    -fx-background-color: #777;
+}
+
+
+.filter-label {
+    -fx-text-fill: white;
+    -fx-font-size: 10pt;
+}
+
+.filter-box {
+    -fx-pref-height: 35px;
+    -fx-pref-width: 200px;
+    -fx-font-size: 13pt;
+}
+
+.grid-scroll-pane {
+    -fx-background: -content-color;
+    -fx-background-color: -content-color;
+    -fx-border-color: -content-color;
+    -fx-font-size: 4;
+    -fx-padding: 0 6px 10px 10px; /* Weird padding so left and (right - scrollbar width) look the same */
+}
+
+.scroll-bar:horizontal, .scroll-bar:vertical{
+    -fx-background-color:transparent;
+}
+
+.increment-button, .decrement-button {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-opacity: 0;
+    -fx-pref-height: 0;
+}
+
+.scroll-bar:horizontal .track,
+.scroll-bar:vertical .track{
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-background-radius: 0em;
+    -fx-font-size: 2;
+}
+
+.scroll-bar:horizontal .thumb,
+.scroll-bar:vertical .thumb {
+    -fx-background-color: white;
+    -fx-background-radius: 5em;
+    -fx-font-size: 2;
+}
+
+.grid-media-box {
+    -fx-background-size: cover;
+    -fx-background-position: center;
+    -fx-background-repeat: no-repeat;
+    -fx-border-radius: 20;
+    -fx-background-radius: 20;
+}
