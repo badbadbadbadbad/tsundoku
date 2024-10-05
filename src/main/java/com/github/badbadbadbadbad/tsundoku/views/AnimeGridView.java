@@ -140,6 +140,12 @@ public class AnimeGridView {
             }
         });
 
+        // Necessary else Windows doesn't do the height on startup properly
+        // Thanks, Microsoft
+        Platform.runLater(() -> {
+            filtersGrid.setMaxHeight(filtersGrid.prefHeight(filtersGrid.getWidth()));
+        });
+
         return filtersGrid;
     }
 
