@@ -2,12 +2,11 @@ package com.github.badbadbadbadbad.tsundoku.views;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.badbadbadbadbad.tsundoku.util.FlowGridPane;
+import com.github.badbadbadbadbad.tsundoku.util.SmoothScroll;
 import javafx.animation.*;
 import javafx.application.Platform;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.image.Image;
 import javafx.scene.layout.*;
 import javafx.scene.layout.Region;
 import javafx.scene.shape.Rectangle;
@@ -91,6 +90,7 @@ public class AnimeGridView {
         filtersGrid.setVgap(10);
         filtersGrid.setMaxWidth(Double.MAX_VALUE);
         filtersGrid.setMinHeight(0); // Necessary for fade animation
+
 
         Screen screen = Screen.getPrimary();
         double screenWidth = screen.getBounds().getWidth();
@@ -336,12 +336,37 @@ public class AnimeGridView {
             animeGrid.setRowsCount(rows);
         });
 
+
+        /*
         ScrollPane scrollPane = new ScrollPane(animeGrid);
         scrollPane.getStyleClass().add("grid-scroll-pane");
         scrollPane.setFitToWidth(true);
         scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         VBox.setVgrow(scrollPane, Priority.NEVER);
+
+
+        // Scroll speed
+        // https://stackoverflow.com/a/59372510
+        final double SPEED = 0.001;
+        scrollPane.getContent().setOnScroll(scrollEvent -> {
+            double deltaY = scrollEvent.getDeltaY() * SPEED;
+            scrollPane.setVvalue(scrollPane.getVvalue() - deltaY);
+        });
+
+         */
+
+
+        ScrollPane scrollPane = new ScrollPane(animeGrid);
+        scrollPane.getStyleClass().add("grid-scroll-pane");
+        scrollPane.setFitToWidth(true);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        VBox.setVgrow(scrollPane, Priority.NEVER);
+
+
+        new SmoothScroll(scrollPane, animeGrid);
+
 
         return scrollPane;
     }
