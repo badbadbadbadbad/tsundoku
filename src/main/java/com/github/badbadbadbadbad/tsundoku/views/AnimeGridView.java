@@ -343,7 +343,6 @@ public class AnimeGridView {
         });
 
 
-        /*
         ScrollPane scrollPane = new ScrollPane(animeGrid);
         scrollPane.getStyleClass().add("grid-scroll-pane");
         scrollPane.setFitToWidth(true);
@@ -351,29 +350,9 @@ public class AnimeGridView {
         scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         VBox.setVgrow(scrollPane, Priority.NEVER);
 
-
-        // Scroll speed
-        // https://stackoverflow.com/a/59372510
-        final double SPEED = 0.001;
-        scrollPane.getContent().setOnScroll(scrollEvent -> {
-            double deltaY = scrollEvent.getDeltaY() * SPEED;
-            scrollPane.setVvalue(scrollPane.getVvalue() - deltaY);
-        });
-
-         */
-
-
-        ScrollPane scrollPane = new ScrollPane(animeGrid);
-        scrollPane.getStyleClass().add("grid-scroll-pane");
-        scrollPane.setFitToWidth(true);
-        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        VBox.setVgrow(scrollPane, Priority.NEVER);
-
-
+        // Smooth scroll listener
         new SmoothScroll(scrollPane, animeGrid);
-
-
+        
         return scrollPane;
     }
 
