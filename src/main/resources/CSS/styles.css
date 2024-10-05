@@ -147,9 +147,18 @@
 }
 
 .grid-media-box {
+    -fx-background-color: lightgray; /* For when image not loaded, should be testing only */
     -fx-background-size: cover;
     -fx-background-position: center;
     -fx-background-repeat: no-repeat;
+
+    /* This needs further testing on what is necessary depending on if we use borders */
     -fx-border-radius: 20;
     -fx-background-radius: 20;
+    -fx-background-insets: 0;
+    -fx-border-insets: 0;
+
+    /* Experiment with borders more later */
+    -fx-border-color: lightgray;
+    -fx-border-width: thin;
 }

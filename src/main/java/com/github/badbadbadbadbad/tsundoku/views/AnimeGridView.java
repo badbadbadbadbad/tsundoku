@@ -7,8 +7,10 @@ import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
 import javafx.scene.layout.*;
 import javafx.scene.layout.Region;
+import javafx.scene.shape.Rectangle;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -376,19 +378,13 @@ public class AnimeGridView {
         animeBox.setStyle("-fx-background-image: url('" + anime.getImageUrl() + "');");
         animeBox.getStyleClass().add("grid-media-box");
 
-
-        // TEST THIS NEXT TIME TO ACHIEVE ROUNDED BORDERS?
-        /*
-        // new Image(url)
-        Image image = new Image(CurrentClass.class.getResource("/path/to/package/bg.jpg"));
-        // new BackgroundSize(width, height, widthAsPercentage, heightAsPercentage, contain, cover)
-        BackgroundSize backgroundSize = new BackgroundSize(100, 100, true, true, true, false);
-        // new BackgroundImage(image, repeatX, repeatY, position, size)
-        BackgroundImage backgroundImage = new BackgroundImage(image, BackgroundRepeat.REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.CENTER, backgroundSize);
-        // new Background(images...)
-        Background background = new Background(backgroundImage);
-
-         */
+        // Clipping rectangle because JavaFX doesn't have any kind of background image clipping. WHY??
+        Rectangle clip = new Rectangle();
+        clip.widthProperty().bind(animeBox.widthProperty());
+        clip.heightProperty().bind(animeBox.heightProperty());
+        clip.setArcHeight(40);
+        clip.setArcWidth(40);
+        animeBox.setClip(clip);
 
 
         animeBox.widthProperty().addListener((obs, oldWidth, newWidth) -> {
