@@ -160,5 +160,15 @@
 
     /* Experiment with borders more later */
     -fx-border-color: lightgray;
-    -fx-border-width: thin;
+    -fx-border-width: 1px;
+}
+
+.grid-media-popup-background {
+    -fx-background-color: black;
+}
+
+.grid-media-popup {
+    -fx-background-color: -sidebar-color;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
 }

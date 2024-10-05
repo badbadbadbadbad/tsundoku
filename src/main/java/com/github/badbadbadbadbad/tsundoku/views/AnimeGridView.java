@@ -9,6 +9,7 @@ import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.layout.Region;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
@@ -35,10 +36,17 @@ public class AnimeGridView {
         HBox.setHgrow(root, Priority.ALWAYS);
 
 
+        // StackPane wrapper to allow for popup functionality when grid element is clicked
+        StackPane stackPane = new StackPane();
+        VBox.setVgrow(stackPane, Priority.ALWAYS);
+        HBox.setHgrow(stackPane, Priority.ALWAYS);
+        stackPane.getChildren().add(root);
+
+
         FlowGridPane filters = createFilters(stage);
         HBox buttonBox = createButtons();
         HBox searchAndFilterToggleBox = createSearchAndFilterToggle(filters);
-        ScrollPane animeGrid = createAnimeGrid(stage);
+        ScrollPane animeGrid = createAnimeGrid(stage, stackPane);
 
 
         VBox controls = new VBox();
@@ -48,7 +56,9 @@ public class AnimeGridView {
 
         controls.getChildren().addAll(searchAndFilterToggleBox, filters, buttonBox);
         root.getChildren().addAll(controls, animeGrid);
-        return root;
+
+
+        return stackPane;
     }
 
 
@@ -304,14 +314,14 @@ public class AnimeGridView {
     }
 
 
-    private ScrollPane createAnimeGrid(Stage stage) {
+    private ScrollPane createAnimeGrid(Stage stage, StackPane stackPane) {
         FlowGridPane animeGrid = new FlowGridPane(2, 3);
         animeGrid.setHgap(20);
         animeGrid.setVgap(20);
         animeGrid.setMaxWidth(Double.MAX_VALUE);
 
         for (Anime anime : animeList) {
-            VBox animeBox = createAnimeBox(anime);
+            VBox animeBox = createAnimeBox(anime, stackPane);
             animeGrid.getChildren().add(animeBox);
         }
 
@@ -351,8 +361,9 @@ public class AnimeGridView {
         VBox.setVgrow(scrollPane, Priority.NEVER);
 
         // Smooth scroll listener
+        // in /util/, SmoothScroll
         new SmoothScroll(scrollPane, animeGrid);
-        
+
         return scrollPane;
     }
 
@@ -377,7 +388,7 @@ public class AnimeGridView {
     }
 
 
-    private VBox createAnimeBox(Anime anime) {
+    private VBox createAnimeBox(Anime anime, StackPane stackPane) {
         // Anime covers on MAL have _slightly_ different image sizes.
         // This seems to be the most common? We force all images to be this size
         double RATIO = 318.0 / 225.0;
@@ -405,6 +416,60 @@ public class AnimeGridView {
                 animeBox.setMinHeight(newHeight);
                 animeBox.setPrefHeight(newHeight);
                 animeBox.setMaxHeight(newHeight);
+            });
+        });
+
+
+        // Click listener for popup
+        animeBox.setOnMouseClicked(event -> {
+            VBox darkBackground = new VBox();
+            darkBackground.getStyleClass().add("grid-media-popup-background");
+            VBox.setVgrow(darkBackground, Priority.ALWAYS);
+            HBox.setHgrow(darkBackground, Priority.ALWAYS);
+
+
+            VBox infoBox = new VBox();
+            infoBox.getStyleClass().add("grid-media-popup");
+            infoBox.setMinWidth(Screen.getPrimary().getVisualBounds().getWidth() * 0.2);
+            infoBox.setMaxWidth(Screen.getPrimary().getVisualBounds().getWidth() * 0.2);
+            infoBox.setMinHeight(Screen.getPrimary().getVisualBounds().getHeight() * 0.4);
+            infoBox.setMaxHeight(Screen.getPrimary().getVisualBounds().getHeight() * 0.4);
+            infoBox.setAlignment(Pos.CENTER);
+
+
+            // Initially transparent for fade-in effect
+            darkBackground.setOpacity(0);
+            infoBox.setOpacity(0);
+
+            stackPane.getChildren().addAll(darkBackground, infoBox);
+
+            // Fade-in animations
+            FadeTransition fadeInBackground = new FadeTransition(Duration.seconds(0.2), darkBackground);
+            fadeInBackground.setFromValue(0);
+            fadeInBackground.setToValue(0.8);
+
+            FadeTransition fadeInInfoBox = new FadeTransition(Duration.seconds(0.2), infoBox);
+            fadeInInfoBox.setFromValue(0);
+            fadeInInfoBox.setToValue(1);
+
+            fadeInBackground.play();
+            fadeInInfoBox.play();
+
+            darkBackground.setOnMouseClicked(backGroundEvent -> {
+
+                // Fade-out animations
+                FadeTransition fadeOutBackground = new FadeTransition(Duration.seconds(0.2), darkBackground);
+                fadeOutBackground.setFromValue(0.8);
+                fadeOutBackground.setToValue(0);
+
+                FadeTransition fadeOutInfoBox = new FadeTransition(Duration.seconds(0.2), infoBox);
+                fadeOutInfoBox.setFromValue(1);
+                fadeOutInfoBox.setToValue(0);
+
+                // Destroy after fade-out
+                fadeOutInfoBox.setOnFinished(e -> stackPane.getChildren().removeAll(darkBackground, infoBox));
+                fadeOutBackground.play();
+                fadeOutInfoBox.play();
             });
         });
 
