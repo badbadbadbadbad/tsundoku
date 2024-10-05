@@ -1,3 +1,6 @@
+// By /u/Matjaz on stackoverflow
+// https://stackoverflow.com/a/70161549
+
 package com.github.badbadbadbadbad.tsundoku.util;
 
 import javafx.animation.Interpolator;
