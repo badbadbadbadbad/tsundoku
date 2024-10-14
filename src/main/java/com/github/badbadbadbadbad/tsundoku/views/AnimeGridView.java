@@ -386,16 +386,24 @@ public class AnimeGridView {
                 String publicationStatus = animeNode.get("status").asText();
                 int episodesTotal = animeNode.get("episodes").asInt();
                 String source = animeNode.get("source").asText();
-                String ageRating = animeNode.get("rating").asText();
                 String synopsis = animeNode.get("synopsis").asText();
 
                 String releaseSeason = animeNode.get("season").asText();
                 int releaseYear = animeNode.get("year").asInt();
-                String release = releaseSeason + " " + releaseYear;
+                String release = releaseSeason.substring(0, 1).toUpperCase() + releaseSeason.substring(1) + " " + releaseYear;
 
                 List<String> studioNames = new ArrayList<>();
                 animeNode.get("studios").forEach(studio -> studioNames.add(studio.get("name").asText()));
                 String studios = String.join(", ", studioNames);
+
+                String ageRatingFull = animeNode.get("rating").asText();
+                String ageRating = ageRatingFull
+                        .replace("G - All Ages", "G")
+                        .replace("PG - Children", "PG")
+                        .replace("PG-13 - Teens 13 or older", "PG13")
+                        .replace("R - 17+ (violence & profanity)", "R17+")
+                        .replace("R+ - Mild Nudity", "R+")
+                        .replace("Rx - Hentai", "Rx");
 
                 String title = null;
                 String titleJapanese = "None provided";

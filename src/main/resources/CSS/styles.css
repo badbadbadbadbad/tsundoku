@@ -71,7 +71,7 @@
     -fx-focus-color: transparent;
     -fx-faint-focus-color: transparent;
     -fx-pref-height: 35px;
-    -fx-pref-width: 100px;
+    -fx-pref-width: 120px;
     -fx-background-insets: 0; /* Override default JavaFX styling that makes buttons larger than desired */
 }
 
@@ -214,6 +214,14 @@
 .grid-media-popup-right {
     -fx-border-color: red;
     -fx-border-width: 0 0 0 2;
+}
+
+.popup-scroll-pane {
+    -fx-background: -sidebar-color;
+    -fx-background-color: -sidebar-color;
+    -fx-border-color: -sidebar-color;
+    -fx-font-size: 4;
+    /* -fx-padding: 0 6px 10px 10px;  Weird padding so left and (right - scrollbar width) look the same */
 }
 
 /* Spinner stuff */

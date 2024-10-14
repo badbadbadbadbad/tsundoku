@@ -1,12 +1,12 @@
 package com.github.badbadbadbadbad.tsundoku.views;
 
+import com.github.badbadbadbadbad.tsundoku.external.FlowGridPane;
+import com.github.badbadbadbadbad.tsundoku.external.SmoothScroll;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
@@ -14,6 +14,8 @@ import javafx.stage.Screen;
 import org.kordamp.ikonli.dashicons.Dashicons;
 import org.kordamp.ikonli.fluentui.FluentUiFilledMZ;
 import org.kordamp.ikonli.javafx.FontIcon;
+
+import java.util.function.BiFunction;
 
 public class AnimePopupView {
     double RATIO = 318.0 / 225.0; // The aspect ratio to use for anime images. Close to most cover images.
@@ -75,7 +77,7 @@ public class AnimePopupView {
         VBox.setVgrow(contentWrapper, Priority.ALWAYS);
 
         VBox leftContent = createLeftPopupContent(anime, popupBox);
-        VBox rightContent = createRightPopupContent();
+        VBox rightContent = createRightPopupContent(anime);
 
         contentWrapper.getChildren().addAll(leftContent, rightContent);
 
@@ -177,12 +179,20 @@ public class AnimePopupView {
         progressTracker.setMaxWidth(Double.MAX_VALUE);
         VBox.setVgrow(progressTracker, Priority.ALWAYS);
 
-        // Spinner for current progress. Replace 100 with total episode / chapter / volume count later.
-        Spinner<Integer> numberInput = new Spinner<>(0, 100, progressValue);
-        numberInput.setEditable(true);
+        // Input for current progress.
+        TextField numberInput = new TextField(String.valueOf(progressValue));
         numberInput.setMinHeight(30);
         numberInput.setMaxHeight(30);
+        numberInput.setStyle("-fx-background-radius: 10; -fx-border-radius: 10;");
         HBox.setHgrow(numberInput, Priority.ALWAYS);
+
+        numberInput.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.matches("\\d*")) {
+                numberInput.setText(newValue.replaceAll("\\D", ""));
+            }
+        });
+
+
 
         // The text. Replace "<X>" with total episode / chapter / volume count later.
         Label progressLabel = new Label(" / <X> " + unit);
@@ -196,12 +206,98 @@ public class AnimePopupView {
         return progressTracker;
     }
 
-    private VBox createRightPopupContent() {
+    private VBox createRightPopupContent(AnimeInfo anime) {
         VBox metaStatsAndSaveWrapper = new VBox();
         VBox.setVgrow(metaStatsAndSaveWrapper, Priority.ALWAYS);
         HBox.setHgrow(metaStatsAndSaveWrapper, Priority.ALWAYS);
         metaStatsAndSaveWrapper.getStyleClass().add("grid-media-popup-right");
 
+        ScrollPane synopsis = createSynopsis(metaStatsAndSaveWrapper, anime.getSynopsis());
+        FlowGridPane metaInfo = createMetaInfo(metaStatsAndSaveWrapper, anime);
+        HBox saveButton = createSaveButton(metaStatsAndSaveWrapper);
+
+        metaStatsAndSaveWrapper.getChildren().addAll(synopsis, metaInfo, saveButton);
         return metaStatsAndSaveWrapper;
+    }
+
+    private ScrollPane createSynopsis(VBox wrapper, String synopsis) {
+        Label synopsisLabel = new Label(synopsis);
+        synopsisLabel.setWrapText(true);
+        synopsisLabel.setStyle("-fx-text-fill: white; -fx-font-size: 16;");
+
+        VBox content = new VBox(synopsisLabel);
+
+        ScrollPane scrollPane = new ScrollPane(content);
+        scrollPane.getStyleClass().add("popup-scroll-pane");
+        scrollPane.setFitToWidth(true);
+        // scrollPane.minHeightProperty().bind(wrapper.heightProperty().multiply(0.4));
+        // scrollPane.maxHeightProperty().bind(wrapper.heightProperty().multiply(0.4));
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        VBox.setVgrow(scrollPane, Priority.ALWAYS);
+        scrollPane.setStyle("-fx-padding: 10;");
+
+        // Smooth scroll listener
+        // in /external/
+        new SmoothScroll(scrollPane, content, 80);
+
+        return scrollPane;
+    }
+
+
+
+    private FlowGridPane createMetaInfo(VBox wrapper, AnimeInfo anime) {
+        FlowGridPane metaInfo = new FlowGridPane(3, 2);
+        metaInfo.setHgap(20);
+        metaInfo.setVgap(20);
+        HBox.setHgrow(metaInfo, Priority.ALWAYS);
+        metaInfo.setMaxWidth(Double.MAX_VALUE);
+
+        // metaInfo.minHeightProperty().bind(wrapper.heightProperty().multiply(0.5));
+        // metaInfo.maxHeightProperty().bind(wrapper.heightProperty().multiply(0.5));
+        metaInfo.setMinHeight(Region.USE_PREF_SIZE);
+        metaInfo.setMaxHeight(Region.USE_PREF_SIZE);
+
+
+        metaInfo.setStyle("-fx-padding: 10;");
+
+        BiFunction<String, String, VBox> createPropertyBox = (labelText, contentText) -> {
+            Label label = new Label(labelText);
+            label.getStyleClass().add("filter-label");
+            Label content = new Label(contentText);
+            content.getStyleClass().add("filter-label");
+            // VBox propertyBox = new VBox(5, label, content);
+            return new VBox(5, label, content);
+        };
+
+        metaInfo.getChildren().addAll(
+                createPropertyBox.apply("Release", anime.getRelease()),
+                createPropertyBox.apply("Total Episodes", String.valueOf(anime.getEpisodesTotal())),
+                createPropertyBox.apply("Publication Status", anime.getPublicationStatus()),
+                createPropertyBox.apply("Source", anime.getSource()),
+                createPropertyBox.apply("Age Rating", anime.getAgeRating()),
+                createPropertyBox.apply("Studios", anime.getStudios())
+        );
+
+        return metaInfo;
+    }
+
+
+    private HBox createSaveButton(VBox wrapper) {
+        HBox saveButtonWrapper = new HBox();
+        HBox.setHgrow(saveButtonWrapper, Priority.ALWAYS);
+        saveButtonWrapper.setMaxWidth(Double.MAX_VALUE);
+        saveButtonWrapper.setPadding(new Insets(10));
+        saveButtonWrapper.minHeightProperty().bind(wrapper.heightProperty().multiply(0.1));
+        saveButtonWrapper.maxHeightProperty().bind(wrapper.heightProperty().multiply(0.1));
+        saveButtonWrapper.setStyle("-fx-padding: 0 10 10 0; -fx-border-color: white; -fx-border-width: 0 0 2 0;");
+
+        Button saveButton = new Button("Save changes");
+        saveButtonWrapper.setAlignment(Pos.CENTER_RIGHT);
+        saveButton.getStyleClass().add("controls-button");
+        saveButton.prefHeightProperty().bind(saveButtonWrapper.heightProperty().subtract(10));
+
+        saveButtonWrapper.getChildren().add(saveButton);
+        return saveButtonWrapper;
     }
 }
