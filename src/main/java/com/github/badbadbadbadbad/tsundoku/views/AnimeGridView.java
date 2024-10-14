@@ -379,12 +379,43 @@ public class AnimeGridView {
 
         if (dataArray.isArray()) {
             for (JsonNode animeNode : dataArray) {
+
                 int id = animeNode.get("mal_id").asInt();
-                String title = animeNode.get("title").asText();
                 String imageUrl = animeNode.get("images").get("jpg").get("large_image_url").asText();
                 // String imageUrl = animeNode.get("images").get("jpg").get("image_url").asText();
+                String publicationStatus = animeNode.get("status").asText();
+                int episodesTotal = animeNode.get("episodes").asInt();
+                String source = animeNode.get("source").asText();
+                String ageRating = animeNode.get("rating").asText();
+                String synopsis = animeNode.get("synopsis").asText();
 
-                AnimeInfo anime = new AnimeInfo(id, title, imageUrl);
+                String releaseSeason = animeNode.get("season").asText();
+                int releaseYear = animeNode.get("year").asInt();
+                String release = releaseSeason + " " + releaseYear;
+
+                List<String> studioNames = new ArrayList<>();
+                animeNode.get("studios").forEach(studio -> studioNames.add(studio.get("name").asText()));
+                String studios = String.join(", ", studioNames);
+
+                String title = null;
+                String titleJapanese = "None provided";
+                String titleEnglish = "None provided";
+                for (JsonNode titleNode : animeNode.get("titles")) {
+                    String type = titleNode.get("type").asText();
+                    String titleText = titleNode.get("title").asText();
+
+                    if ("Default".equals(type)) {
+                        title = titleText;
+                    } else if ("Japanese".equals(type)) {
+                        titleJapanese = titleText;
+                    } else if ("English".equals(type)) {
+                        titleEnglish = titleText;
+                    }
+                }
+
+
+                AnimeInfo anime = new AnimeInfo(id, title, titleJapanese, titleEnglish, imageUrl, publicationStatus,
+                        episodesTotal, source, ageRating, synopsis, release, studios);
                 animeList.add(anime);
             }
         }
