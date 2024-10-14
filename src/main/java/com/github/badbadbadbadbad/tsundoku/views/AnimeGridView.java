@@ -1,6 +1,7 @@
 package com.github.badbadbadbadbad.tsundoku.views;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import com.github.badbadbadbadbad.tsundoku.util.FlowGridPane;
 import com.github.badbadbadbadbad.tsundoku.util.SmoothScroll;
 import javafx.animation.*;
@@ -9,11 +10,19 @@ import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.layout.Region;
-import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+
+import org.kordamp.ikonli.dashicons.Dashicons;
+import org.kordamp.ikonli.fluentui.FluentUiFilledMZ;
+import org.kordamp.ikonli.javafx.FontIcon;
+// import org.kordamp.ikonli.dashicons.Dashicons;
+// import org.kordamp.ikonli.dashicons.Dashicons;
+// import org.kordamp.ikonli.fluentui;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -22,8 +31,9 @@ import java.util.List;
 
 public class AnimeGridView {
 
+    double RATIO = 318.0 / 225.0; // The aspect ratio to use for anime images. Close to most cover images.
     private static boolean filtersHidden = false;
-    private List<Anime> animeList = new ArrayList<>();
+    private List<AnimeInfo> animeList = new ArrayList<>();
     private final List<Button> browseModeButtons = new ArrayList<>();
 
     public AnimeGridView(JsonNode animeData) {
@@ -320,7 +330,7 @@ public class AnimeGridView {
         animeGrid.setVgap(20);
         animeGrid.setMaxWidth(Double.MAX_VALUE);
 
-        for (Anime anime : animeList) {
+        for (AnimeInfo anime : animeList) {
             VBox animeBox = createAnimeBox(anime, stackPane);
             animeGrid.getChildren().add(animeBox);
         }
@@ -368,8 +378,8 @@ public class AnimeGridView {
     }
 
 
-    private List<Anime> parseAnimeData(JsonNode animeData) {
-        List<Anime> animeList = new ArrayList<>();
+    private List<AnimeInfo> parseAnimeData(JsonNode animeData) {
+        List<AnimeInfo> animeList = new ArrayList<>();
         JsonNode dataArray = animeData.get("data");
 
         if (dataArray.isArray()) {
@@ -379,7 +389,7 @@ public class AnimeGridView {
                 String imageUrl = animeNode.get("images").get("jpg").get("large_image_url").asText();
                 // String imageUrl = animeNode.get("images").get("jpg").get("image_url").asText();
 
-                Anime anime = new Anime(id, title, imageUrl);
+                AnimeInfo anime = new AnimeInfo(id, title, imageUrl);
                 animeList.add(anime);
             }
         }
@@ -388,10 +398,10 @@ public class AnimeGridView {
     }
 
 
-    private VBox createAnimeBox(Anime anime, StackPane stackPane) {
+    private VBox createAnimeBox(AnimeInfo anime, StackPane stackPane) {
         // Anime covers on MAL have _slightly_ different image sizes.
         // This seems to be the most common? We force all images to be this size
-        double RATIO = 318.0 / 225.0;
+        // double RATIO = 318.0 / 225.0;
 
         // Make image into VBox background, CSS cover sizing to look okay
         VBox animeBox = new VBox();
@@ -420,59 +430,59 @@ public class AnimeGridView {
         });
 
 
-        // Click listener for popup
+        // Popup when the box is clicked
         animeBox.setOnMouseClicked(event -> {
-            VBox darkBackground = new VBox();
-            darkBackground.getStyleClass().add("grid-media-popup-background");
-            VBox.setVgrow(darkBackground, Priority.ALWAYS);
-            HBox.setHgrow(darkBackground, Priority.ALWAYS);
-
-
-            VBox infoBox = new VBox();
-            infoBox.getStyleClass().add("grid-media-popup");
-            infoBox.setMinWidth(Screen.getPrimary().getVisualBounds().getWidth() * 0.2);
-            infoBox.setMaxWidth(Screen.getPrimary().getVisualBounds().getWidth() * 0.2);
-            infoBox.setMinHeight(Screen.getPrimary().getVisualBounds().getHeight() * 0.4);
-            infoBox.setMaxHeight(Screen.getPrimary().getVisualBounds().getHeight() * 0.4);
-            infoBox.setAlignment(Pos.CENTER);
-
-
-            // Initially transparent for fade-in effect
-            darkBackground.setOpacity(0);
-            infoBox.setOpacity(0);
-
-            stackPane.getChildren().addAll(darkBackground, infoBox);
-
-            // Fade-in animations
-            FadeTransition fadeInBackground = new FadeTransition(Duration.seconds(0.2), darkBackground);
-            fadeInBackground.setFromValue(0);
-            fadeInBackground.setToValue(0.8);
-
-            FadeTransition fadeInInfoBox = new FadeTransition(Duration.seconds(0.2), infoBox);
-            fadeInInfoBox.setFromValue(0);
-            fadeInInfoBox.setToValue(1);
-
-            fadeInBackground.play();
-            fadeInInfoBox.play();
-
-            darkBackground.setOnMouseClicked(backGroundEvent -> {
-
-                // Fade-out animations
-                FadeTransition fadeOutBackground = new FadeTransition(Duration.seconds(0.2), darkBackground);
-                fadeOutBackground.setFromValue(0.8);
-                fadeOutBackground.setToValue(0);
-
-                FadeTransition fadeOutInfoBox = new FadeTransition(Duration.seconds(0.2), infoBox);
-                fadeOutInfoBox.setFromValue(1);
-                fadeOutInfoBox.setToValue(0);
-
-                // Destroy after fade-out
-                fadeOutInfoBox.setOnFinished(e -> stackPane.getChildren().removeAll(darkBackground, infoBox));
-                fadeOutBackground.play();
-                fadeOutInfoBox.play();
-            });
+            createPopupScreen(anime, stackPane);
         });
 
         return animeBox;
+    }
+
+
+    private void createPopupScreen(AnimeInfo anime, StackPane stackPane) {
+        // Fake darkener effect
+        VBox darkBackground = new VBox();
+        darkBackground.getStyleClass().add("grid-media-popup-background");
+        VBox.setVgrow(darkBackground, Priority.ALWAYS);
+        HBox.setHgrow(darkBackground, Priority.ALWAYS);
+
+        // The actual popup
+        AnimePopupView animePopupView = new AnimePopupView();
+        VBox popupBox = animePopupView.createPopup(anime);
+
+        // Initially transparent for fade-in effect
+        darkBackground.setOpacity(0);
+        popupBox.setOpacity(0);
+
+        stackPane.getChildren().addAll(darkBackground, popupBox);
+
+        // Fade-in animations
+        FadeTransition fadeInBackground = new FadeTransition(Duration.seconds(0.2), darkBackground);
+        fadeInBackground.setFromValue(0);
+        fadeInBackground.setToValue(0.8);
+
+        FadeTransition fadeInInfoBox = new FadeTransition(Duration.seconds(0.2), popupBox);
+        fadeInInfoBox.setFromValue(0);
+        fadeInInfoBox.setToValue(1);
+
+        fadeInBackground.play();
+        fadeInInfoBox.play();
+
+        darkBackground.setOnMouseClicked(backGroundEvent -> {
+
+            // Fade-out animations
+            FadeTransition fadeOutBackground = new FadeTransition(Duration.seconds(0.2), darkBackground);
+            fadeOutBackground.setFromValue(0.8);
+            fadeOutBackground.setToValue(0);
+
+            FadeTransition fadeOutInfoBox = new FadeTransition(Duration.seconds(0.2), popupBox);
+            fadeOutInfoBox.setFromValue(1);
+            fadeOutInfoBox.setToValue(0);
+
+            // Destroy after fade-out
+            fadeOutInfoBox.setOnFinished(e -> stackPane.getChildren().removeAll(darkBackground, popupBox));
+            fadeOutBackground.play();
+            fadeOutInfoBox.play();
+        });
     }
 }

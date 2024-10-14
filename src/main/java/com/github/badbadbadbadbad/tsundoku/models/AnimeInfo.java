@@ -1,11 +1,11 @@
-package com.github.badbadbadbadbad.tsundoku.views;
+package com.github.badbadbadbadbad.tsundoku.models;
 
-public class Anime {
+public class AnimeInfo {
     private final int id;
     private final String title;
     private final String imageUrl;
 
-    public Anime (int id, String title, String imageUrl) {
+    public AnimeInfo(int id, String title, String imageUrl) {
         this.id = id;
         this.title = title;
         this.imageUrl = imageUrl;

@@ -172,3 +172,72 @@
     -fx-border-radius: 10;
     -fx-background-radius: 10;
 }
+
+.grid-media-popup-title {
+    -fx-border-color: white;
+    -fx-border-width: 0 0 2 0;
+    -fx-text-fill: white;
+    -fx-padding: 5 5 5 10;
+}
+
+.grid-media-popup-left {
+    -fx-spacing: 5;
+    -fx-padding: 10;
+    -fx-border-color: white;
+    -fx-border-width: 0 2 0 0;
+}
+
+.grid-media-popup-left-item {
+
+}
+
+.ratings-button {
+    -fx-background-color: transparent;
+    -fx-border: none;
+}
+
+.ikonli-inactive .ikonli-font-icon {
+    -fx-icon-color: gray;
+    -fx-icon-size: 24px;
+}
+
+.ikonli-heart-active .ikonli-font-icon {
+    -fx-icon-color: red;
+    -fx-icon-size: 24px;
+}
+
+.ikonli-thumb-active .ikonli-font-icon {
+    -fx-icon-color: goldenrod;
+    -fx-icon-size: 24px;
+}
+
+.grid-media-popup-right {
+    -fx-border-color: red;
+    -fx-border-width: 0 0 0 2;
+}
+
+/* Spinner stuff */
+.spinner {
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-padding: 0;
+}
+.spinner .text-field {
+    -fx-background-radius: 10 0 0 10;
+    -fx-border-radius: 10 0 0 10;
+}
+.spinner .increment-arrow-button {
+    -fx-background-radius: 0 10 10 0;
+    -fx-border-radius: 0 10 10 0;
+    -fx-background-color: transparent;
+}
+.spinner .decrement-arrow-button {
+    -fx-background-radius: 0 10 10 0;
+    -fx-border-radius: 0 10 10 0;
+    -fx-background-color: transparent;
+}
+.spinner .increment-arrow-button:hover {}
+.spinner .decrement-arrow-button:hover {}
+.spinner .increment-arrow-button:pressed {}
+.spinner .decrement-arrow-button:pressed {}
+.spinner .increment-arrow-button .increment-arrow {}

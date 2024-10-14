@@ -35,7 +35,7 @@ public class MainWindowView {
         stage.setWidth(screenWidth / 1.5);
         stage.setHeight(screenHeight / 1.5);
         stage.setMinWidth(screenWidth / 2);
-        stage.setMinHeight(screenHeight / 2);
+        stage.setMinHeight(screenHeight / 1.7);
 
         stage.setScene(scene);
     }
