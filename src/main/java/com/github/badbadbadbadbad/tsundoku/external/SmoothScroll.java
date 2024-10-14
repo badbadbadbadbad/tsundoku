@@ -1,7 +1,7 @@
 // By /u/Matjaz on stackoverflow
 // https://stackoverflow.com/a/70161549
 
-package com.github.badbadbadbadbad.tsundoku.util;
+package com.github.badbadbadbadbad.tsundoku.external;
 
 import javafx.animation.Interpolator;
 import javafx.event.EventHandler;

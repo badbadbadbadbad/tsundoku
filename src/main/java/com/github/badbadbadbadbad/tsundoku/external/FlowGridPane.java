@@ -1,4 +1,4 @@
-package com.github.badbadbadbadbad.tsundoku.util;
+package com.github.badbadbadbadbad.tsundoku.external;
 
 import javafx.collections.ObservableList;
 import javafx.collections.ListChangeListener;

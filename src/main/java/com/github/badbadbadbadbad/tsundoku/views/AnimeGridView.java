@@ -2,8 +2,8 @@ package com.github.badbadbadbadbad.tsundoku.views;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
-import com.github.badbadbadbadbad.tsundoku.util.FlowGridPane;
-import com.github.badbadbadbadbad.tsundoku.util.SmoothScroll;
+import com.github.badbadbadbadbad.tsundoku.external.FlowGridPane;
+import com.github.badbadbadbadbad.tsundoku.external.SmoothScroll;
 import javafx.animation.*;
 import javafx.application.Platform;
 import javafx.geometry.Pos;
@@ -11,15 +11,10 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.layout.Region;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.text.Font;
-import javafx.scene.text.Text;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-import org.kordamp.ikonli.dashicons.Dashicons;
-import org.kordamp.ikonli.fluentui.FluentUiFilledMZ;
-import org.kordamp.ikonli.javafx.FontIcon;
 // import org.kordamp.ikonli.dashicons.Dashicons;
 // import org.kordamp.ikonli.dashicons.Dashicons;
 // import org.kordamp.ikonli.fluentui;
