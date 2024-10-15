@@ -15,6 +15,7 @@ public class SidebarView {
     private static final double SIDEBAR_WIDTH = 0.12; // Percent of screen width, not scaling with window size for now
 
     private final List<Button> modeButtons = new ArrayList<>();
+    private final List<Button> browseModeButtons = new ArrayList<>();
     private Consumer<String> contentChangeListener;
 
     public Region createSidebar(Consumer<String> contentChangeListener) {
@@ -36,6 +37,23 @@ public class SidebarView {
         Region separator = new Region();
         separator.getStyleClass().add("separator");
 
+
+        // Mode selector buttons
+        Button browseButton = createBrowseModeButton("Browse");
+        Button logButton = createBrowseModeButton("Log");
+
+        browseButton.setId("browse-mode-browse-button");
+        logButton.setId("browse-mode-log-button");
+
+
+        Collections.addAll(browseModeButtons, browseButton, logButton);
+
+        // Treat them as one component
+        HBox browseModeButtonBox = new HBox(browseButton, logButton);
+
+
+
+
         Button gamesButton = createModeButton("Games");
         Button mangaButton = createModeButton("Manga");
         Button animeButton = createModeButton("Anime");
@@ -47,8 +65,27 @@ public class SidebarView {
         Button settingsButton = createModeButton("Settings");
 
         Collections.addAll(modeButtons, gamesButton, mangaButton, animeButton, profileButton, settingsButton);
-        sidebar.getChildren().addAll(programLabel, separator, gamesButton, mangaButton, animeButton, stretchRegion, profileButton, settingsButton);
+        sidebar.getChildren().addAll(programLabel, separator, browseModeButtonBox, gamesButton, mangaButton, animeButton, stretchRegion, profileButton, settingsButton);
         return sidebar;
+    }
+
+    private Button createBrowseModeButton(String label) {
+        Button button = new Button(label);
+        // button.setMaxWidth(Double.MAX_VALUE);
+        button.getStyleClass().addAll("controls-button", "browse-mode-button");
+
+        button.setOnAction(e -> {
+            setActiveBrowseModeButton(button);
+        });
+
+        return button;
+    }
+
+    private void setActiveBrowseModeButton(Button selectedButton) {
+        for (Button button : browseModeButtons) {
+            button.getStyleClass().removeAll("browse-mode-button-active");
+        }
+        selectedButton.getStyleClass().add("browse-mode-button-active");
     }
 
     private Button createModeButton(String label) {

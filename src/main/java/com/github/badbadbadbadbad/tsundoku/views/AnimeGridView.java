@@ -255,6 +255,7 @@ public class AnimeGridView {
     private HBox createButtons() {
 
         // Mode selector buttons
+        /*
         Button browseButton = createModeButton("Browse");
         Button logButton = createModeButton("Log");
 
@@ -264,16 +265,13 @@ public class AnimeGridView {
 
         Collections.addAll(browseModeButtons, browseButton, logButton);
 
-        // Needed to prevent button jumping upon toggling to active.
-        // browseButton.setFocusTraversable(false);
-        // logButton.setFocusTraversable(false);
 
-        // Change later
-        // browseButton.setSelected(true);
 
         // Treat them as one component
         HBox leftButtonBox = new HBox(browseButton, logButton);
         leftButtonBox.setAlignment(Pos.CENTER_LEFT);
+
+         */
 
         // Right buttons
         Button seasonButton = new Button("Season");
@@ -287,11 +285,11 @@ public class AnimeGridView {
         HBox rightButtonBox = new HBox(10, seasonButton, topButton, searchButton);
         rightButtonBox.setAlignment(Pos.CENTER_RIGHT);
 
-        // Fill middle region with empty space
+
         Region space = new Region();
         HBox.setHgrow(space, Priority.ALWAYS);
 
-        HBox buttonBox = new HBox(leftButtonBox, space, rightButtonBox);
+        HBox buttonBox = new HBox(space, rightButtonBox);
         HBox.setHgrow(buttonBox, Priority.ALWAYS);
 
         return buttonBox;
