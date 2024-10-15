@@ -24,9 +24,13 @@ import javafx.util.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Stack;
 
 
 public class AnimeGridView {
+
+    FlowGridPane animeGrid;
+    StackPane stackPane;
 
     private final APIController apiController;
     private final double RATIO = 318.0 / 225.0; // The aspect ratio to use for anime images. Close to most cover images.
@@ -43,7 +47,8 @@ public class AnimeGridView {
 
 
         // StackPane wrapper to allow for popup functionality when grid element is clicked
-        StackPane stackPane = new StackPane();
+        // StackPane stackPane = new StackPane();
+        stackPane = new StackPane();
         VBox.setVgrow(stackPane, Priority.ALWAYS);
         HBox.setHgrow(stackPane, Priority.ALWAYS);
         stackPane.getChildren().add(root);
@@ -321,12 +326,13 @@ public class AnimeGridView {
 
 
     private ScrollPane createAnimeGrid(Stage stage, StackPane stackPane) {
-        FlowGridPane animeGrid = new FlowGridPane(2, 3);
+        // FlowGridPane animeGrid = new FlowGridPane(2, 3);
+        animeGrid = new FlowGridPane(2, 3);
         animeGrid.setHgap(20);
         animeGrid.setVgap(20);
         animeGrid.setMaxWidth(Double.MAX_VALUE);
-        
-        AnimeListInfo animeListInfo = apiController.getCurrentAnimeSeason(2);
+
+        AnimeListInfo animeListInfo = apiController.getCurrentAnimeSeason(1);
         List<AnimeInfo> animeList = animeListInfo.getAnimeList();
 
         for (AnimeInfo anime : animeList) {
@@ -362,7 +368,14 @@ public class AnimeGridView {
         });
 
 
-        ScrollPane scrollPane = new ScrollPane(animeGrid);
+
+        // HBox pagination = createPagination(animeListInfo.getLastPage());
+        HBox pagination = createPagination(animeListInfo.getLastPage(), animeGrid, stackPane);
+        VBox wrapper = new VBox(10, animeGrid, pagination);
+        wrapper.setMaxWidth(Double.MAX_VALUE);
+
+        // ScrollPane scrollPane = new ScrollPane(animeGrid);
+        ScrollPane scrollPane = new ScrollPane(wrapper);
         scrollPane.getStyleClass().add("grid-scroll-pane");
         scrollPane.setFitToWidth(true);
         scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
@@ -371,12 +384,153 @@ public class AnimeGridView {
 
         // Smooth scroll listener
         // in /util/, SmoothScroll
-        new SmoothScroll(scrollPane, animeGrid);
+        // new SmoothScroll(scrollPane, animeGrid);
+        new SmoothScroll(scrollPane, wrapper);
 
         return scrollPane;
     }
 
 
+    private HBox createPagination(int pages, FlowGridPane animeGrid, StackPane stackPane) {
+        int selectedPage = 1;
+
+        HBox pagination = new HBox();
+        pagination.setMinHeight(40);
+        pagination.setMaxHeight(40);
+        pagination.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(pagination, Priority.ALWAYS);
+        pagination.setAlignment(Pos.CENTER);
+
+        HBox paginationButtons = new HBox(10);
+        paginationButtons.setMinHeight(40);
+        paginationButtons.setMaxHeight(40);
+
+        pagination.getChildren().add(paginationButtons);
+        updatePaginationButtons(paginationButtons, selectedPage, pages);
+        return pagination;
+    }
+
+    private void updatePaginationButtons(HBox paginationButtons, int selectedPage, int pages) {
+        paginationButtons.getChildren().clear();
+
+        // Only need "first page" button if it's not already the selected one
+        if (selectedPage > 2) {
+            paginationButtons.getChildren().add(createPageButton(1, pages));
+        }
+
+        // Low numbers ellipsis button
+        if (selectedPage > 3) {
+            paginationButtons.getChildren().add(createEllipsisButton(paginationButtons, pages));
+        }
+
+        // Selected page as well as its prev and next
+        for (int i = Math.max(1, selectedPage - 1); i <= Math.min(pages, selectedPage + 1); i++) {
+            Button butt = createPageButton(i, pages);
+            if (i == selectedPage) {
+                butt.getStyleClass().add("pagination-button-active");
+            }
+            paginationButtons.getChildren().add(butt);
+
+        }
+
+        // High numbers ellipsis button
+        if (selectedPage < pages - 2) {
+            paginationButtons.getChildren().add(createEllipsisButton(paginationButtons, pages));
+        }
+
+        // Only need "last page" button if it's not already the selected one
+        if (selectedPage < pages - 1) {
+            paginationButtons.getChildren().add(createPageButton(pages, pages));
+        }
+
+
+        // Actually call the new page
+        animeGrid.getChildren().clear();
+        AnimeListInfo animeListInfo = apiController.getCurrentAnimeSeason(selectedPage);
+        List<AnimeInfo> animeList = animeListInfo.getAnimeList();
+
+        for (AnimeInfo anime : animeList) {
+            VBox animeBox = createAnimeBox(anime, stackPane);
+            animeGrid.getChildren().add(animeBox);
+        }
+    }
+
+    private Button createPageButton(int page, int pages) {
+        Button pageButton =  new Button(String.valueOf(page));
+        pageButton.getStyleClass().add("pagination-button");
+
+        pageButton.setOnAction(event -> {
+            updatePaginationButtons((HBox) pageButton.getParent(), page, pages);
+        });
+
+        return pageButton;
+    }
+
+    private Button createEllipsisButton(HBox paginationButtons, int pages) {
+        Button ellipsisButton =  new Button("...");
+        ellipsisButton.getStyleClass().add("pagination-button");
+
+        ellipsisButton.setOnAction(event -> {
+            TextField pageInputField = createPageInputField(paginationButtons, pages);
+            int index = paginationButtons.getChildren().indexOf(ellipsisButton);
+            paginationButtons.getChildren().set(index, pageInputField);
+            pageInputField.requestFocus();
+        });
+
+        return ellipsisButton;
+    }
+
+    private TextField createPageInputField(HBox paginationButtons, int pages) {
+        TextField pageInputField = new TextField();
+        pageInputField.setMinWidth(60);
+        pageInputField.setMaxWidth(60);
+        pageInputField.setMinHeight(40);
+        pageInputField.setMaxHeight(40);
+        pageInputField.setStyle("-fx-font-size: 16px;");
+
+        // Numbers only regex
+        pageInputField.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.matches("\\d*")) {
+                pageInputField.setText(newValue.replaceAll("\\D", ""));
+            }
+        });
+
+        // Focus lost
+        pageInputField.focusedProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue) {
+                handlePageInput(paginationButtons, pageInputField, pages);
+            }
+        });
+
+        // Enter pressed (default value for setOnAction for textFields)
+        pageInputField.setOnAction(event -> handlePageInput(paginationButtons, pageInputField, pages));
+
+        return pageInputField;
+    }
+
+
+    private void handlePageInput(HBox paginationButtons, TextField pageInputField, int pages) {
+        String input = pageInputField.getText();
+        int index = paginationButtons.getChildren().indexOf(pageInputField);
+
+        if (index == -1) {
+            return;
+        }
+
+        if (input.isEmpty()) {
+            paginationButtons.getChildren().set(index, createEllipsisButton(paginationButtons, pages));
+        } else {
+            try {
+                int clampedPage = Math.clamp(Integer.parseInt(input), 1, pages);
+                updatePaginationButtons(paginationButtons, clampedPage, pages);
+
+            } catch (NumberFormatException e) {
+                // Number formatting issues _shouldn't_ exist
+                paginationButtons.getChildren().set(index, createEllipsisButton(paginationButtons, pages));
+            }
+
+        }
+    }
 
 
     private VBox createAnimeBox(AnimeInfo anime, StackPane stackPane) {

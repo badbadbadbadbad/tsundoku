@@ -163,6 +163,21 @@
     -fx-border-width: 1px;
 }
 
+.pagination-button {
+    -fx-min-width: 40;
+    -fx-max-width: 40;
+    -fx-min-height: 40;
+    -fx-max-height: 40;
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: white;
+    -fx-font-size: 16px;
+}
+
+.pagination-button-active {
+    -fx-background-color: goldenrod;
+}
+
 .grid-media-popup-background {
     -fx-background-color: black;
 }
