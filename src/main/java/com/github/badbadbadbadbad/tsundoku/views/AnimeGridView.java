@@ -31,8 +31,8 @@ public class AnimeGridView {
     private List<AnimeInfo> animeList = new ArrayList<>();
     private final List<Button> browseModeButtons = new ArrayList<>();
 
-    public AnimeGridView(JsonNode animeData) {
-        this.animeList = parseAnimeData(animeData);
+    public AnimeGridView(List<AnimeInfo> animeData) {
+        this.animeList = animeData;
     }
 
     public Region createGridView(Stage stage) {
@@ -295,7 +295,7 @@ public class AnimeGridView {
         return buttonBox;
     }
 
-
+    /*
     private Button createModeButton(String label) {
         Button button = new Button(label);
         // button.setMaxWidth(Double.MAX_VALUE);
@@ -315,6 +315,8 @@ public class AnimeGridView {
         }
         selectedButton.getStyleClass().add("browse-mode-button-active");
     }
+
+     */
 
 
     private ScrollPane createAnimeGrid(Stage stage, StackPane stackPane) {
@@ -371,63 +373,6 @@ public class AnimeGridView {
     }
 
 
-    private List<AnimeInfo> parseAnimeData(JsonNode animeData) {
-        List<AnimeInfo> animeList = new ArrayList<>();
-        JsonNode dataArray = animeData.get("data");
-
-        if (dataArray.isArray()) {
-            for (JsonNode animeNode : dataArray) {
-
-                int id = animeNode.get("mal_id").asInt();
-                String imageUrl = animeNode.get("images").get("jpg").get("large_image_url").asText();
-                // String imageUrl = animeNode.get("images").get("jpg").get("image_url").asText();
-                String publicationStatus = animeNode.get("status").asText();
-                int episodesTotal = animeNode.get("episodes").asInt();
-                String source = animeNode.get("source").asText();
-                String synopsis = animeNode.get("synopsis").asText();
-
-                String releaseSeason = animeNode.get("season").asText();
-                int releaseYear = animeNode.get("year").asInt();
-                String release = releaseSeason.substring(0, 1).toUpperCase() + releaseSeason.substring(1) + " " + releaseYear;
-
-                List<String> studioNames = new ArrayList<>();
-                animeNode.get("studios").forEach(studio -> studioNames.add(studio.get("name").asText()));
-                String studios = String.join(", ", studioNames);
-
-                String ageRatingFull = animeNode.get("rating").asText();
-                String ageRating = ageRatingFull
-                        .replace("G - All Ages", "G")
-                        .replace("PG - Children", "PG")
-                        .replace("PG-13 - Teens 13 or older", "PG13")
-                        .replace("R - 17+ (violence & profanity)", "R17+")
-                        .replace("R+ - Mild Nudity", "R+")
-                        .replace("Rx - Hentai", "Rx");
-
-                String title = null;
-                String titleJapanese = "None provided";
-                String titleEnglish = "None provided";
-                for (JsonNode titleNode : animeNode.get("titles")) {
-                    String type = titleNode.get("type").asText();
-                    String titleText = titleNode.get("title").asText();
-
-                    if ("Default".equals(type)) {
-                        title = titleText;
-                    } else if ("Japanese".equals(type)) {
-                        titleJapanese = titleText;
-                    } else if ("English".equals(type)) {
-                        titleEnglish = titleText;
-                    }
-                }
-
-
-                AnimeInfo anime = new AnimeInfo(id, title, titleJapanese, titleEnglish, imageUrl, publicationStatus,
-                        episodesTotal, source, ageRating, synopsis, release, studios);
-                animeList.add(anime);
-            }
-        }
-
-        return animeList;
-    }
 
 
     private VBox createAnimeBox(AnimeInfo anime, StackPane stackPane) {

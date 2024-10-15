@@ -2,11 +2,13 @@ package com.github.badbadbadbadbad.tsundoku;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeAPIModel;
+import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import com.github.badbadbadbadbad.tsundoku.views.MainWindowView;
 import javafx.application.Application;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.util.List;
 
 public class TsundokuApplication extends Application {
 
@@ -19,7 +21,7 @@ public class TsundokuApplication extends Application {
 
 
         AnimeAPIModel model = new AnimeAPIModel();
-        JsonNode currentSeasonData = model.getCurrentSeason();
+        List<AnimeInfo> currentSeasonData = model.getCurrentSeason();
 
         MainWindowView mainWindowView = new MainWindowView(stage, currentSeasonData);
         stage.setTitle("tsundoku.");

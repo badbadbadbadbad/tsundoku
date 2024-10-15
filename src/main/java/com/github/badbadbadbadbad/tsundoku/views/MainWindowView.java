@@ -2,6 +2,7 @@ package com.github.badbadbadbadbad.tsundoku.views;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.layout.*;
@@ -9,9 +10,11 @@ import javafx.scene.paint.Color;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 
+import java.util.List;
+
 public class MainWindowView {
 
-    public MainWindowView(Stage stage, JsonNode mediaData) {
+    public MainWindowView(Stage stage, List<AnimeInfo> mediaData) {
 
         HBox root = new HBox();
         root.setId("main-root");
