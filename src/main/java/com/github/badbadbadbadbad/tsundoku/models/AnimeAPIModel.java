@@ -10,9 +10,8 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class AnimeAPIModel {
 
@@ -120,7 +119,14 @@ public class AnimeAPIModel {
 
         int lastPage = animeData.get("pagination").get("last_visible_page").asInt();
 
-        // return animeList;
-        return new AnimeListInfo(animeList, lastPage);
+        // return new AnimeListInfo(animeList, lastPage);
+        return new AnimeListInfo(removeDuplicates(animeList), lastPage);
+    }
+
+    private List<AnimeInfo> removeDuplicates(List<AnimeInfo> animeList) {
+        Set<Integer> seenIds = new HashSet<>();
+        return animeList.stream()
+                .filter(anime -> seenIds.add(anime.getId()))
+                .collect(Collectors.toList());
     }
 }
