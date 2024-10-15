@@ -212,26 +212,25 @@ public class AnimePopupView {
         HBox.setHgrow(metaStatsAndSaveWrapper, Priority.ALWAYS);
         metaStatsAndSaveWrapper.getStyleClass().add("grid-media-popup-right");
 
-        ScrollPane synopsis = createSynopsis(metaStatsAndSaveWrapper, anime.getSynopsis());
-        FlowGridPane metaInfo = createMetaInfo(metaStatsAndSaveWrapper, anime);
+        ScrollPane synopsis = createSynopsis(anime.getSynopsis());
+        FlowGridPane metaInfo = createMetaInfo(anime);
         HBox saveButton = createSaveButton(metaStatsAndSaveWrapper);
 
-        metaStatsAndSaveWrapper.getChildren().addAll(synopsis, metaInfo, saveButton);
+        metaStatsAndSaveWrapper.getChildren().addAll(metaInfo, synopsis, saveButton);
         return metaStatsAndSaveWrapper;
     }
 
-    private ScrollPane createSynopsis(VBox wrapper, String synopsis) {
+    private ScrollPane createSynopsis(String synopsis) {
+
         Label synopsisLabel = new Label(synopsis);
         synopsisLabel.setWrapText(true);
         synopsisLabel.setStyle("-fx-text-fill: white; -fx-font-size: 16;");
-
         VBox content = new VBox(synopsisLabel);
+
 
         ScrollPane scrollPane = new ScrollPane(content);
         scrollPane.getStyleClass().add("popup-scroll-pane");
         scrollPane.setFitToWidth(true);
-        // scrollPane.minHeightProperty().bind(wrapper.heightProperty().multiply(0.4));
-        // scrollPane.maxHeightProperty().bind(wrapper.heightProperty().multiply(0.4));
         scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         VBox.setVgrow(scrollPane, Priority.ALWAYS);
@@ -246,15 +245,13 @@ public class AnimePopupView {
 
 
 
-    private FlowGridPane createMetaInfo(VBox wrapper, AnimeInfo anime) {
+    private FlowGridPane createMetaInfo(AnimeInfo anime) {
         FlowGridPane metaInfo = new FlowGridPane(3, 2);
         metaInfo.setHgap(20);
         metaInfo.setVgap(20);
         HBox.setHgrow(metaInfo, Priority.ALWAYS);
         metaInfo.setMaxWidth(Double.MAX_VALUE);
 
-        // metaInfo.minHeightProperty().bind(wrapper.heightProperty().multiply(0.5));
-        // metaInfo.maxHeightProperty().bind(wrapper.heightProperty().multiply(0.5));
         metaInfo.setMinHeight(Region.USE_PREF_SIZE);
         metaInfo.setMaxHeight(Region.USE_PREF_SIZE);
 
