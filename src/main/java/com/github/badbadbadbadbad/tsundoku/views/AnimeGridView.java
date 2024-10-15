@@ -1,9 +1,11 @@
 package com.github.badbadbadbadbad.tsundoku.views;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.github.badbadbadbadbad.tsundoku.controllers.APIController;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import com.github.badbadbadbadbad.tsundoku.external.FlowGridPane;
 import com.github.badbadbadbadbad.tsundoku.external.SmoothScroll;
+import com.github.badbadbadbadbad.tsundoku.models.AnimeListInfo;
 import javafx.animation.*;
 import javafx.application.Platform;
 import javafx.geometry.Pos;
@@ -26,13 +28,12 @@ import java.util.List;
 
 public class AnimeGridView {
 
-    double RATIO = 318.0 / 225.0; // The aspect ratio to use for anime images. Close to most cover images.
+    private final APIController apiController;
+    private final double RATIO = 318.0 / 225.0; // The aspect ratio to use for anime images. Close to most cover images.
     private static boolean filtersHidden = false;
-    private List<AnimeInfo> animeList = new ArrayList<>();
-    private final List<Button> browseModeButtons = new ArrayList<>();
 
-    public AnimeGridView(List<AnimeInfo> animeData) {
-        this.animeList = animeData;
+    public AnimeGridView(APIController apiController) {
+        this.apiController = apiController;
     }
 
     public Region createGridView(Stage stage) {
@@ -324,6 +325,9 @@ public class AnimeGridView {
         animeGrid.setHgap(20);
         animeGrid.setVgap(20);
         animeGrid.setMaxWidth(Double.MAX_VALUE);
+        
+        AnimeListInfo animeListInfo = apiController.getCurrentAnimeSeason(2);
+        List<AnimeInfo> animeList = animeListInfo.getAnimeList();
 
         for (AnimeInfo anime : animeList) {
             VBox animeBox = createAnimeBox(anime, stackPane);

@@ -1,6 +1,7 @@
 package com.github.badbadbadbadbad.tsundoku;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.github.badbadbadbadbad.tsundoku.controllers.APIController;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeAPIModel;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import com.github.badbadbadbadbad.tsundoku.views.MainWindowView;
@@ -20,10 +21,10 @@ public class TsundokuApplication extends Application {
         Initializer.init();
 
 
-        AnimeAPIModel model = new AnimeAPIModel();
-        List<AnimeInfo> currentSeasonData = model.getCurrentSeason();
+        AnimeAPIModel animeAPImodel = new AnimeAPIModel();
+        APIController apiController = new APIController(animeAPImodel);
 
-        MainWindowView mainWindowView = new MainWindowView(stage, currentSeasonData);
+        MainWindowView mainWindowView = new MainWindowView(stage, apiController);
         stage.setTitle("tsundoku.");
         stage.show();
     }

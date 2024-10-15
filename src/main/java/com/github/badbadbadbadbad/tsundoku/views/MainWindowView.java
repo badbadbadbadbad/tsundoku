@@ -2,6 +2,7 @@ package com.github.badbadbadbadbad.tsundoku.views;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import com.github.badbadbadbadbad.tsundoku.controllers.APIController;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -13,8 +14,10 @@ import javafx.stage.Stage;
 import java.util.List;
 
 public class MainWindowView {
+    private APIController apiController;
 
-    public MainWindowView(Stage stage, List<AnimeInfo> mediaData) {
+    public MainWindowView(Stage stage, APIController apiController) {
+        this.apiController = apiController;
 
         HBox root = new HBox();
         root.setId("main-root");
@@ -26,7 +29,7 @@ public class MainWindowView {
         SidebarView sidebarView = new SidebarView();
         Region sidebar = sidebarView.createSidebar(this::loadSidebarContent);
 
-        AnimeGridView animeGridView = new AnimeGridView(mediaData);
+        AnimeGridView animeGridView = new AnimeGridView(apiController);
         Region gridView = animeGridView.createGridView(stage);
 
         root.getChildren().addAll(sidebar, createSeparator(), gridView);

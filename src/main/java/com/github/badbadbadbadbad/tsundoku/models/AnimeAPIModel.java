@@ -12,16 +12,19 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class AnimeAPIModel {
 
     // Jikan API
     private static final String BASE_URL = "https://api.jikan.moe/v4";
 
-    // public JsonNode getCurrentSeason() {
-    public List<AnimeInfo> getCurrentSeason() {
+    public AnimeListInfo getCurrentSeason(int page) {
         try {
             String urlString = BASE_URL + "/seasons/now";
+            if (page != 1) {
+                urlString += "?page=" + String.valueOf(page);
+            }
             URL url = new URL(urlString);
 
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -54,8 +57,8 @@ public class AnimeAPIModel {
         }
     }
 
-
-    private List<AnimeInfo> parseAnimeData(JsonNode animeData) {
+    // private List<AnimeInfo> parseAnimeData(JsonNode animeData) {
+    private AnimeListInfo parseAnimeData(JsonNode animeData) {
         List<AnimeInfo> animeList = new ArrayList<>();
         JsonNode dataArray = animeData.get("data");
 
@@ -72,7 +75,12 @@ public class AnimeAPIModel {
 
                 String releaseSeason = animeNode.get("season").asText();
                 int releaseYear = animeNode.get("year").asInt();
-                String release = releaseSeason.substring(0, 1).toUpperCase() + releaseSeason.substring(1) + " " + releaseYear;
+                String release;
+                if (releaseSeason.equals("null") || releaseYear == 0) {
+                    release = "Not yet provided";
+                } else {
+                    release = releaseSeason.substring(0, 1).toUpperCase() + releaseSeason.substring(1) + " " + releaseYear;
+                }
 
                 List<String> studioNames = new ArrayList<>();
                 animeNode.get("studios").forEach(studio -> studioNames.add(studio.get("name").asText()));
@@ -110,6 +118,9 @@ public class AnimeAPIModel {
             }
         }
 
-        return animeList;
+        int lastPage = animeData.get("pagination").get("last_visible_page").asInt();
+
+        // return animeList;
+        return new AnimeListInfo(animeList, lastPage);
     }
 }
