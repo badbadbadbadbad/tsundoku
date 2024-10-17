@@ -117,7 +117,7 @@
     -fx-background-color: -content-color;
     -fx-border-color: -content-color;
     -fx-font-size: 4;
-    -fx-padding: 0 6px 10px 10px; /* Weird padding so left and (right - scrollbar width) look the same */
+    -fx-padding: 0 6px 0 10px; /* Weird padding so left and (right - scrollbar width) look the same */
 }
 
 .scroll-bar:horizontal, .scroll-bar:vertical{
@@ -165,7 +165,7 @@
 
 .pagination-button {
     -fx-min-width: 40;
-    -fx-max-width: 40;
+    -fx-max-width: 65;
     -fx-min-height: 40;
     -fx-max-height: 40;
     -fx-background-color: transparent;

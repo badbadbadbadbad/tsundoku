@@ -16,4 +16,12 @@ public class APIController {
     public AnimeListInfo getCurrentAnimeSeason(int page) {
         return animeAPIModel.getCurrentSeason(page);
     }
+
+    public AnimeListInfo getTopAnime(int page) {
+        return animeAPIModel.getTop(page);
+    }
+
+    public AnimeListInfo getAnimeSearch(String query, int page) {
+        return animeAPIModel.getSearchByName(query, page);
+    }
 }

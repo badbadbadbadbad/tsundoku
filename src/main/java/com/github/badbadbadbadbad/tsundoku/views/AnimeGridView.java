@@ -1,6 +1,6 @@
 package com.github.badbadbadbadbad.tsundoku.views;
 
-import com.fasterxml.jackson.databind.JsonNode;
+
 import com.github.badbadbadbadbad.tsundoku.controllers.APIController;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import com.github.badbadbadbadbad.tsundoku.external.FlowGridPane;
@@ -17,23 +17,21 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-// import org.kordamp.ikonli.dashicons.Dashicons;
-// import org.kordamp.ikonli.dashicons.Dashicons;
-// import org.kordamp.ikonli.fluentui;
-
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Stack;
 
 
 public class AnimeGridView {
 
-    FlowGridPane animeGrid;
-    StackPane stackPane;
-
-    private final APIController apiController;
     private final double RATIO = 318.0 / 225.0; // The aspect ratio to use for anime images. Close to most cover images.
+    private final APIController apiController;
+
+    AnimeListInfo animeListInfo;
+    private FlowGridPane animeGrid;
+    private HBox pagination;
+    private StackPane stackPane;
+
+    private String searchMode = "SEASON";  // Changes between SEASON, TOP, and SEARCH depending on last mode selected
+    private String searchString = "";
     private static boolean filtersHidden = false;
 
     public AnimeGridView(APIController apiController) {
@@ -57,7 +55,7 @@ public class AnimeGridView {
         FlowGridPane filters = createFilters(stage);
         HBox buttonBox = createButtons();
         HBox searchAndFilterToggleBox = createSearchAndFilterToggle(filters);
-        ScrollPane animeGrid = createAnimeGrid(stage, stackPane);
+        ScrollPane animeGrid = createBrowseGrid(stage, apiController.getCurrentAnimeSeason(1));
 
 
         VBox controls = new VBox();
@@ -82,6 +80,10 @@ public class AnimeGridView {
         searchBar.setId("search-bar");
         searchBar.setPromptText("Enter query..");
         HBox.setHgrow(searchBar, Priority.ALWAYS);
+
+        searchBar.textProperty().addListener((observable, oldValue, newValue) -> {
+            searchString = newValue;
+        });
 
         // Filter toggle button
         ToggleButton toggleFiltersButton = new ToggleButton("Hide filters");
@@ -259,27 +261,6 @@ public class AnimeGridView {
 
 
     private HBox createButtons() {
-
-        // Mode selector buttons
-        /*
-        Button browseButton = createModeButton("Browse");
-        Button logButton = createModeButton("Log");
-
-        browseButton.setId("browse-mode-browse-button");
-        logButton.setId("browse-mode-log-button");
-
-
-        Collections.addAll(browseModeButtons, browseButton, logButton);
-
-
-
-        // Treat them as one component
-        HBox leftButtonBox = new HBox(browseButton, logButton);
-        leftButtonBox.setAlignment(Pos.CENTER_LEFT);
-
-         */
-
-        // Right buttons
         Button seasonButton = new Button("Season");
         Button topButton = new Button("Top");
         Button searchButton = new Button("Search");
@@ -288,57 +269,47 @@ public class AnimeGridView {
         topButton.getStyleClass().add("controls-button");
         searchButton.getStyleClass().add("controls-button");
 
+        // Listeners to call for content
+        seasonButton.setOnAction(event -> {
+            searchMode = "SEASON";
+            animeListInfo = apiController.getCurrentAnimeSeason(1);
+            reloadAnimeGrid(animeListInfo.getAnimeList());
+            updatePaginationButtons(pagination, 1, animeListInfo.getLastPage());
+        });
+
+        topButton.setOnAction(event -> {
+            searchMode = "TOP";
+            animeListInfo = apiController.getTopAnime(1);
+            reloadAnimeGrid(animeListInfo.getAnimeList());
+            updatePaginationButtons(pagination, 1, animeListInfo.getLastPage());
+        });
+
+        searchButton.setOnAction(event -> {
+            searchMode = "SEARCH";
+            animeListInfo = apiController.getAnimeSearch(searchString, 1);
+            reloadAnimeGrid(animeListInfo.getAnimeList());
+            updatePaginationButtons(pagination, 1, animeListInfo.getLastPage());
+        });
+
         HBox rightButtonBox = new HBox(10, seasonButton, topButton, searchButton);
-        rightButtonBox.setAlignment(Pos.CENTER_RIGHT);
 
 
-        Region space = new Region();
-        HBox.setHgrow(space, Priority.ALWAYS);
-
-        HBox buttonBox = new HBox(space, rightButtonBox);
+        HBox buttonBox = new HBox(rightButtonBox);
         HBox.setHgrow(buttonBox, Priority.ALWAYS);
+        buttonBox.setAlignment(Pos.CENTER_RIGHT);
 
         return buttonBox;
     }
 
-    /*
-    private Button createModeButton(String label) {
-        Button button = new Button(label);
-        // button.setMaxWidth(Double.MAX_VALUE);
-        button.getStyleClass().addAll("controls-button", "browse-mode-button");
 
-        button.setOnAction(e -> {
-            setActiveButton(button);
-        });
+    private ScrollPane createBrowseGrid(Stage stage, AnimeListInfo animeListInfo) {
 
-        return button;
-    }
-
-
-    private void setActiveButton(Button selectedButton) {
-        for (Button button : browseModeButtons) {
-            button.getStyleClass().removeAll("browse-mode-button-active");
-        }
-        selectedButton.getStyleClass().add("browse-mode-button-active");
-    }
-
-     */
-
-
-    private ScrollPane createAnimeGrid(Stage stage, StackPane stackPane) {
-        // FlowGridPane animeGrid = new FlowGridPane(2, 3);
         animeGrid = new FlowGridPane(2, 3);
         animeGrid.setHgap(20);
         animeGrid.setVgap(20);
         animeGrid.setMaxWidth(Double.MAX_VALUE);
 
-        AnimeListInfo animeListInfo = apiController.getCurrentAnimeSeason(1);
-        List<AnimeInfo> animeList = animeListInfo.getAnimeList();
-
-        for (AnimeInfo anime : animeList) {
-            VBox animeBox = createAnimeBox(anime, stackPane);
-            animeGrid.getChildren().add(animeBox);
-        }
+        reloadAnimeGrid(animeListInfo.getAnimeList());
 
         Screen screen = Screen.getPrimary();
         double screenWidth = screen.getBounds().getWidth();
@@ -350,7 +321,7 @@ public class AnimeGridView {
             int cols, rows;
 
             if (windowWidth < screenWidth * 0.6) {
-                cols = 3;  // Minimum 2 columns
+                cols = 3;
             } else if (windowWidth < screenWidth * 0.7) {
                 cols = 4;
             } else if (windowWidth < screenWidth * 0.8) {
@@ -369,12 +340,11 @@ public class AnimeGridView {
 
 
 
-        // HBox pagination = createPagination(animeListInfo.getLastPage());
-        HBox pagination = createPagination(animeListInfo.getLastPage(), animeGrid, stackPane);
+        pagination = createPagination(animeListInfo.getLastPage());
         VBox wrapper = new VBox(10, animeGrid, pagination);
         wrapper.setMaxWidth(Double.MAX_VALUE);
 
-        // ScrollPane scrollPane = new ScrollPane(animeGrid);
+
         ScrollPane scrollPane = new ScrollPane(wrapper);
         scrollPane.getStyleClass().add("grid-scroll-pane");
         scrollPane.setFitToWidth(true);
@@ -384,19 +354,19 @@ public class AnimeGridView {
 
         // Smooth scroll listener
         // in /util/, SmoothScroll
-        // new SmoothScroll(scrollPane, animeGrid);
         new SmoothScroll(scrollPane, wrapper);
 
         return scrollPane;
     }
 
 
-    private HBox createPagination(int pages, FlowGridPane animeGrid, StackPane stackPane) {
+    private HBox createPagination(int pages) {
         int selectedPage = 1;
 
         HBox pagination = new HBox();
-        pagination.setMinHeight(40);
-        pagination.setMaxHeight(40);
+        pagination.setMinHeight(50);
+        pagination.setMaxHeight(50);
+        pagination.setStyle("-fx-padding: 0 0 10px 0;");
         pagination.setMaxWidth(Double.MAX_VALUE);
         HBox.setHgrow(pagination, Priority.ALWAYS);
         pagination.setAlignment(Pos.CENTER);
@@ -442,12 +412,20 @@ public class AnimeGridView {
         if (selectedPage < pages - 1) {
             paginationButtons.getChildren().add(createPageButton(pages, pages));
         }
+    }
 
+    private AnimeListInfo getPageForCurrentQuery(int page) {
+        if (searchMode.equals("SEASON")) {
+            return apiController.getCurrentAnimeSeason(page);
+        } else if (searchMode.equals("TOP")) {
+            return apiController.getTopAnime(page);
+        } else { // Default mode: SEARCH
+            return apiController.getAnimeSearch(searchString, page);
+        }
+    }
 
-        // Actually call the new page
+    private void reloadAnimeGrid(List<AnimeInfo> animeList) {
         animeGrid.getChildren().clear();
-        AnimeListInfo animeListInfo = apiController.getCurrentAnimeSeason(selectedPage);
-        List<AnimeInfo> animeList = animeListInfo.getAnimeList();
 
         for (AnimeInfo anime : animeList) {
             VBox animeBox = createAnimeBox(anime, stackPane);
@@ -460,6 +438,8 @@ public class AnimeGridView {
         pageButton.getStyleClass().add("pagination-button");
 
         pageButton.setOnAction(event -> {
+            animeListInfo = getPageForCurrentQuery(page);
+            reloadAnimeGrid(animeListInfo.getAnimeList());
             updatePaginationButtons((HBox) pageButton.getParent(), page, pages);
         });
 
@@ -522,6 +502,8 @@ public class AnimeGridView {
         } else {
             try {
                 int clampedPage = Math.clamp(Integer.parseInt(input), 1, pages);
+                animeListInfo = getPageForCurrentQuery(clampedPage);
+                reloadAnimeGrid(animeListInfo.getAnimeList());
                 updatePaginationButtons(paginationButtons, clampedPage, pages);
 
             } catch (NumberFormatException e) {

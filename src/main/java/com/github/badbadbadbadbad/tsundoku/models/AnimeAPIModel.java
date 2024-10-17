@@ -2,6 +2,7 @@ package com.github.badbadbadbadbad.tsundoku.models;
 
 /* Using Jikan.moe API */
 /* https://jikan.moe/ */
+/* docs.api.jikan.moe */
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,6 +11,8 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -21,9 +24,8 @@ public class AnimeAPIModel {
     public AnimeListInfo getCurrentSeason(int page) {
         try {
             String urlString = BASE_URL + "/seasons/now";
-            if (page != 1) {
-                urlString += "?page=" + String.valueOf(page);
-            }
+            urlString += "?page=" + String.valueOf(page);
+
             URL url = new URL(urlString);
 
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -48,15 +50,93 @@ public class AnimeAPIModel {
 
             return parseAnimeData(rootNode);
 
-            // System.out.println(rootNode.toPrettyString());
 
         } catch (Exception e) {
-            System.out.println("getCurrentSeason() error: " + e);
+            System.out.println("AnimeAPIModel getCurrentSeason() error: " + e);
             return null;
         }
     }
 
-    // private List<AnimeInfo> parseAnimeData(JsonNode animeData) {
+
+    public AnimeListInfo getTop(int page) {
+        try {
+            String urlString = BASE_URL + "/top/anime";
+            urlString += "?page=" + String.valueOf(page);
+
+            URL url = new URL(urlString);
+
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setRequestProperty("Accept", "application/json");
+
+            if (conn.getResponseCode() != 200) {
+                throw new RuntimeException("getTop: HTTP Error Code " + conn.getResponseCode());
+            }
+
+            BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+
+            StringBuilder response = new StringBuilder();
+            String output;
+            while ((output = br.readLine()) != null) {
+                response.append(output);
+            }
+            conn.disconnect();
+
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode rootNode = mapper.readTree(response.toString());
+
+            return parseAnimeData(rootNode);
+
+        } catch (Exception e) {
+            System.out.println("AnimeAPIModel getTop() error: " + e);
+            return null;
+        }
+    }
+
+    // Jikan's interal search uses typesense.
+    // This means that some special operators can be used, like - for exclusion and "" for exact search
+    public AnimeListInfo getSearchByName(String query, int page) {
+        try {
+            String urlString = BASE_URL + "/anime";
+
+            // Page
+            urlString += "?page=" + String.valueOf(page);
+
+            // Search query
+            // urlString += "&q=" + "\"" + query + "\"";
+            urlString += "&q=" + URLEncoder.encode("\"" + query + "\"", StandardCharsets.UTF_8);
+
+            URL url = new URL(urlString);
+
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setRequestProperty("Accept", "application/json");
+
+            if (conn.getResponseCode() != 200) {
+                throw new RuntimeException("getSearchByName: HTTP Error Code " + conn.getResponseCode());
+            }
+
+            BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+
+            StringBuilder response = new StringBuilder();
+            String output;
+            while ((output = br.readLine()) != null) {
+                response.append(output);
+            }
+            conn.disconnect();
+
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode rootNode = mapper.readTree(response.toString());
+
+            return parseAnimeData(rootNode);
+
+        } catch (Exception e) {
+            System.out.println("AnimeAPIModel getSearchByName() error: " + e);
+            return null;
+        }
+    }
+
+
     private AnimeListInfo parseAnimeData(JsonNode animeData) {
         List<AnimeInfo> animeList = new ArrayList<>();
         JsonNode dataArray = animeData.get("data");
@@ -119,7 +199,6 @@ public class AnimeAPIModel {
 
         int lastPage = animeData.get("pagination").get("last_visible_page").asInt();
 
-        // return new AnimeListInfo(animeList, lastPage);
         return new AnimeListInfo(removeDuplicates(animeList), lastPage);
     }
 
