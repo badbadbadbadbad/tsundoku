@@ -85,6 +85,14 @@ public class AnimeGridView {
             searchString = newValue;
         });
 
+        // Search should trigger on enter press
+        searchBar.setOnAction(event -> {
+            searchMode = "SEARCH";
+            animeListInfo = apiController.getAnimeSearch(searchString, 1);
+            reloadAnimeGrid(animeListInfo.getAnimeList());
+            updatePaginationButtons(pagination, 1, animeListInfo.getLastPage());
+        });
+
         // Filter toggle button
         ToggleButton toggleFiltersButton = new ToggleButton("Hide filters");
         toggleFiltersButton.getStyleClass().add("controls-button");
