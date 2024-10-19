@@ -15,6 +15,7 @@ import java.util.List;
 
 public class MainWindowView {
     private APIController apiController;
+    public Region loadingBar;
 
     public MainWindowView(Stage stage, APIController apiController) {
         this.apiController = apiController;
@@ -29,10 +30,12 @@ public class MainWindowView {
         SidebarView sidebarView = new SidebarView();
         Region sidebar = sidebarView.createSidebar(this::loadSidebarContent);
 
-        AnimeGridView animeGridView = new AnimeGridView(apiController);
+        Region sep = createSeparator();
+
+        AnimeGridView animeGridView = new AnimeGridView(apiController, loadingBar);
         Region gridView = animeGridView.createGridView(stage);
 
-        root.getChildren().addAll(sidebar, createSeparator(), gridView);
+        root.getChildren().addAll(sidebar, sep, gridView);
 
         Scene scene = new Scene(root);
         scene.getStylesheets().add(getClass().getResource("/CSS/styles.css").toExternalForm());
@@ -52,9 +55,23 @@ public class MainWindowView {
 
 
     private Region createSeparator() {
-        Region separator = new Region();
+        Region background = new Region();
+        background.setMinWidth(2);
+        background.setBackground(new Background(new BackgroundFill(Color.BLACK, CornerRadii.EMPTY, Insets.EMPTY)));
+
+        loadingBar = new Region();
+        loadingBar.setMinWidth(2);
+        loadingBar.setMinHeight(0);
+        loadingBar.setMaxHeight(0);
+        loadingBar.setBackground(new Background(new BackgroundFill(Color.GOLDENROD, CornerRadii.EMPTY, Insets.EMPTY)));
+
+        StackPane separator = new StackPane(background, loadingBar);
         separator.setMinWidth(2);
-        separator.setBackground(new Background(new BackgroundFill(Color.BLACK, CornerRadii.EMPTY, Insets.EMPTY)));
+        separator.setMaxWidth(2);
+        separator.setPrefWidth(2);
+        // separator.setMinHeight(200); // Example height, adjust as needed
+
+
         return separator;
     }
 }
