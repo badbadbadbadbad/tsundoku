@@ -100,41 +100,7 @@ public class AnimeGridView {
                 searchMode = "SEARCH";
                 apiLock = true;
 
-                // Begin load animation
-                VBox darkBackground = createSearchBackground(stackPane);
-                FadeTransition fadeInBackground = createFadeInTransition(darkBackground, 0.2, 0.8);
-                fadeInBackground.play();
-                animateLoadingBar(0, 50, 0.2);
-
-                // API call
-                apiController.getAnimeSearch(searchString, 1).thenAccept(info -> {
-
-                    // Middle load animation
-                    animateLoadingBar(50, 80, 0.2);
-
-                    // Update grid in the background
-                    reloadAnimeGridAsync(info.getAnimeList());
-
-                    Platform.runLater(() -> {
-                        // Update pagination. Maybe move later? Needs testing
-                        updatePaginationButtons(pagination, 1, info.getLastPage());
-
-                        // Inner runLater for animation end after everything is loaded. Needs testing if inner runLater is needed.
-                        Platform.runLater(() -> {
-                            PauseTransition pause = new PauseTransition(Duration.seconds(0.1));
-                            pause.setOnFinished(ev -> {
-                                animateLoadingBar(80, 100, 0.2);
-
-                                FadeTransition fadeOutBackground = createFadeOutTransition(darkBackground, 0.3, 0.8);
-                                fadeOutBackground.play();
-
-                                fadeOutLoadingBar(0.2);
-                            });
-                            pause.play();
-                        });
-                    });
-
-                });
+                invokeAnimatedAPICall(1);
             }
         });
 
@@ -328,41 +294,7 @@ public class AnimeGridView {
                 searchMode = "SEASON";
                 apiLock = true;
 
-                // Begin load animation
-                VBox darkBackground = createSearchBackground(stackPane);
-                FadeTransition fadeInBackground = createFadeInTransition(darkBackground, 0.2, 0.8);
-                fadeInBackground.play();
-                animateLoadingBar(0, 50, 0.2);
-
-                // API call
-                apiController.getCurrentAnimeSeason(1).thenAccept(info -> {
-
-                    // Middle load animation
-                    animateLoadingBar(50, 80, 0.2);
-
-                    // Update grid in the background
-                    reloadAnimeGridAsync(info.getAnimeList());
-
-                    Platform.runLater(() -> {
-                        // Update pagination. Maybe move later? Needs testing
-                        updatePaginationButtons(pagination, 1, info.getLastPage());
-
-                        // Inner runLater for animation end after everything is loaded. Needs testing if inner runLater is needed.
-                        Platform.runLater(() -> {
-                            PauseTransition pause = new PauseTransition(Duration.seconds(0.1));
-                            pause.setOnFinished(ev -> {
-                                animateLoadingBar(80, 100, 0.2);
-
-                                FadeTransition fadeOutBackground = createFadeOutTransition(darkBackground, 0.3, 0.8);
-                                fadeOutBackground.play();
-
-                                fadeOutLoadingBar(0.2);
-                            });
-                            pause.play();
-                        });
-                    });
-
-                });
+                invokeAnimatedAPICall(1);
             }
         });
 
@@ -371,41 +303,7 @@ public class AnimeGridView {
                 searchMode = "TOP";
                 apiLock = true;
 
-                // Begin load animation
-                VBox darkBackground = createSearchBackground(stackPane);
-                FadeTransition fadeInBackground = createFadeInTransition(darkBackground, 0.2, 0.8);
-                fadeInBackground.play();
-                animateLoadingBar(0, 50, 0.2);
-
-                // API call
-                apiController.getTopAnime(1).thenAccept(info -> {
-
-                    // Middle load animation
-                    animateLoadingBar(50, 80, 0.2);
-
-                    // Update grid in the background
-                    reloadAnimeGridAsync(info.getAnimeList());
-
-                    Platform.runLater(() -> {
-                        // Update pagination. Maybe move later? Needs testing
-                        updatePaginationButtons(pagination, 1, info.getLastPage());
-
-                        // Inner runLater for animation end after everything is loaded. Needs testing if inner runLater is needed.
-                        Platform.runLater(() -> {
-                            PauseTransition pause = new PauseTransition(Duration.seconds(0.1));
-                            pause.setOnFinished(ev -> {
-                                animateLoadingBar(80, 100, 0.2);
-
-                                FadeTransition fadeOutBackground = createFadeOutTransition(darkBackground, 0.3, 0.8);
-                                fadeOutBackground.play();
-
-                                fadeOutLoadingBar(0.2);
-                            });
-                            pause.play();
-                        });
-                    });
-
-                });
+                invokeAnimatedAPICall(1);
             }
         });
 
@@ -414,41 +312,7 @@ public class AnimeGridView {
                 searchMode = "SEARCH";
                 apiLock = true;
 
-                // Begin load animation
-                VBox darkBackground = createSearchBackground(stackPane);
-                FadeTransition fadeInBackground = createFadeInTransition(darkBackground, 0.2, 0.8);
-                fadeInBackground.play();
-                animateLoadingBar(0, 50, 0.2);
-
-                // API call
-                apiController.getAnimeSearch(searchString, 1).thenAccept(info -> {
-
-                    // Middle load animation
-                    animateLoadingBar(50, 80, 0.2);
-
-                    // Update grid in the background
-                    reloadAnimeGridAsync(info.getAnimeList());
-
-                    Platform.runLater(() -> {
-                        // Update pagination. Maybe move later? Needs testing
-                        updatePaginationButtons(pagination, 1, info.getLastPage());
-
-                        // Inner runLater for animation end after everything is loaded. Needs testing if inner runLater is needed.
-                        Platform.runLater(() -> {
-                            PauseTransition pause = new PauseTransition(Duration.seconds(0.1));
-                            pause.setOnFinished(ev -> {
-                                animateLoadingBar(80, 100, 0.2);
-
-                                FadeTransition fadeOutBackground = createFadeOutTransition(darkBackground, 0.3, 0.8);
-                                fadeOutBackground.play();
-
-                                fadeOutLoadingBar(0.2);
-                            });
-                            pause.play();
-                        });
-                    });
-
-                });
+                invokeAnimatedAPICall(1);
             }
         });
 
@@ -542,6 +406,7 @@ public class AnimeGridView {
         return pagination;
     }
 
+
     private void updatePaginationButtons(HBox paginationButtons, int selectedPage, int pages) {
         paginationButtons.getChildren().clear();
 
@@ -577,6 +442,45 @@ public class AnimeGridView {
     }
 
 
+    private void invokeAnimatedAPICall(int page) {
+        // Begin load animation
+        VBox darkBackground = createSearchBackground(stackPane);
+        FadeTransition fadeInBackground = createFadeInTransition(darkBackground, 0.2, 0.8);
+        fadeInBackground.play();
+        animateLoadingBar(0, 50, 0.2);
+
+        // API call
+        getPageForCurrentQuery(page).thenAccept(info -> {
+
+            // Middle load animation
+            animateLoadingBar(50, 80, 0.2);
+
+            // Update grid in the background
+            reloadAnimeGridAsync(info.getAnimeList());
+
+            Platform.runLater(() -> {
+                // Update pagination. Maybe move later? Needs testing
+                updatePaginationButtons(pagination, page, info.getLastPage());
+
+                // Inner runLater for animation end after everything is loaded. Needs testing if inner runLater is needed.
+                Platform.runLater(() -> {
+                    PauseTransition pause = new PauseTransition(Duration.seconds(0.1));
+                    pause.setOnFinished(ev -> {
+                        animateLoadingBar(80, 100, 0.1);
+
+                        FadeTransition fadeOutBackground = createFadeOutTransition(darkBackground, 0.3, 0.8);
+                        fadeOutBackground.play();
+
+                        fadeOutLoadingBar(0.3);
+                    });
+                    pause.play();
+                });
+            });
+
+        });
+    }
+
+
     private CompletableFuture<AnimeListInfo> getPageForCurrentQuery(int page) {
         if (searchMode.equals("SEASON")) {
             return apiController.getCurrentAnimeSeason(page);
@@ -587,6 +491,7 @@ public class AnimeGridView {
         }
     }
 
+    // TODO OLD VERSION, REMOVE OR MAKE BLOCKING FOR INITIAL CALL
     private void reloadAnimeGrid(List<AnimeInfo> animeList) {
 
         CompletableFuture.supplyAsync(() -> {
@@ -602,17 +507,8 @@ public class AnimeGridView {
             });
         });
 
-
-        /*
-        animeGrid.getChildren().clear();
-
-        for (AnimeInfo anime : animeList) {
-            VBox animeBox = createAnimeBox(anime, stackPane);
-            animeGrid.getChildren().add(animeBox);
-        }
-
-         */
     }
+
 
     private List<VBox> createAnimeGridItems(List<AnimeInfo> animeList) {
         List<VBox> animeBoxes = new ArrayList<>();
@@ -623,11 +519,10 @@ public class AnimeGridView {
         return animeBoxes;
     }
 
+
     private void reloadAnimeGridAsync(List<AnimeInfo> animeList) {
-        // Run the creation of VBoxes in a background thread
         CompletableFuture.supplyAsync(() -> createAnimeGridItems(animeList))
                 .thenAccept(animeBoxes -> {
-                    // Update the scene graph on the JavaFX Application thread
                     Platform.runLater(() -> {
                         animeGrid.getChildren().clear();
                         animeGrid.getChildren().addAll(animeBoxes);
@@ -635,6 +530,7 @@ public class AnimeGridView {
                     });
                 });
     }
+
 
     private void adjustGridItemHeights() {
         for (Node node : animeGrid.getChildren()) {
@@ -648,6 +544,7 @@ public class AnimeGridView {
         }
     }
 
+
     private Button createPageButton(int page, int pages) {
         Button pageButton =  new Button(String.valueOf(page));
         pageButton.getStyleClass().add("pagination-button");
@@ -655,59 +552,13 @@ public class AnimeGridView {
         pageButton.setOnAction(event -> {
             if(!apiLock) {
                 apiLock = true;
-
-                // Begin load animation
-                VBox darkBackground = createSearchBackground(stackPane);
-                FadeTransition fadeInBackground = createFadeInTransition(darkBackground, 0.2, 0.8);
-                fadeInBackground.play();
-                animateLoadingBar(0, 50, 0.2);
-
-                // API call
-                getPageForCurrentQuery(page).thenAccept(info -> {
-
-                    // Middle load animation
-                    animateLoadingBar(50, 80, 0.2);
-
-                    // Update grid in the background
-                    reloadAnimeGridAsync(info.getAnimeList());
-
-                    Platform.runLater(() -> {
-                        // Update pagination. Maybe move later? Needs testing
-                        updatePaginationButtons((HBox) pageButton.getParent(), page, pages);
-
-                        // Inner runLater for animation end after everything is loaded. Needs testing if inner runLater is needed.
-                        Platform.runLater(() -> {
-                            PauseTransition pause = new PauseTransition(Duration.seconds(0.1));
-                            pause.setOnFinished(ev -> {
-                                animateLoadingBar(80, 100, 0.2);
-
-                                FadeTransition fadeOutBackground = createFadeOutTransition(darkBackground, 0.3, 0.8);
-                                fadeOutBackground.play();
-
-                                fadeOutLoadingBar(0.2);
-                            });
-                            pause.play();
-                        });
-                    });
-
-                });
+                invokeAnimatedAPICall(page);
             }
-
-
-            /*
-            getPageForCurrentQuery(page).thenAccept(info -> {
-                reloadAnimeGridAsync(info.getAnimeList());
-                Platform.runLater(() -> {
-                    updatePaginationButtons((HBox) pageButton.getParent(), page, pages);
-                });
-            });
-
-             */
-
         });
 
         return pageButton;
     }
+
 
     private Button createEllipsisButton(HBox paginationButtons, int pages) {
         Button ellipsisButton =  new Button("...");
@@ -722,6 +573,7 @@ public class AnimeGridView {
 
         return ellipsisButton;
     }
+
 
     private TextField createPageInputField(HBox paginationButtons, int pages) {
         TextField pageInputField = new TextField();
@@ -768,60 +620,11 @@ public class AnimeGridView {
 
                 if(!apiLock) {
                     apiLock = true;
-
-                    // Begin load animation
-                    VBox darkBackground = createSearchBackground(stackPane);
-                    FadeTransition fadeInBackground = createFadeInTransition(darkBackground, 0.2, 0.8);
-                    fadeInBackground.play();
-                    animateLoadingBar(0, 50, 0.2);
-
-                    // API call
-                    getPageForCurrentQuery(clampedPage).thenAccept(info -> {
-
-                        // Middle load animation
-                        animateLoadingBar(50, 80, 0.2);
-
-                        // Update grid in the background
-                        reloadAnimeGridAsync(info.getAnimeList());
-
-                        Platform.runLater(() -> {
-                            // Update pagination. Maybe move later? Needs testing
-                            updatePaginationButtons(paginationButtons, clampedPage, pages);
-
-                            // Inner runLater for animation end after everything is loaded. Needs testing if inner runLater is needed.
-                            Platform.runLater(() -> {
-                                PauseTransition pause = new PauseTransition(Duration.seconds(0.1));
-                                pause.setOnFinished(ev -> {
-                                    animateLoadingBar(80, 100, 0.2);
-
-                                    FadeTransition fadeOutBackground = createFadeOutTransition(darkBackground, 0.3, 0.8);
-                                    fadeOutBackground.play();
-
-                                    fadeOutLoadingBar(0.2);
-                                });
-                                pause.play();
-                            });
-                        });
-
-                    });
+                    invokeAnimatedAPICall(clampedPage);
                 }
 
-                /*
-                getPageForCurrentQuery(clampedPage).thenAccept(info -> {
-                    reloadAnimeGridAsync(info.getAnimeList());
-                    Platform.runLater(() -> {
-                        updatePaginationButtons(paginationButtons, clampedPage, pages);
-                    });
-
-                });
-
-                 */
-                // animeListInfo = getPageForCurrentQuery(clampedPage);
-                // reloadAnimeGrid(animeListInfo.getAnimeList());
-                // updatePaginationButtons(paginationButtons, clampedPage, pages);
-
             } catch (NumberFormatException e) {
-                // Number formatting issues _shouldn't_ exist
+                // Number formatting issues _shouldn't_ exist, but provide failsafe anyway
                 paginationButtons.getChildren().set(index, createEllipsisButton(paginationButtons, pages));
             }
 
@@ -865,6 +668,7 @@ public class AnimeGridView {
     }
 
 
+    // TODO: Clean up code, reuse animations
     private void createPopupScreen(AnimeInfo anime, StackPane stackPane) {
         // Fake darkener effect
         VBox darkBackground = new VBox();
@@ -915,11 +719,7 @@ public class AnimeGridView {
 
     private void animateLoadingBar(double fromPercent, double toPercent, double durationSeconds) {
         // Calculate the heights as a percentage of the parent region's height
-        Screen screen = Screen.getPrimary();
-        // double screenWidth = screen.getBounds().getWidth();
-        double parentHeight = screen.getBounds().getHeight();
-        // double parentHeight = loadingBar.getParent().getLayoutBounds().getHeight();
-        double fromHeight = (fromPercent / 100.0) * parentHeight;
+        double parentHeight = loadingBar.getParent().getLayoutBounds().getHeight();
         double toHeight = (toPercent / 100.0) * parentHeight;
 
         // Animation for minHeight
@@ -939,6 +739,7 @@ public class AnimeGridView {
         parallelTransition.play();
     }
 
+
     private void fadeOutLoadingBar(double durationSeconds) {
         FadeTransition fadeTransition = new FadeTransition(Duration.seconds(durationSeconds), loadingBar);
         fadeTransition.setFromValue(1.0);
@@ -953,6 +754,7 @@ public class AnimeGridView {
         fadeTransition.play();
     }
 
+
     private VBox createSearchBackground(StackPane parent) {
         VBox darkBackground = new VBox();
         darkBackground.getStyleClass().add("grid-media-popup-background");
@@ -963,12 +765,14 @@ public class AnimeGridView {
         return darkBackground;
     }
 
+
     private FadeTransition createFadeInTransition(Node node, double durationSeconds, double toValue) {
         FadeTransition fadeIn = new FadeTransition(Duration.seconds(durationSeconds), node);
         fadeIn.setFromValue(0);
         fadeIn.setToValue(toValue);
         return fadeIn;
     }
+
 
     private FadeTransition createFadeOutTransition(Node node, double durationSeconds, double fromValue) {
         FadeTransition fadeOut = new FadeTransition(Duration.seconds(durationSeconds), node);
@@ -977,6 +781,5 @@ public class AnimeGridView {
         fadeOut.setOnFinished(e -> stackPane.getChildren().remove(node));
         return fadeOut;
     }
-
 
 }
