@@ -25,79 +25,75 @@ import java.util.stream.Collectors;
 public class AnimeAPIModel {
 
     private static final String BASE_URL = "https://api.jikan.moe/v4";
-    // HttpClient client = HttpClient.newHttpClient();
     HttpClient client;
 
     public CompletableFuture<AnimeListInfo> getCurrentSeason(int page) {
+        String urlString = BASE_URL + "/seasons/now?page=" + page;
+        URI uri = URI.create(urlString);
+        client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(uri)
+                .header("Accept", "application/json")
+                .GET()
+                .build();
 
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                String urlString = BASE_URL + "/seasons/now?page=" + page;
-                URI uri = URI.create(urlString);
-
-                client = HttpClient.newHttpClient();
-                HttpRequest request = HttpRequest.newBuilder()
-                        .uri(uri)
-                        .header("Accept", "application/json")
-                        .GET()
-                        .build();
-
-                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-                if (response.statusCode() != 200) {
-                    throw new RuntimeException("getCurrentSeason: HTTP Error Code " + response.statusCode());
-                }
-
-                ObjectMapper mapper = new ObjectMapper();
-                JsonNode rootNode = mapper.readTree(response.body());
-
-                return parseAnimeData(rootNode);
-
-            } catch (Exception e) {
-                System.out.println("AnimeAPIModel getCurrentSeason() error: " + e);
-                return null;
-            }
-        });
+        // Use sendAsync and handle exceptions within the future
+        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(response -> {
+                    if (response.statusCode() != 200) {
+                        throw new RuntimeException("getCurrentSeason(): HTTP Error Code " + response.statusCode());
+                    }
+                    // Handle the parsing and potential exceptions here
+                    try {
+                        ObjectMapper mapper = new ObjectMapper();
+                        JsonNode rootNode = mapper.readTree(response.body());
+                        return parseAnimeData(rootNode);
+                    } catch (IOException e) {
+                        System.out.println("Parsing error: " + e.getMessage());
+                        return null; // Return null or a default AnimeListInfo
+                    }
+                })
+                .exceptionally(e -> {
+                    System.out.println("AnimeAPIModel getCurrentSeason() error: " + e);
+                    return null; // Handle the exception and return null
+                });
     }
 
 
     public CompletableFuture<AnimeListInfo> getTop(int page) {
+        String urlString = BASE_URL + "/top/anime?page=" + page;
+        URI uri = URI.create(urlString);
+        client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(uri)
+                .header("Accept", "application/json")
+                .GET()
+                .build();
 
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                String urlString = BASE_URL + "/top/anime?page=" + page;
-                URI uri = URI.create(urlString);
-
-                client = HttpClient.newHttpClient();
-                HttpRequest request = HttpRequest.newBuilder()
-                        .uri(uri)
-                        .header("Accept", "application/json")
-                        .GET()
-                        .build();
-
-                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-                if (response.statusCode() != 200) {
-                    throw new RuntimeException("getTop: HTTP Error Code " + response.statusCode());
-                }
-
-                ObjectMapper mapper = new ObjectMapper();
-                JsonNode rootNode = mapper.readTree(response.body());
-
-                return parseAnimeData(rootNode);
-
-            } catch (Exception e) {
-                System.out.println("AnimeAPIModel getTop() error: " + e);
-                return null;
-            }
-        });
+        // Use sendAsync and handle exceptions within the future
+        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(response -> {
+                    if (response.statusCode() != 200) {
+                        throw new RuntimeException("getTop: HTTP Error Code " + response.statusCode());
+                    }
+                    // Handle the parsing and potential exceptions here
+                    try {
+                        ObjectMapper mapper = new ObjectMapper();
+                        JsonNode rootNode = mapper.readTree(response.body());
+                        return parseAnimeData(rootNode);
+                    } catch (IOException e) {
+                        System.out.println("Parsing error: " + e.getMessage());
+                        return null; // Return null or a default AnimeListInfo
+                    }
+                })
+                .exceptionally(e -> {
+                    System.out.println("AnimeAPIModel getTop() error: " + e);
+                    return null; // Handle the exception and return null
+                });
     }
 
 
-    // Jikan's interal search uses typesense.
-    // This means that some special operators can be used, like - for exclusion and "" for exact search
     public CompletableFuture<AnimeListInfo> getSearchByName(String query, int page) {
-
         String urlString = BASE_URL + "/anime?page=" + page + "&q=" + URLEncoder.encode("\"" + query + "\"", StandardCharsets.UTF_8);
         URI uri = URI.create(urlString);
         client = HttpClient.newHttpClient();
@@ -127,40 +123,6 @@ public class AnimeAPIModel {
                     System.out.println("AnimeAPIModel getSearchByName() error: " + e);
                     return null; // Handle the exception and return null
                 });
-
-        /*
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                String urlString = BASE_URL + "/anime?page=" + page + "&q=" + URLEncoder.encode("\"" + query + "\"", StandardCharsets.UTF_8);
-                URI uri = URI.create(urlString);
-
-                client = HttpClient.newHttpClient();
-                HttpRequest request = HttpRequest.newBuilder()
-                        .uri(uri)
-                        .header("Accept", "application/json")
-                        .GET()
-                        .build();
-
-
-
-                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-                if (response.statusCode() != 200) {
-                    throw new RuntimeException("getTop: HTTP Error Code " + response.statusCode());
-                }
-
-                ObjectMapper mapper = new ObjectMapper();
-                JsonNode rootNode = mapper.readTree(response.body());
-
-                return parseAnimeData(rootNode);
-
-            } catch (Exception e) {
-                System.out.println("AnimeAPIModel getTop() error: " + e);
-                return null;
-            }
-        });
-
-         */
     }
 
 

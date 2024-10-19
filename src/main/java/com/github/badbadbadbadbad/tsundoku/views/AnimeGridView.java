@@ -9,6 +9,7 @@ import com.github.badbadbadbadbad.tsundoku.models.AnimeListInfo;
 import javafx.animation.*;
 import javafx.application.Platform;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.layout.Region;
@@ -17,7 +18,6 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-import javax.sound.midi.SysexMessage;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -48,7 +48,6 @@ public class AnimeGridView {
 
 
         // StackPane wrapper to allow for popup functionality when grid element is clicked
-        // StackPane stackPane = new StackPane();
         stackPane = new StackPane();
         VBox.setVgrow(stackPane, Priority.ALWAYS);
         HBox.setHgrow(stackPane, Priority.ALWAYS);
@@ -96,33 +95,40 @@ public class AnimeGridView {
         searchBar.setOnAction(event -> {
             searchMode = "SEARCH";
 
+            // NEW
+            VBox darkBackground = new VBox();
+            darkBackground.getStyleClass().add("grid-media-popup-background");
+            VBox.setVgrow(darkBackground, Priority.ALWAYS);
+            HBox.setHgrow(darkBackground, Priority.ALWAYS);
+            darkBackground.setOpacity(0);
+            stackPane.getChildren().add(darkBackground);
+
+            FadeTransition fadeInBackground = new FadeTransition(Duration.seconds(0.2), darkBackground);
+            fadeInBackground.setFromValue(0);
+            fadeInBackground.setToValue(0.8);
+            fadeInBackground.play();
+
+
             apiController.getAnimeSearch(searchString, 1).thenAccept(info -> {
-                long beforeTime = System.currentTimeMillis(); // Start time
-                System.out.println("BEFORE: " + beforeTime);
 
+                reloadAnimeGridAsync(info.getAnimeList());
                 Platform.runLater(() -> {
-                    long startTime = System.currentTimeMillis(); // Time when Platform.runLater starts
-                    System.out.println("START: " + startTime);
-
-                    reloadAnimeGrid(info.getAnimeList());
-                    long middleTime = System.currentTimeMillis(); // Time after reloadAnimeGrid
-                    System.out.println("MIDDLE: " + middleTime + " (Elapsed: " + (middleTime - startTime) + " ms)");
-
                     updatePaginationButtons(pagination, 1, info.getLastPage());
-                    long afterTime = System.currentTimeMillis(); // Time after updatePaginationButtons
-                    System.out.println("AFTER: " + afterTime + " (Elapsed: " + (afterTime - middleTime) + " ms)");
 
-                    long totalTime = afterTime - beforeTime; // Total time from before to after
-                    System.out.println("TOTAL TIME: " + totalTime + " ms");
+                    Platform.runLater(() -> {
+                        PauseTransition pause = new PauseTransition(Duration.seconds(0.1)); // Adjust the delay if needed
+                        pause.setOnFinished(ev -> {
+                            FadeTransition fadeOutBackground = new FadeTransition(Duration.seconds(0.3), darkBackground);
+                            fadeOutBackground.setFromValue(0.8);
+                            fadeOutBackground.setToValue(0);
+                            fadeOutBackground.setOnFinished(e -> stackPane.getChildren().remove(darkBackground));
+                            fadeOutBackground.play();
+                        });
+                        pause.play();
+                    });
                 });
+
             });
-
-            /*
-            animeListInfo = apiController.getAnimeSearch(searchString, 1);
-            reloadAnimeGrid(animeListInfo.getAnimeList());
-            updatePaginationButtons(pagination, 1, animeListInfo.getLastPage());
-
-             */
         });
 
         // Filter toggle button
@@ -313,30 +319,51 @@ public class AnimeGridView {
         seasonButton.setOnAction(event -> {
             searchMode = "SEASON";
             apiController.getCurrentAnimeSeason(1).thenAccept(info -> {
+                reloadAnimeGridAsync(info.getAnimeList());
+                Platform.runLater(() -> {
+                    updatePaginationButtons(pagination, 1, info.getLastPage());
+                });
+                /*
                 Platform.runLater(() -> { // Async call happens on different thread, this forces result into JavaFX thread
                     reloadAnimeGrid(info.getAnimeList());
                     updatePaginationButtons(pagination, 1, info.getLastPage());
                 });
+
+                 */
             });
         });
 
         topButton.setOnAction(event -> {
             searchMode = "TOP";
             apiController.getTopAnime(1).thenAccept(info -> {
+                reloadAnimeGridAsync(info.getAnimeList());
+                Platform.runLater(() -> {
+                    updatePaginationButtons(pagination, 1, info.getLastPage());
+                });
+                /*
                 Platform.runLater(() -> {
                     reloadAnimeGrid(info.getAnimeList());
                     updatePaginationButtons(pagination, 1, info.getLastPage());
                 });
+
+                 */
             });
         });
 
         searchButton.setOnAction(event -> {
             searchMode = "SEARCH";
             apiController.getAnimeSearch(searchString, 1).thenAccept(info -> {
+                reloadAnimeGridAsync(info.getAnimeList());
+                Platform.runLater(() -> {
+                    updatePaginationButtons(pagination, 1, info.getLastPage());
+                });
+                /*
                 Platform.runLater(() -> {
                     reloadAnimeGrid(info.getAnimeList());
                     updatePaginationButtons(pagination, 1, info.getLastPage());
                 });
+
+                 */
             });
             /*
             animeListInfo = apiController.getAnimeSearch(searchString, 1);
@@ -508,6 +535,40 @@ public class AnimeGridView {
          */
     }
 
+    private List<VBox> createAnimeGridItems(List<AnimeInfo> animeList) {
+        List<VBox> animeBoxes = new ArrayList<>();
+        for (AnimeInfo anime : animeList) {
+            VBox animeBox = createAnimeBox(anime, stackPane);
+            animeBoxes.add(animeBox);
+        }
+        return animeBoxes;
+    }
+
+    private void reloadAnimeGridAsync(List<AnimeInfo> animeList) {
+        // Run the creation of VBoxes in a background thread
+        CompletableFuture.supplyAsync(() -> createAnimeGridItems(animeList))
+                .thenAccept(animeBoxes -> {
+                    // Update the scene graph on the JavaFX Application thread
+                    Platform.runLater(() -> {
+                        animeGrid.getChildren().clear();
+                        animeGrid.getChildren().addAll(animeBoxes);
+                        adjustGridItemHeights(); // Adjust the heights after adding to the scene graph
+                    });
+                });
+    }
+
+    private void adjustGridItemHeights() {
+        for (Node node : animeGrid.getChildren()) {
+            if (node instanceof VBox animeBox) {
+                double width = animeBox.getWidth();
+                double newHeight = width * RATIO;
+                animeBox.setMinHeight(newHeight);
+                animeBox.setPrefHeight(newHeight);
+                animeBox.setMaxHeight(newHeight);
+            }
+        }
+    }
+
     private Button createPageButton(int page, int pages) {
         Button pageButton =  new Button(String.valueOf(page));
         pageButton.getStyleClass().add("pagination-button");
@@ -515,10 +576,17 @@ public class AnimeGridView {
         pageButton.setOnAction(event -> {
 
             getPageForCurrentQuery(page).thenAccept(info -> {
+                reloadAnimeGridAsync(info.getAnimeList());
+                Platform.runLater(() -> {
+                    updatePaginationButtons((HBox) pageButton.getParent(), page, pages);
+                });
+                /*
                 Platform.runLater(() -> {
                     reloadAnimeGrid(info.getAnimeList());
                     updatePaginationButtons((HBox) pageButton.getParent(), page, pages);
                 });
+
+                 */
                 /*
                 animeListInfo = info;
                 reloadAnimeGrid(animeListInfo.getAnimeList());
@@ -593,10 +661,17 @@ public class AnimeGridView {
                 int clampedPage = Math.clamp(Integer.parseInt(input), 1, pages);
 
                 getPageForCurrentQuery(clampedPage).thenAccept(info -> {
+                    reloadAnimeGridAsync(info.getAnimeList());
+                    Platform.runLater(() -> {
+                        updatePaginationButtons(paginationButtons, clampedPage, pages);
+                    });
+                    /*
                     Platform.runLater(() -> {
                         reloadAnimeGrid(info.getAnimeList());
                         updatePaginationButtons(paginationButtons, clampedPage, pages);
                     });
+
+                     */
                     /*
                     animeListInfo = info;
                     reloadAnimeGrid(animeListInfo.getAnimeList());
@@ -618,9 +693,6 @@ public class AnimeGridView {
 
 
     private VBox createAnimeBox(AnimeInfo anime, StackPane stackPane) {
-        // Anime covers on MAL have _slightly_ different image sizes.
-        // This seems to be the most common? We force all images to be this size
-        // double RATIO = 318.0 / 225.0;
 
         // Make image into VBox background, CSS cover sizing to look okay
         VBox animeBox = new VBox();
@@ -636,7 +708,6 @@ public class AnimeGridView {
         clip.setArcWidth(40);
         animeBox.setClip(clip);
 
-
         animeBox.widthProperty().addListener((obs, oldWidth, newWidth) -> {
             // Platform.runLater needed to trigger layout update post-resizing
             // Has a chance to get a bit wonky on window snaps otherwise
@@ -647,7 +718,6 @@ public class AnimeGridView {
                 animeBox.setMaxHeight(newHeight);
             });
         });
-
 
         // Popup when the box is clicked
         animeBox.setOnMouseClicked(event -> {
