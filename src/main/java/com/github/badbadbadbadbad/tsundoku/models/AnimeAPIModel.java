@@ -8,133 +8,161 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 public class AnimeAPIModel {
 
-    // Jikan API
     private static final String BASE_URL = "https://api.jikan.moe/v4";
+    // HttpClient client = HttpClient.newHttpClient();
+    HttpClient client;
 
-    public AnimeListInfo getCurrentSeason(int page) {
-        try {
-            String urlString = BASE_URL + "/seasons/now";
-            urlString += "?page=" + String.valueOf(page);
+    public CompletableFuture<AnimeListInfo> getCurrentSeason(int page) {
 
-            URL url = new URL(urlString);
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                String urlString = BASE_URL + "/seasons/now?page=" + page;
+                URI uri = URI.create(urlString);
 
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
-            conn.setRequestProperty("Accept", "application/json");
+                client = HttpClient.newHttpClient();
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(uri)
+                        .header("Accept", "application/json")
+                        .GET()
+                        .build();
 
-            if (conn.getResponseCode() != 200) {
-                throw new RuntimeException("getCurrentSeason: HTTP Error Code " + conn.getResponseCode());
+                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+                if (response.statusCode() != 200) {
+                    throw new RuntimeException("getCurrentSeason: HTTP Error Code " + response.statusCode());
+                }
+
+                ObjectMapper mapper = new ObjectMapper();
+                JsonNode rootNode = mapper.readTree(response.body());
+
+                return parseAnimeData(rootNode);
+
+            } catch (Exception e) {
+                System.out.println("AnimeAPIModel getCurrentSeason() error: " + e);
+                return null;
             }
-
-            BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-
-            StringBuilder response = new StringBuilder();
-            String output;
-            while ((output = br.readLine()) != null) {
-                response.append(output);
-            }
-            conn.disconnect();
-
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode rootNode = mapper.readTree(response.toString());
-
-            return parseAnimeData(rootNode);
-
-
-        } catch (Exception e) {
-            System.out.println("AnimeAPIModel getCurrentSeason() error: " + e);
-            return null;
-        }
+        });
     }
 
 
-    public AnimeListInfo getTop(int page) {
-        try {
-            String urlString = BASE_URL + "/top/anime";
-            urlString += "?page=" + String.valueOf(page);
+    public CompletableFuture<AnimeListInfo> getTop(int page) {
 
-            URL url = new URL(urlString);
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                String urlString = BASE_URL + "/top/anime?page=" + page;
+                URI uri = URI.create(urlString);
 
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
-            conn.setRequestProperty("Accept", "application/json");
+                client = HttpClient.newHttpClient();
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(uri)
+                        .header("Accept", "application/json")
+                        .GET()
+                        .build();
 
-            if (conn.getResponseCode() != 200) {
-                throw new RuntimeException("getTop: HTTP Error Code " + conn.getResponseCode());
+                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+                if (response.statusCode() != 200) {
+                    throw new RuntimeException("getTop: HTTP Error Code " + response.statusCode());
+                }
+
+                ObjectMapper mapper = new ObjectMapper();
+                JsonNode rootNode = mapper.readTree(response.body());
+
+                return parseAnimeData(rootNode);
+
+            } catch (Exception e) {
+                System.out.println("AnimeAPIModel getTop() error: " + e);
+                return null;
             }
-
-            BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-
-            StringBuilder response = new StringBuilder();
-            String output;
-            while ((output = br.readLine()) != null) {
-                response.append(output);
-            }
-            conn.disconnect();
-
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode rootNode = mapper.readTree(response.toString());
-
-            return parseAnimeData(rootNode);
-
-        } catch (Exception e) {
-            System.out.println("AnimeAPIModel getTop() error: " + e);
-            return null;
-        }
+        });
     }
+
 
     // Jikan's interal search uses typesense.
     // This means that some special operators can be used, like - for exclusion and "" for exact search
-    public AnimeListInfo getSearchByName(String query, int page) {
-        try {
-            String urlString = BASE_URL + "/anime";
+    public CompletableFuture<AnimeListInfo> getSearchByName(String query, int page) {
 
-            // Page
-            urlString += "?page=" + String.valueOf(page);
+        String urlString = BASE_URL + "/anime?page=" + page + "&q=" + URLEncoder.encode("\"" + query + "\"", StandardCharsets.UTF_8);
+        URI uri = URI.create(urlString);
+        client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(uri)
+                .header("Accept", "application/json")
+                .GET()
+                .build();
 
-            // Search query
-            // urlString += "&q=" + "\"" + query + "\"";
-            urlString += "&q=" + URLEncoder.encode("\"" + query + "\"", StandardCharsets.UTF_8);
+        // Use sendAsync and handle exceptions within the future
+        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(response -> {
+                    if (response.statusCode() != 200) {
+                        throw new RuntimeException("getSearchByName: HTTP Error Code " + response.statusCode());
+                    }
+                    // Handle the parsing and potential exceptions here
+                    try {
+                        ObjectMapper mapper = new ObjectMapper();
+                        JsonNode rootNode = mapper.readTree(response.body());
+                        return parseAnimeData(rootNode);
+                    } catch (IOException e) {
+                        System.out.println("Parsing error: " + e.getMessage());
+                        return null; // Return null or a default AnimeListInfo
+                    }
+                })
+                .exceptionally(e -> {
+                    System.out.println("AnimeAPIModel getSearchByName() error: " + e);
+                    return null; // Handle the exception and return null
+                });
 
-            URL url = new URL(urlString);
+        /*
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                String urlString = BASE_URL + "/anime?page=" + page + "&q=" + URLEncoder.encode("\"" + query + "\"", StandardCharsets.UTF_8);
+                URI uri = URI.create(urlString);
 
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
-            conn.setRequestProperty("Accept", "application/json");
+                client = HttpClient.newHttpClient();
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(uri)
+                        .header("Accept", "application/json")
+                        .GET()
+                        .build();
 
-            if (conn.getResponseCode() != 200) {
-                throw new RuntimeException("getSearchByName: HTTP Error Code " + conn.getResponseCode());
+
+
+                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+                if (response.statusCode() != 200) {
+                    throw new RuntimeException("getTop: HTTP Error Code " + response.statusCode());
+                }
+
+                ObjectMapper mapper = new ObjectMapper();
+                JsonNode rootNode = mapper.readTree(response.body());
+
+                return parseAnimeData(rootNode);
+
+            } catch (Exception e) {
+                System.out.println("AnimeAPIModel getTop() error: " + e);
+                return null;
             }
+        });
 
-            BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-
-            StringBuilder response = new StringBuilder();
-            String output;
-            while ((output = br.readLine()) != null) {
-                response.append(output);
-            }
-            conn.disconnect();
-
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode rootNode = mapper.readTree(response.toString());
-
-            return parseAnimeData(rootNode);
-
-        } catch (Exception e) {
-            System.out.println("AnimeAPIModel getSearchByName() error: " + e);
-            return null;
-        }
+         */
     }
+
 
 
     private AnimeListInfo parseAnimeData(JsonNode animeData) {

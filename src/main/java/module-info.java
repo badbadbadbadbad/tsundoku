@@ -8,6 +8,8 @@ module com.github.badbadbadbadbad.tsundoku {
     requires java.sql;
     requires org.kordamp.ikonli.fluentui;
     requires org.kordamp.ikonli.dashicons;
+    requires java.desktop;
+    requires java.net.http;
 
     opens com.github.badbadbadbadbad.tsundoku to javafx.fxml;
     exports com.github.badbadbadbadbad.tsundoku;

@@ -5,6 +5,7 @@ import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeListInfo;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 public class APIController {
     private final AnimeAPIModel animeAPIModel;
@@ -13,15 +14,15 @@ public class APIController {
         this.animeAPIModel = animeAPIModel;
     }
 
-    public AnimeListInfo getCurrentAnimeSeason(int page) {
+    public CompletableFuture<AnimeListInfo> getCurrentAnimeSeason(int page) {
         return animeAPIModel.getCurrentSeason(page);
     }
 
-    public AnimeListInfo getTopAnime(int page) {
+    public CompletableFuture<AnimeListInfo> getTopAnime(int page) {
         return animeAPIModel.getTop(page);
     }
 
-    public AnimeListInfo getAnimeSearch(String query, int page) {
+    public CompletableFuture<AnimeListInfo> getAnimeSearch(String query, int page) {
         return animeAPIModel.getSearchByName(query, page);
     }
 }
