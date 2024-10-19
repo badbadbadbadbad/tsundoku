@@ -54,16 +54,41 @@ public class Initializer {
     }
 
     private static void createSettingsFile() throws IOException {
-        String settingsFilePath = Paths.get(appDataPath, "settings.json").toString();
+        String settingsFilePath = Paths.get(appDataPath, "config.json").toString();
         File settingsFile = new File(settingsFilePath);
 
         if (!settingsFile.exists()) {
             // Test settings for now. Do this properly when we know what settings are needed.
-            Map<String, String> defaultSettings = new HashMap<>();
+            Map<String, Object> defaultSettings = new HashMap<>();
+
             defaultSettings.put("igdbSecret", null);
             defaultSettings.put("mangadexSecret", null);
             defaultSettings.put("profiles", "Default");
 
+            // Anime types
+            Map<String, Boolean> animeTypeFilters = new HashMap<>();
+            animeTypeFilters.put("tv", true);
+            animeTypeFilters.put("movie", true);
+            animeTypeFilters.put("ova", true);
+            animeTypeFilters.put("special", true);
+            animeTypeFilters.put("ona", true);
+            animeTypeFilters.put("music", false);
+            animeTypeFilters.put("cm", false);
+            animeTypeFilters.put("pv", false);
+            animeTypeFilters.put("tv_special", true);
+
+            // Anime age ratings
+            Map<String, Boolean> animeRatingFilters = new HashMap<>();
+            animeRatingFilters.put("g", true);
+            animeRatingFilters.put("pg", true);
+            animeRatingFilters.put("pg13", true);
+            animeRatingFilters.put("r17", true);
+            animeRatingFilters.put("r", false);
+            animeRatingFilters.put("rx", false);
+
+
+            defaultSettings.put("animeTypeFilters", animeTypeFilters);
+            defaultSettings.put("animeRatingFilters", animeRatingFilters);
 
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.writeValue(settingsFile, defaultSettings);
