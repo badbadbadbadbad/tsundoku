@@ -17,10 +17,11 @@ public class AnimeInfo {
     private final String synopsis;
     private final String release;
     private final String studios;
+    private final String type;
 
     public AnimeInfo(int id, String title, String titleJapanese, String titleEnglish, String imageUrl,
                      String publicationStatus, int episodesTotal, String source, String ageRating,
-                     String synopsis, String release, String studios) {
+                     String synopsis, String release, String studios, String type) {
         this.id = id;
         this.title = title;
         this.titleJapanese = titleJapanese;
@@ -33,6 +34,7 @@ public class AnimeInfo {
         this.synopsis = synopsis;
         this.release = release;
         this.studios = studios;
+        this.type = type;
     }
 
     public void setOwnRating(String newRating) {
@@ -105,5 +107,9 @@ public class AnimeInfo {
 
     public String getStudios() {
         return studios;
+    }
+
+    public String getType() {
+        return type;
     }
 }

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.github.badbadbadbadbad.tsundoku.controllers.APIController;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeAPIModel;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
+import com.github.badbadbadbadbad.tsundoku.models.ConfigModel;
 import com.github.badbadbadbadbad.tsundoku.views.MainWindowView;
 import javafx.application.Application;
 import javafx.stage.Stage;
@@ -22,7 +23,8 @@ public class TsundokuApplication extends Application {
 
 
         AnimeAPIModel animeAPImodel = new AnimeAPIModel();
-        APIController apiController = new APIController(animeAPImodel);
+        ConfigModel configModel = new ConfigModel();
+        APIController apiController = new APIController(animeAPImodel, configModel);
 
         MainWindowView mainWindowView = new MainWindowView(stage, apiController);
         stage.setTitle("tsundoku.");

@@ -7,12 +7,8 @@ package com.github.badbadbadbadbad.tsundoku.models;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.URL;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -27,6 +23,9 @@ public class AnimeAPIModel {
     private static final String BASE_URL = "https://api.jikan.moe/v4";
     HttpClient client;
 
+    private Map<String, Boolean> typeFilters;
+    private Map<String, Boolean> ratingFilters;
+
     public CompletableFuture<AnimeListInfo> getCurrentSeason(int page) {
         String urlString = BASE_URL + "/seasons/now?page=" + page;
         URI uri = URI.create(urlString);
@@ -37,7 +36,7 @@ public class AnimeAPIModel {
                 .GET()
                 .build();
 
-        // Use sendAsync and handle exceptions within the future
+
         return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenApply(response -> {
                     if (response.statusCode() != 200) {
@@ -50,12 +49,12 @@ public class AnimeAPIModel {
                         return parseAnimeData(rootNode);
                     } catch (IOException e) {
                         System.out.println("Parsing error: " + e.getMessage());
-                        return null; // Return null or a default AnimeListInfo
+                        return null;
                     }
                 })
                 .exceptionally(e -> {
                     System.out.println("AnimeAPIModel getCurrentSeason() error: " + e);
-                    return null; // Handle the exception and return null
+                    return null;
                 });
     }
 
@@ -70,25 +69,24 @@ public class AnimeAPIModel {
                 .GET()
                 .build();
 
-        // Use sendAsync and handle exceptions within the future
+
         return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenApply(response -> {
                     if (response.statusCode() != 200) {
                         throw new RuntimeException("getTop: HTTP Error Code " + response.statusCode());
                     }
-                    // Handle the parsing and potential exceptions here
                     try {
                         ObjectMapper mapper = new ObjectMapper();
                         JsonNode rootNode = mapper.readTree(response.body());
                         return parseAnimeData(rootNode);
                     } catch (IOException e) {
                         System.out.println("Parsing error: " + e.getMessage());
-                        return null; // Return null or a default AnimeListInfo
+                        return null;
                     }
                 })
                 .exceptionally(e -> {
                     System.out.println("AnimeAPIModel getTop() error: " + e);
-                    return null; // Handle the exception and return null
+                    return null;
                 });
     }
 
@@ -103,28 +101,27 @@ public class AnimeAPIModel {
                 .GET()
                 .build();
 
-        // Use sendAsync and handle exceptions within the future
+
         return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenApply(response -> {
                     if (response.statusCode() != 200) {
                         throw new RuntimeException("getSearchByName: HTTP Error Code " + response.statusCode());
                     }
-                    // Handle the parsing and potential exceptions here
+
                     try {
                         ObjectMapper mapper = new ObjectMapper();
                         JsonNode rootNode = mapper.readTree(response.body());
                         return parseAnimeData(rootNode);
                     } catch (IOException e) {
                         System.out.println("Parsing error: " + e.getMessage());
-                        return null; // Return null or a default AnimeListInfo
+                        return null;
                     }
                 })
                 .exceptionally(e -> {
                     System.out.println("AnimeAPIModel getSearchByName() error: " + e);
-                    return null; // Handle the exception and return null
+                    return null;
                 });
     }
-
 
 
     private AnimeListInfo parseAnimeData(JsonNode animeData) {
@@ -141,6 +138,7 @@ public class AnimeAPIModel {
                 int episodesTotal = animeNode.get("episodes").asInt();
                 String source = animeNode.get("source").asText();
                 String synopsis = animeNode.get("synopsis").asText();
+                String animeType = animeNode.get("type").asText().toLowerCase();
 
                 String releaseSeason = animeNode.get("season").asText();
                 int releaseYear = animeNode.get("year").asInt();
@@ -168,28 +166,29 @@ public class AnimeAPIModel {
                 String titleJapanese = "None provided";
                 String titleEnglish = "None provided";
                 for (JsonNode titleNode : animeNode.get("titles")) {
-                    String type = titleNode.get("type").asText();
+                    String titleType = titleNode.get("type").asText();
                     String titleText = titleNode.get("title").asText();
 
-                    if ("Default".equals(type)) {
+                    if ("Default".equals(titleType)) {
                         title = titleText;
-                    } else if ("Japanese".equals(type)) {
+                    } else if ("Japanese".equals(titleType)) {
                         titleJapanese = titleText;
-                    } else if ("English".equals(type)) {
+                    } else if ("English".equals(titleType)) {
                         titleEnglish = titleText;
                     }
                 }
 
 
                 AnimeInfo anime = new AnimeInfo(id, title, titleJapanese, titleEnglish, imageUrl, publicationStatus,
-                        episodesTotal, source, ageRating, synopsis, release, studios);
+                        episodesTotal, source, ageRating, synopsis, release, studios, animeType);
                 animeList.add(anime);
             }
         }
 
         int lastPage = animeData.get("pagination").get("last_visible_page").asInt();
 
-        return new AnimeListInfo(removeDuplicates(animeList), lastPage);
+        List<AnimeInfo> filteredAnimeList = filterByTypeAndRating(animeList);
+        return new AnimeListInfo(removeDuplicates(filteredAnimeList), lastPage);
     }
 
     private List<AnimeInfo> removeDuplicates(List<AnimeInfo> animeList) {
@@ -197,5 +196,20 @@ public class AnimeAPIModel {
         return animeList.stream()
                 .filter(anime -> seenIds.add(anime.getId()))
                 .collect(Collectors.toList());
+    }
+
+    private List<AnimeInfo> filterByTypeAndRating(List<AnimeInfo> animeList) {
+        return animeList.stream()
+                .filter(anime -> typeFilters.getOrDefault(anime.getType(), false))
+                .filter(anime -> ratingFilters.getOrDefault(anime.getAgeRating(), false))
+                .collect(Collectors.toList());
+    }
+
+    public void setTypeFilters(Map<String, Boolean> typeFilters) {
+        this.typeFilters = typeFilters;
+    }
+
+    public void setRatingFilters(Map<String, Boolean> ratingFilters) {
+        this.ratingFilters = ratingFilters;
     }
 }

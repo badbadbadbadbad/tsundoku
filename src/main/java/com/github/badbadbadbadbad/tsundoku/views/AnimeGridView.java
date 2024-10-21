@@ -146,13 +146,12 @@ public class AnimeGridView {
         VBox startYearFilter = createNumberFilter("Start year");
         VBox endYearFilter = createNumberFilter("End year");
 
-        VBox sfwFilter = createDropdownFilter("Filter adult entries",
-                new String[]{"Yes", "No"}, "Yes");
+        // VBox sfwFilter = createDropdownFilter("Filter adult entries", new String[]{"Yes", "No"}, "Yes");
 
         VBox statusFilter = createDropdownFilter("Status",
                 new String[]{"Any", "Complete", "Airing", "Upcoming"}, "Any");
 
-        filtersGrid.getChildren().addAll(orderByFilter, startYearFilter, endYearFilter, sfwFilter, statusFilter);
+        filtersGrid.getChildren().addAll(orderByFilter, statusFilter, startYearFilter, endYearFilter);
 
 
         // Dynamically adjust column amount based on window size
@@ -161,6 +160,7 @@ public class AnimeGridView {
             double windowWidth = newWidth.doubleValue();
             int cols, rows;
 
+            /*
             if (windowWidth < screenWidth * 0.625) {
                 cols = 2;  // Minimum 2 columns
             } else if (windowWidth < screenWidth * 0.75) {
@@ -169,6 +169,14 @@ public class AnimeGridView {
                 cols = 4;
             } else {
                 cols = 5;  // Maximum 5 columns
+            }
+             */
+            if (windowWidth < screenWidth * 0.625) {
+                cols = 2;  // Minimum 2 columns
+            } else if (windowWidth < screenWidth * 0.75) {
+                cols = 3;
+            } else {
+                cols = 4;
             }
 
             rows = (int) Math.ceil((double) filtersAmount / cols); // Need an int value, but need float division, hence ugly casting..

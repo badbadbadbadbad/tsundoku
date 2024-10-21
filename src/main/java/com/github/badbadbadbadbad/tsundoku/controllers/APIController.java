@@ -1,17 +1,20 @@
 package com.github.badbadbadbadbad.tsundoku.controllers;
 
-import com.github.badbadbadbadbad.tsundoku.models.AnimeAPIModel;
-import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
-import com.github.badbadbadbadbad.tsundoku.models.AnimeListInfo;
+import com.github.badbadbadbadbad.tsundoku.models.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-public class APIController {
+public class APIController implements ConfigChangeListener {
     private final AnimeAPIModel animeAPIModel;
+    private final ConfigModel configModel;
 
-    public APIController(AnimeAPIModel animeAPIModel) {
+    public APIController(AnimeAPIModel animeAPIModel, ConfigModel configModel) {
         this.animeAPIModel = animeAPIModel;
+        this.configModel = configModel;
+
+        configModel.addConfigChangeListener(this);
     }
 
     public CompletableFuture<AnimeListInfo> getCurrentAnimeSeason(int page) {
@@ -25,4 +28,12 @@ public class APIController {
     public CompletableFuture<AnimeListInfo> getAnimeSearch(String query, int page) {
         return animeAPIModel.getSearchByName(query, page);
     }
+
+    @Override
+    public void onAnimeTypeAndRatingFiltersUpdated(Map<String, Boolean> animeTypeFilters, Map<String, Boolean> animeRatingFilters) {
+        animeAPIModel.setTypeFilters(animeTypeFilters);
+        animeAPIModel.setRatingFilters(animeRatingFilters);
+    }
+
+
 }

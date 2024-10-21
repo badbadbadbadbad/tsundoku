@@ -75,16 +75,16 @@ public class Initializer {
             animeTypeFilters.put("music", false);
             animeTypeFilters.put("cm", false);
             animeTypeFilters.put("pv", false);
-            animeTypeFilters.put("tv_special", true);
+            animeTypeFilters.put("tv special", true);
 
             // Anime age ratings
             Map<String, Boolean> animeRatingFilters = new HashMap<>();
-            animeRatingFilters.put("g", true);
-            animeRatingFilters.put("pg", true);
-            animeRatingFilters.put("pg13", true);
-            animeRatingFilters.put("r17", true);
-            animeRatingFilters.put("r", false);
-            animeRatingFilters.put("rx", false);
+            animeRatingFilters.put("G", true);
+            animeRatingFilters.put("PG", true);
+            animeRatingFilters.put("PG13", true);
+            animeRatingFilters.put("R17+", true);
+            animeRatingFilters.put("R+", false);
+            animeRatingFilters.put("Rx", false);
 
 
             defaultSettings.put("animeTypeFilters", animeTypeFilters);
