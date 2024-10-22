@@ -14,8 +14,9 @@ import java.util.Map;
 
 public class ConfigModel {
     private static final String appName = "tsundoku";
-    private String configFilePath;
+    private final String configFilePath;
 
+    private final List<ConfigChangeListener> listeners = new ArrayList<>();
     private APIController apiController;
 
     private String igdbSecret;
@@ -25,7 +26,10 @@ public class ConfigModel {
 
     private Map<String, Boolean> animeTypeFilters;
     private Map<String, Boolean> animeRatingFilters;
-    private List<ConfigChangeListener> listeners = new ArrayList<>();
+    private String animeOrderBy;
+    private String animeStatus;
+    private String animeStartYear;
+    private String animeEndYear;
 
     public ConfigModel() {
         this.configFilePath = Paths.get(getAppDataPath(), "config.json").toString();
@@ -58,9 +62,8 @@ public class ConfigModel {
                 this.mangadexSecret = (String) settings.get("mangadexSecret");
                 this.profiles = (String) settings.get("profiles");
 
-                updateFilters((Map<String, Boolean>) settings.get("animeTypeFilters"), (Map<String, Boolean>) settings.get("animeRatingFilters"));
-                // this.animeTypeFilters = (Map<String, Boolean>) settings.get("animeTypeFilters");
-                // this.animeRatingFilters = (Map<String, Boolean>) settings.get("animeRatingFilters");
+                updateAnimeFilters((Map<String, Boolean>) settings.get("animeTypeFilters"), (Map<String, Boolean>) settings.get("animeRatingFilters"));
+                updateAnimeSearchFilters((Map<String, String>) settings.get("animeSearchFilters"));
             } catch (IOException e) {
                 System.exit(1);
             }
@@ -69,9 +72,39 @@ public class ConfigModel {
         }
     }
 
-    public void updateFilters(Map<String, Boolean> newTypeFilters, Map<String, Boolean> newRatingFilters) {
+
+    public void setAnimeOrderBy(String orderBy) {
+        this.animeOrderBy = orderBy;
+        notifyListeners();
+    }
+
+    public void setAnimeStatus(String status) {
+        this.animeStatus = status;
+        notifyListeners();
+    }
+
+    public void setAnimeStartYear(String startYear) {
+        this.animeStartYear = startYear;
+        notifyListeners();
+    }
+
+    public void setAnimeEndYear(String endYear) {
+        this.animeEndYear = endYear;
+        notifyListeners();
+    }
+
+    public void updateAnimeFilters(Map<String, Boolean> newTypeFilters, Map<String, Boolean> newRatingFilters) {
         this.animeTypeFilters = newTypeFilters;
         this.animeRatingFilters = newRatingFilters;
+        notifyListeners();
+    }
+
+
+    public void updateAnimeSearchFilters(Map<String, String> newSearchFilters) {
+        this.animeOrderBy = newSearchFilters.get("Order by");
+        this.animeStatus = newSearchFilters.get("Status");
+        this.animeStartYear = newSearchFilters.get("Start year");
+        this.animeEndYear = newSearchFilters.get("End year");
         notifyListeners();
     }
 
@@ -87,6 +120,7 @@ public class ConfigModel {
     private void notifyListeners() {
         for (ConfigChangeListener listener : listeners) {
             listener.onAnimeTypeAndRatingFiltersUpdated(animeTypeFilters, animeRatingFilters);
+            listener.onAnimeSearchFiltersUpdates(animeOrderBy, animeStatus, animeStartYear, animeEndYear);
         }
     }
 }

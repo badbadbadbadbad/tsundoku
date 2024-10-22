@@ -2,6 +2,7 @@ package com.github.badbadbadbadbad.tsundoku.views;
 
 
 import com.github.badbadbadbadbad.tsundoku.controllers.APIController;
+import com.github.badbadbadbadbad.tsundoku.controllers.ConfigController;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import com.github.badbadbadbadbad.tsundoku.external.FlowGridPane;
 import com.github.badbadbadbadbad.tsundoku.external.SmoothScroll;
@@ -27,6 +28,7 @@ public class AnimeGridView {
 
     private final double RATIO = 318.0 / 225.0; // The aspect ratio to use for anime images. Close to most cover images.
     private final APIController apiController;
+    private final ConfigController configController;
     private final Region loadingBar;
 
     AnimeListInfo animeListInfo;
@@ -39,8 +41,9 @@ public class AnimeGridView {
     private static boolean filtersHidden = false;
     private boolean apiLock = false;
 
-    public AnimeGridView(APIController apiController, Region loadingBar) {
+    public AnimeGridView(APIController apiController, ConfigController configController, Region loadingBar) {
         this.apiController = apiController;
+        this.configController = configController;
         this.loadingBar = loadingBar;
     }
 
@@ -146,12 +149,13 @@ public class AnimeGridView {
         VBox startYearFilter = createNumberFilter("Start year");
         VBox endYearFilter = createNumberFilter("End year");
 
-        // VBox sfwFilter = createDropdownFilter("Filter adult entries", new String[]{"Yes", "No"}, "Yes");
-
         VBox statusFilter = createDropdownFilter("Status",
                 new String[]{"Any", "Complete", "Airing", "Upcoming"}, "Any");
 
+
+
         filtersGrid.getChildren().addAll(orderByFilter, statusFilter, startYearFilter, endYearFilter);
+
 
 
         // Dynamically adjust column amount based on window size
@@ -160,17 +164,6 @@ public class AnimeGridView {
             double windowWidth = newWidth.doubleValue();
             int cols, rows;
 
-            /*
-            if (windowWidth < screenWidth * 0.625) {
-                cols = 2;  // Minimum 2 columns
-            } else if (windowWidth < screenWidth * 0.75) {
-                cols = 3;
-            } else if (windowWidth < screenWidth * 0.875) {
-                cols = 4;
-            } else {
-                cols = 5;  // Maximum 5 columns
-            }
-             */
             if (windowWidth < screenWidth * 0.625) {
                 cols = 2;  // Minimum 2 columns
             } else if (windowWidth < screenWidth * 0.75) {
@@ -211,6 +204,17 @@ public class AnimeGridView {
         comboBox.setMaxWidth(Double.MAX_VALUE);
         VBox.setVgrow(comboBox, Priority.ALWAYS);
 
+        // Filter change listeners
+        if (labelText.equals("Order by")) {
+            comboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
+                configController.onAnimeOrderByChanged(newVal);
+            });
+        } else if (labelText.equals("Status")) {
+            comboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
+                configController.onAnimeStatusChanged(newVal);
+            });
+        }
+
         return new VBox(5, label, comboBox);
     }
 
@@ -224,12 +228,23 @@ public class AnimeGridView {
         textField.setMaxWidth(Double.MAX_VALUE);
         VBox.setVgrow(textField, Priority.ALWAYS);
 
-        // Numeric input regex filter
+        // Numeric input and at most four digits regex filter
         textField.textProperty().addListener((observable, oldValue, newValue) -> {
-            if (!newValue.matches("\\d*")) {
-                textField.setText(newValue.replaceAll("\\D", ""));
+            if (!newValue.matches("\\d{0,4}")) {
+                textField.setText(oldValue);
             }
         });
+
+        // Filter change listeners
+        if (labelText.equals("Start year")) {
+            textField.textProperty().addListener((obs, oldVal, newVal) -> {
+                configController.onAnimeStartYearChanged(newVal);
+            });
+        } else if (labelText.equals("End year")) {
+            textField.textProperty().addListener((obs, oldVal, newVal) -> {
+                configController.onAnimeEndYearChanged(newVal);
+            });
+        }
 
         return new VBox(5, label, textField);
     }

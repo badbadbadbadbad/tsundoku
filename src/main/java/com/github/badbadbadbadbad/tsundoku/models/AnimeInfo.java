@@ -11,7 +11,7 @@ public class AnimeInfo {
     private final String titleEnglish;
     private final String imageUrl;
     private final String publicationStatus;
-    private final int episodesTotal;
+    private final String episodesTotal;
     private final String source;
     private final String ageRating;
     private final String synopsis;
@@ -20,7 +20,7 @@ public class AnimeInfo {
     private final String type;
 
     public AnimeInfo(int id, String title, String titleJapanese, String titleEnglish, String imageUrl,
-                     String publicationStatus, int episodesTotal, String source, String ageRating,
+                     String publicationStatus, String episodesTotal, String source, String ageRating,
                      String synopsis, String release, String studios, String type) {
         this.id = id;
         this.title = title;
@@ -85,7 +85,7 @@ public class AnimeInfo {
         return publicationStatus;
     }
 
-    public int getEpisodesTotal() {
+    public String getEpisodesTotal() {
         return episodesTotal;
     }
 

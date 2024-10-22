@@ -25,6 +25,10 @@ public class AnimeAPIModel {
 
     private Map<String, Boolean> typeFilters;
     private Map<String, Boolean> ratingFilters;
+    private String orderBy;
+    private String status;
+    private String startYear;
+    private String endYear;
 
     public CompletableFuture<AnimeListInfo> getCurrentSeason(int page) {
         String urlString = BASE_URL + "/seasons/now?page=" + page;
@@ -93,6 +97,9 @@ public class AnimeAPIModel {
 
     public CompletableFuture<AnimeListInfo> getSearchByName(String query, int page) {
         String urlString = BASE_URL + "/anime?page=" + page + "&q=" + URLEncoder.encode("\"" + query + "\"", StandardCharsets.UTF_8);
+        urlString += decodeOrderBy() + decodeStatus() + decodeStartYear() + decodeEndYear(); // Search query filters and order
+
+
         URI uri = URI.create(urlString);
         client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
@@ -135,7 +142,6 @@ public class AnimeAPIModel {
                 String imageUrl = animeNode.get("images").get("jpg").get("large_image_url").asText();
                 // String imageUrl = animeNode.get("images").get("jpg").get("image_url").asText();
                 String publicationStatus = animeNode.get("status").asText();
-                int episodesTotal = animeNode.get("episodes").asInt();
                 String source = animeNode.get("source").asText();
                 String synopsis = animeNode.get("synopsis").asText();
                 String animeType = animeNode.get("type").asText().toLowerCase();
@@ -149,13 +155,16 @@ public class AnimeAPIModel {
                     release = releaseSeason.substring(0, 1).toUpperCase() + releaseSeason.substring(1) + " " + releaseYear;
                 }
 
+                String episodesTotal = animeNode.get("episodes").asText();
+                episodesTotal = episodesTotal.equals("null") ? "Not yet known" : episodesTotal;
+
                 List<String> studioNames = new ArrayList<>();
                 animeNode.get("studios").forEach(studio -> studioNames.add(studio.get("name").asText()));
                 String studios = String.join(", ", studioNames);
 
                 String ageRatingFull = animeNode.get("rating").asText();
-                String ageRating = ageRatingFull
-                        .replace("G - All Ages", "G")
+                String ageRating = (ageRatingFull.equals("null")) ? "Not yet rated" :
+                        ageRatingFull.replace("G - All Ages", "G")
                         .replace("PG - Children", "PG")
                         .replace("PG-13 - Teens 13 or older", "PG13")
                         .replace("R - 17+ (violence & profanity)", "R17+")
@@ -191,12 +200,54 @@ public class AnimeAPIModel {
         return new AnimeListInfo(removeDuplicates(filteredAnimeList), lastPage);
     }
 
+
+    private String decodeOrderBy() {
+        return switch (orderBy) {
+            case "Title: Ascending" -> "&order_by=title&sort=asc";
+            case "Title: Descending" -> "&order_by=title&sort=desc";
+            case "Rating: Highest" -> "&order_by=score&sort=desc";
+            case "Rating: Lowest" -> "&order_by=score&sort=asc";
+            case "Popular: Least" -> "&order_by=popularity&sort=desc"; // Popularity is a rank in MAL, so "1" is most popular
+            default ->  // Default case: Popular - Most
+                    "&order_by=popularity&sort=asc";
+        };
+    }
+
+
+    private String decodeStatus() {
+        if (status.equals("Any")) {
+            return "";
+        } else {
+            return "&status=" + status.toLowerCase();
+        }
+    }
+
+
+    private String decodeStartYear() {
+        if (startYear.isEmpty()) {
+            return "";
+        } else {
+            return "&start_date=" + String.format("%04d", Integer.parseInt(startYear)) + "-01-01";
+        }
+    }
+
+
+    private String decodeEndYear() {
+        if (endYear.isEmpty()) {
+            return "";
+        } else {
+            return "&end_date=" + String.format("%04d", Integer.parseInt(endYear)) + "-12-31";
+        }
+    }
+
+
     private List<AnimeInfo> removeDuplicates(List<AnimeInfo> animeList) {
         Set<Integer> seenIds = new HashSet<>();
         return animeList.stream()
                 .filter(anime -> seenIds.add(anime.getId()))
                 .collect(Collectors.toList());
     }
+
 
     private List<AnimeInfo> filterByTypeAndRating(List<AnimeInfo> animeList) {
         return animeList.stream()
@@ -205,11 +256,22 @@ public class AnimeAPIModel {
                 .collect(Collectors.toList());
     }
 
+
     public void setTypeFilters(Map<String, Boolean> typeFilters) {
         this.typeFilters = typeFilters;
     }
 
+
     public void setRatingFilters(Map<String, Boolean> ratingFilters) {
         this.ratingFilters = ratingFilters;
     }
+
+
+    public void setSearchFilters(String orderBy, String status, String startYear, String endYear) {
+        this.orderBy = orderBy;
+        this.status = status;
+        this.startYear = startYear;
+        this.endYear = endYear;
+    }
+
 }

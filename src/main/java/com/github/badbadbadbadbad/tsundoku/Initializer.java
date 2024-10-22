@@ -85,10 +85,19 @@ public class Initializer {
             animeRatingFilters.put("R17+", true);
             animeRatingFilters.put("R+", false);
             animeRatingFilters.put("Rx", false);
+            animeRatingFilters.put("Not yet rated", true);
+
+            // Anime search filters
+            Map<String, String> animeSearchFilters = new HashMap<>();
+            animeSearchFilters.put("Order by", "Popular: Most");
+            animeSearchFilters.put("Status", "Any");
+            animeSearchFilters.put("Start year", "");
+            animeSearchFilters.put("End year", "");
 
 
             defaultSettings.put("animeTypeFilters", animeTypeFilters);
             defaultSettings.put("animeRatingFilters", animeRatingFilters);
+            defaultSettings.put("animeSearchFilters", animeSearchFilters);
 
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.writeValue(settingsFile, defaultSettings);

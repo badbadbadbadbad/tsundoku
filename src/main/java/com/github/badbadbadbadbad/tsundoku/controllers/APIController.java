@@ -35,5 +35,10 @@ public class APIController implements ConfigChangeListener {
         animeAPIModel.setRatingFilters(animeRatingFilters);
     }
 
+    @Override
+    public void onAnimeSearchFiltersUpdates(String animeOrderBy, String animeStatus, String animeStartYear, String animeEndYear) {
+        animeAPIModel.setSearchFilters(animeOrderBy, animeStatus, animeStartYear, animeEndYear);
+    }
+
 
 }

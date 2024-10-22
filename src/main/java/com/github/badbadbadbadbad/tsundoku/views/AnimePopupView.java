@@ -269,7 +269,7 @@ public class AnimePopupView {
 
         metaInfo.getChildren().addAll(
                 createPropertyBox.apply("Release", anime.getRelease()),
-                createPropertyBox.apply("Total Episodes", String.valueOf(anime.getEpisodesTotal())),
+                createPropertyBox.apply("Total Episodes", anime.getEpisodesTotal()),
                 createPropertyBox.apply("Publication Status", anime.getPublicationStatus()),
                 createPropertyBox.apply("Source", anime.getSource()),
                 createPropertyBox.apply("Age Rating", anime.getAgeRating()),
