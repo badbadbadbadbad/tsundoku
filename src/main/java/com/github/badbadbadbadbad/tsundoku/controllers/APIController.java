@@ -2,11 +2,10 @@ package com.github.badbadbadbadbad.tsundoku.controllers;
 
 import com.github.badbadbadbadbad.tsundoku.models.*;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-public class APIController implements ConfigChangeListener {
+public class APIController implements ConfigListener {
     private final AnimeAPIModel animeAPIModel;
     private final ConfigModel configModel;
 
@@ -14,7 +13,7 @@ public class APIController implements ConfigChangeListener {
         this.animeAPIModel = animeAPIModel;
         this.configModel = configModel;
 
-        configModel.addConfigChangeListener(this);
+        configModel.addConfigListener(this);
     }
 
     public CompletableFuture<AnimeListInfo> getCurrentAnimeSeason(int page) {

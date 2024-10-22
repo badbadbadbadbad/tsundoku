@@ -3,12 +3,12 @@ package com.github.badbadbadbadbad.tsundoku.models;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.badbadbadbadbad.tsundoku.controllers.APIController;
+import com.github.badbadbadbadbad.tsundoku.controllers.ConfigListener;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -16,7 +16,7 @@ public class ConfigModel {
     private static final String appName = "tsundoku";
     private final String configFilePath;
 
-    private final List<ConfigChangeListener> listeners = new ArrayList<>();
+    private final List<ConfigListener> listeners = new ArrayList<>();
     private APIController apiController;
 
     private String igdbSecret;
@@ -108,17 +108,17 @@ public class ConfigModel {
         notifyListeners();
     }
 
-    public void addConfigChangeListener(ConfigChangeListener listener) {
+    public void addConfigListener(ConfigListener listener) {
         listeners.add(listener);
         notifyListeners(); // So new listeners get current config data on creation. Kinda sloppy.
     }
 
-    public void removeConfigChangeListener(ConfigChangeListener listener) {
+    public void removeConfigListener(ConfigListener listener) {
         listeners.remove(listener);
     }
 
     private void notifyListeners() {
-        for (ConfigChangeListener listener : listeners) {
+        for (ConfigListener listener : listeners) {
             listener.onAnimeTypeAndRatingFiltersUpdated(animeTypeFilters, animeRatingFilters);
             listener.onAnimeSearchFiltersUpdates(animeOrderBy, animeStatus, animeStartYear, animeEndYear);
         }

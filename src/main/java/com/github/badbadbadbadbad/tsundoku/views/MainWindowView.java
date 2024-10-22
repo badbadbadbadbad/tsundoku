@@ -40,6 +40,9 @@ public class MainWindowView {
 
         root.getChildren().addAll(sidebar, sep, gridView);
 
+        // TODO REMOVE LATER WHEN VIEWS CONTROLLER IS IMPLEMENTED
+        configController.listenToAnimeGrid(animeGridView);
+
         Scene scene = new Scene(root);
         scene.getStylesheets().add(getClass().getResource("/CSS/styles.css").toExternalForm());
         scene.setFill(Color.rgb(35, 36, 42)); // To prevent white flicker on expanding resize

@@ -3,6 +3,8 @@ package com.github.badbadbadbadbad.tsundoku.views;
 
 import com.github.badbadbadbadbad.tsundoku.controllers.APIController;
 import com.github.badbadbadbadbad.tsundoku.controllers.ConfigController;
+import com.github.badbadbadbadbad.tsundoku.controllers.ConfigListener;
+import com.github.badbadbadbadbad.tsundoku.controllers.GridFilterListener;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import com.github.badbadbadbadbad.tsundoku.external.FlowGridPane;
 import com.github.badbadbadbadbad.tsundoku.external.SmoothScroll;
@@ -18,6 +20,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import org.controlsfx.control.spreadsheet.Grid;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +30,7 @@ import java.util.concurrent.CompletableFuture;
 public class AnimeGridView {
 
     private final double RATIO = 318.0 / 225.0; // The aspect ratio to use for anime images. Close to most cover images.
+    private final List<GridFilterListener> gridFilterListeners = new ArrayList<>();
     private final APIController apiController;
     private final ConfigController configController;
     private final Region loadingBar;
@@ -207,11 +211,15 @@ public class AnimeGridView {
         // Filter change listeners
         if (labelText.equals("Order by")) {
             comboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
-                configController.onAnimeOrderByChanged(newVal);
+                for (GridFilterListener listener: gridFilterListeners) {
+                    listener.onAnimeOrderByChanged(newVal);
+                }
             });
         } else if (labelText.equals("Status")) {
             comboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
-                configController.onAnimeStatusChanged(newVal);
+                for (GridFilterListener listener: gridFilterListeners) {
+                    listener.onAnimeStatusChanged(newVal);
+                }
             });
         }
 
@@ -238,11 +246,15 @@ public class AnimeGridView {
         // Filter change listeners
         if (labelText.equals("Start year")) {
             textField.textProperty().addListener((obs, oldVal, newVal) -> {
-                configController.onAnimeStartYearChanged(newVal);
+                for (GridFilterListener listener: gridFilterListeners) {
+                    listener.onAnimeStartYearChanged(newVal);
+                }
             });
         } else if (labelText.equals("End year")) {
             textField.textProperty().addListener((obs, oldVal, newVal) -> {
-                configController.onAnimeEndYearChanged(newVal);
+                for (GridFilterListener listener: gridFilterListeners) {
+                    listener.onAnimeEndYearChanged(newVal);
+                }
             });
         }
 
@@ -805,4 +817,12 @@ public class AnimeGridView {
         return fadeOut;
     }
 
+
+    public void addGridFilterListener(GridFilterListener listener) {
+        gridFilterListeners.add(listener);
+    }
+
+    public void removeGridFilterListener(GridFilterListener listener) {
+        gridFilterListeners.remove(listener);
+    }
 }
