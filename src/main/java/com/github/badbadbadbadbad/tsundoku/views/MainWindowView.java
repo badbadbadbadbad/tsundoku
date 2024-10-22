@@ -35,13 +35,14 @@ public class MainWindowView {
 
         Region sep = createSeparator();
 
-        AnimeGridView animeGridView = new AnimeGridView(apiController, configController, loadingBar);
+        AnimeGridView animeGridView = new AnimeGridView(apiController, loadingBar);
         Region gridView = animeGridView.createGridView(stage);
 
         root.getChildren().addAll(sidebar, sep, gridView);
 
         // TODO REMOVE LATER WHEN VIEWS CONTROLLER IS IMPLEMENTED
         configController.listenToAnimeGrid(animeGridView);
+        // apiController.listenToAnimeGrid(animeGridView);
 
         Scene scene = new Scene(root);
         scene.getStylesheets().add(getClass().getResource("/CSS/styles.css").toExternalForm());

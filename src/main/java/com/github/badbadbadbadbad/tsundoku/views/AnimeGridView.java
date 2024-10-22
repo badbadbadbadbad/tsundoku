@@ -2,8 +2,7 @@ package com.github.badbadbadbadbad.tsundoku.views;
 
 
 import com.github.badbadbadbadbad.tsundoku.controllers.APIController;
-import com.github.badbadbadbadbad.tsundoku.controllers.ConfigController;
-import com.github.badbadbadbadbad.tsundoku.controllers.ConfigListener;
+import com.github.badbadbadbadbad.tsundoku.controllers.APIRequestListener;
 import com.github.badbadbadbadbad.tsundoku.controllers.GridFilterListener;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import com.github.badbadbadbadbad.tsundoku.external.FlowGridPane;
@@ -20,7 +19,6 @@ import javafx.scene.shape.Rectangle;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-import org.controlsfx.control.spreadsheet.Grid;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,8 +29,8 @@ public class AnimeGridView {
 
     private final double RATIO = 318.0 / 225.0; // The aspect ratio to use for anime images. Close to most cover images.
     private final List<GridFilterListener> gridFilterListeners = new ArrayList<>();
+    private APIRequestListener apiRequestListener = null; // TODO Change when ViewsController is implemented
     private final APIController apiController;
-    private final ConfigController configController;
     private final Region loadingBar;
 
     AnimeListInfo animeListInfo;
@@ -45,9 +43,8 @@ public class AnimeGridView {
     private static boolean filtersHidden = false;
     private boolean apiLock = false;
 
-    public AnimeGridView(APIController apiController, ConfigController configController, Region loadingBar) {
+    public AnimeGridView(APIController apiController, Region loadingBar) {
         this.apiController = apiController;
-        this.configController = configController;
         this.loadingBar = loadingBar;
     }
 
@@ -68,9 +65,13 @@ public class AnimeGridView {
         HBox buttonBox = createButtons();
         HBox searchAndFilterToggleBox = createSearchAndFilterToggle(filters);
 
+        // TODO Change when viewsController is implemented
+        setAPIRequestListener(apiController);
+
         // Blocking call on CompletableFuture for first setup
         // Probably change later when functionality for media type tab switching is in
-        animeListInfo = apiController.getCurrentAnimeSeason(1).join();
+        animeListInfo = apiRequestListener.getCurrentAnimeSeason(1).join();
+        // animeListInfo = apiController.getCurrentAnimeSeason(1).join();
         ScrollPane animeGrid = createBrowseGrid(stage, animeListInfo);
 
 
@@ -518,11 +519,11 @@ public class AnimeGridView {
 
     private CompletableFuture<AnimeListInfo> getPageForCurrentQuery(int page) {
         if (searchMode.equals("SEASON")) {
-            return apiController.getCurrentAnimeSeason(page);
+            return apiRequestListener.getCurrentAnimeSeason(page);
         } else if (searchMode.equals("TOP")) {
-            return apiController.getTopAnime(page);
+            return apiRequestListener.getTopAnime(page);
         } else { // Default mode: SEARCH
-            return apiController.getAnimeSearch(searchString, page);
+            return apiRequestListener.getAnimeSearch(searchString, page);
         }
     }
 
@@ -824,5 +825,10 @@ public class AnimeGridView {
 
     public void removeGridFilterListener(GridFilterListener listener) {
         gridFilterListeners.remove(listener);
+    }
+
+    public void setAPIRequestListener(APIRequestListener listener) {
+        // apiRequestListeners.add(listener);
+        this.apiRequestListener = listener;
     }
 }
