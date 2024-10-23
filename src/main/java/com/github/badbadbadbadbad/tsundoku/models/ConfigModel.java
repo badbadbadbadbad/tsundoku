@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -73,9 +74,38 @@ public class ConfigModel {
     }
 
 
+    private void saveConfigFile() {
+        File configFile = new File(configFilePath);
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            Map<String, Object> settings = new HashMap<>();
+
+            settings.put("igdbSecret", this.igdbSecret);
+            settings.put("mangadexSecret", this.mangadexSecret);
+            settings.put("profiles", this.profiles);
+
+            settings.put("animeTypeFilters", this.animeTypeFilters);
+            settings.put("animeRatingFilters", this.animeRatingFilters);
+
+            Map<String, String> animeSearchFilters = new HashMap<>();
+            animeSearchFilters.put("Order by", this.animeOrderBy);
+            animeSearchFilters.put("Status", this.animeStatus);
+            animeSearchFilters.put("Start year", this.animeStartYear);
+            animeSearchFilters.put("End year", this.animeEndYear);
+            settings.put("animeSearchFilters", animeSearchFilters);
+
+            objectMapper.writeValue(configFile, settings);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
     public void setAnimeOrderBy(String orderBy) {
         this.animeOrderBy = orderBy;
         notifyListeners();
+        saveConfigFile();
     }
 
     public void setAnimeStatus(String status) {

@@ -355,17 +355,13 @@ public class AnimeGridView {
 
         HBox leftButtons = new HBox(10, seasonButton, topButton);
         HBox rightButtons = new HBox(searchButton);
-        // HBox rightButtonBox = new HBox(10, seasonButton, topButton, searchButton);
         HBox.setHgrow(leftButtons, Priority.ALWAYS);
         HBox.setHgrow(rightButtons, Priority.ALWAYS);
-
         leftButtons.setAlignment(Pos.CENTER_LEFT);
         rightButtons.setAlignment(Pos.CENTER_RIGHT);
 
-        // HBox buttonBox = new HBox(rightButtonBox);
         HBox buttonBox = new HBox(10, leftButtons, rightButtons);
         HBox.setHgrow(buttonBox, Priority.ALWAYS);
-        // buttonBox.setAlignment(Pos.CENTER_RIGHT);
         buttonBox.setAlignment(Pos.CENTER);
 
         return buttonBox;
