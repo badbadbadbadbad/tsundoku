@@ -1,5 +1,6 @@
 package com.github.badbadbadbadbad.tsundoku.views;
 
+import com.github.badbadbadbadbad.tsundoku.controllers.SidebarListener;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.*;
@@ -14,12 +15,12 @@ public class SidebarView {
 
     private static final double SIDEBAR_WIDTH = 0.12; // Percent of screen width, not scaling with window size for now
 
+    private SidebarListener sidebarListener;
+
     private final List<Button> modeButtons = new ArrayList<>();
     private final List<Button> browseModeButtons = new ArrayList<>();
-    private Consumer<String> contentChangeListener;
 
-    public Region createSidebar(Consumer<String> contentChangeListener) {
-        this.contentChangeListener = contentChangeListener;
+    public Region createSidebar() {
 
         Screen screen = Screen.getPrimary();
         double screenWidth = screen.getBounds().getWidth();
@@ -95,7 +96,6 @@ public class SidebarView {
 
         button.setOnAction(e -> {
             setActiveButton(button);
-            contentChangeListener.accept(label);
         });
 
         return button;
@@ -106,6 +106,11 @@ public class SidebarView {
             button.getStyleClass().removeAll("sidebar-button-active");
         }
         selectedButton.getStyleClass().add("sidebar-button-active");
+    }
+
+
+    private void setSidebarListener(SidebarListener sidebarListener) {
+        this.sidebarListener = sidebarListener;
     }
 
 }

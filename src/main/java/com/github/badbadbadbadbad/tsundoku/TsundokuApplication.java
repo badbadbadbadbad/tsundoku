@@ -1,18 +1,14 @@
 package com.github.badbadbadbadbad.tsundoku;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.github.badbadbadbadbad.tsundoku.controllers.APIController;
 import com.github.badbadbadbadbad.tsundoku.controllers.ConfigController;
+import com.github.badbadbadbadbad.tsundoku.controllers.ViewsController;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeAPIModel;
-import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import com.github.badbadbadbadbad.tsundoku.models.ConfigModel;
-import com.github.badbadbadbadbad.tsundoku.views.MainWindowView;
 import javafx.application.Application;
 import javafx.stage.Stage;
 
 import java.io.IOException;
-import java.io.ObjectInputFilter;
-import java.util.List;
 
 public class TsundokuApplication extends Application {
 
@@ -28,7 +24,8 @@ public class TsundokuApplication extends Application {
         ConfigModel configModel = new ConfigModel();
         APIController apiController = new APIController(animeAPImodel, configModel);
         ConfigController configController = new ConfigController(configModel);
-        MainWindowView mainWindowView = new MainWindowView(stage, apiController, configController);
+        ViewsController viewsController = new ViewsController(stage, apiController, configController);
+
         stage.setTitle("tsundoku.");
         stage.show();
     }
