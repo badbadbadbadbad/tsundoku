@@ -4,6 +4,7 @@ package com.github.badbadbadbadbad.tsundoku.views;
 import com.github.badbadbadbadbad.tsundoku.controllers.APIController;
 import com.github.badbadbadbadbad.tsundoku.controllers.APIRequestListener;
 import com.github.badbadbadbadbad.tsundoku.controllers.GridFilterListener;
+import com.github.badbadbadbadbad.tsundoku.controllers.LoadingBarListener;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import com.github.badbadbadbadbad.tsundoku.external.FlowGridPane;
 import com.github.badbadbadbadbad.tsundoku.external.SmoothScroll;
@@ -30,8 +31,8 @@ public class AnimeGridView {
     private final double RATIO = 318.0 / 225.0; // The aspect ratio to use for anime images. Close to most cover images.
     private final List<GridFilterListener> gridFilterListeners = new ArrayList<>();
     private APIRequestListener apiRequestListener = null; // TODO Change when ViewsController is implemented
+    private LoadingBarListener loadingBarListener = null;
     private final APIController apiController;
-    private final Region loadingBar;
 
     AnimeListInfo animeListInfo;
     private FlowGridPane animeGrid;
@@ -43,9 +44,8 @@ public class AnimeGridView {
     private static boolean filtersHidden = false;
     private boolean apiLock = false;
 
-    public AnimeGridView(APIController apiController, Region loadingBar) {
+    public AnimeGridView(APIController apiController) {
         this.apiController = apiController;
-        this.loadingBar = loadingBar;
     }
 
     public Region createGridView(Stage stage) {
@@ -488,13 +488,14 @@ public class AnimeGridView {
         VBox darkBackground = createSearchBackground(stackPane);
         FadeTransition fadeInBackground = createFadeInTransition(darkBackground, 0.2, 0.8);
         fadeInBackground.play();
-        animateLoadingBar(0, 50, 0.2);
+
+        loadingBarListener.animateLoadingBar(0, 50, 0.2);
 
         // API call
         getPageForCurrentQuery(page).thenAccept(info -> {
 
             // Middle load animation
-            animateLoadingBar(50, 80, 0.2);
+            loadingBarListener.animateLoadingBar(50, 80, 0.2);
 
             // Update grid in the background
             reloadAnimeGridAsync(info.getAnimeList());
@@ -507,12 +508,17 @@ public class AnimeGridView {
                 Platform.runLater(() -> {
                     PauseTransition pause = new PauseTransition(Duration.seconds(0.1));
                     pause.setOnFinished(ev -> {
-                        animateLoadingBar(80, 100, 0.1);
+
+
+                        loadingBarListener.animateLoadingBar(80, 100, 0.1);
 
                         FadeTransition fadeOutBackground = createFadeOutTransition(darkBackground, 0.3, 0.8);
                         fadeOutBackground.play();
 
-                        fadeOutLoadingBar(0.3);
+                        loadingBarListener.fadeOutLoadingBar(0.3);
+                        PauseTransition loadingBarFadeOutTimer = new PauseTransition(Duration.seconds(0.3));
+                        loadingBarFadeOutTimer.setOnFinished(e -> apiLock = false);
+                        loadingBarFadeOutTimer.play();
                     });
                     pause.play();
                 });
@@ -758,44 +764,6 @@ public class AnimeGridView {
     }
 
 
-    private void animateLoadingBar(double fromPercent, double toPercent, double durationSeconds) {
-        // Calculate the heights as a percentage of the parent region's height
-        double parentHeight = loadingBar.getParent().getLayoutBounds().getHeight();
-        double toHeight = (toPercent / 100.0) * parentHeight;
-
-        // Animation for minHeight
-        Timeline minHeightAnimation = new Timeline();
-        KeyValue minKeyValue = new KeyValue(loadingBar.minHeightProperty(), toHeight);
-        KeyFrame minKeyFrame = new KeyFrame(Duration.seconds(durationSeconds), minKeyValue);
-        minHeightAnimation.getKeyFrames().add(minKeyFrame);
-
-        // Animation for maxHeight
-        Timeline maxHeightAnimation = new Timeline();
-        KeyValue maxKeyValue = new KeyValue(loadingBar.maxHeightProperty(), toHeight);
-        KeyFrame maxKeyFrame = new KeyFrame(Duration.seconds(durationSeconds), maxKeyValue);
-        maxHeightAnimation.getKeyFrames().add(maxKeyFrame);
-
-        // Play both animations simultaneously using ParallelTransition
-        ParallelTransition parallelTransition = new ParallelTransition(minHeightAnimation, maxHeightAnimation);
-        parallelTransition.play();
-    }
-
-
-    private void fadeOutLoadingBar(double durationSeconds) {
-        FadeTransition fadeTransition = new FadeTransition(Duration.seconds(durationSeconds), loadingBar);
-        fadeTransition.setFromValue(1.0);
-        fadeTransition.setToValue(0.0);
-        fadeTransition.setOnFinished(event -> {
-            // Reset the loading bar
-            loadingBar.setMinHeight(0);
-            loadingBar.setMaxHeight(0);
-            loadingBar.setOpacity(1.0);
-            apiLock = false;
-        });
-        fadeTransition.play();
-    }
-
-
     private VBox createSearchBackground(StackPane parent) {
         VBox darkBackground = new VBox();
         darkBackground.getStyleClass().add("grid-media-popup-background");
@@ -835,5 +803,9 @@ public class AnimeGridView {
     public void setAPIRequestListener(APIRequestListener listener) {
         // apiRequestListeners.add(listener);
         this.apiRequestListener = listener;
+    }
+
+    public void setLoadingBarListener(LoadingBarListener listener) {
+        this.loadingBarListener = listener;
     }
 }

@@ -2,14 +2,16 @@ package com.github.badbadbadbadbad.tsundoku.controllers;
 
 import com.github.badbadbadbadbad.tsundoku.views.AnimeGridView;
 import com.github.badbadbadbadbad.tsundoku.views.SidebarView;
+import javafx.animation.*;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
-public class ViewsController implements SidebarListener {
+public class ViewsController implements SidebarListener, LoadingBarListener {
     private final APIController apiController;
     private final ConfigController configController;
     public Region loadingBar;
@@ -35,13 +37,6 @@ public class ViewsController implements SidebarListener {
         root.getChildren().addAll(sidebar, loadingSeparator);
         updateMainContent(root, stage);
 
-        // AnimeGridView animeGridView = new AnimeGridView(apiController, loadingBar);
-        // Region gridView = animeGridView.createGridView(stage);
-        // root.getChildren().addAll(sidebar, loadingSeparator, gridView);
-
-        // TODO REMOVE LATER WHEN VIEWS CONTROLLER IS IMPLEMENTED
-        // configController.listenToAnimeGrid(animeGridView);
-        // apiController.listenToAnimeGrid(animeGridView);
 
         Scene scene = new Scene(root);
         scene.getStylesheets().add(getClass().getResource("/CSS/styles.css").toExternalForm());
@@ -83,7 +78,8 @@ public class ViewsController implements SidebarListener {
         Region gridView = null;
 
         if (contentType.equals("ANIME")) {
-            AnimeGridView animeGridView = new AnimeGridView(apiController, loadingBar);
+            AnimeGridView animeGridView = new AnimeGridView(apiController);
+            animeGridView.setLoadingBarListener(this);
             gridView = animeGridView.createGridView(stage);
             configController.listenToAnimeGrid(animeGridView);
         } else if (contentType.equals("MANGA")) {
@@ -96,5 +92,42 @@ public class ViewsController implements SidebarListener {
             root.getChildren().remove(2);
         }
         root.getChildren().add(gridView);
+    }
+
+    @Override
+    public void animateLoadingBar(double fromPercent, double toPercent, double durationSeconds) {
+        // Calculate the heights as a percentage of the parent region's height
+        double parentHeight = loadingBar.getParent().getLayoutBounds().getHeight();
+        double toHeight = (toPercent / 100.0) * parentHeight;
+
+        // Animation for minHeight
+        Timeline minHeightAnimation = new Timeline();
+        KeyValue minKeyValue = new KeyValue(loadingBar.minHeightProperty(), toHeight);
+        KeyFrame minKeyFrame = new KeyFrame(Duration.seconds(durationSeconds), minKeyValue);
+        minHeightAnimation.getKeyFrames().add(minKeyFrame);
+
+        // Animation for maxHeight
+        Timeline maxHeightAnimation = new Timeline();
+        KeyValue maxKeyValue = new KeyValue(loadingBar.maxHeightProperty(), toHeight);
+        KeyFrame maxKeyFrame = new KeyFrame(Duration.seconds(durationSeconds), maxKeyValue);
+        maxHeightAnimation.getKeyFrames().add(maxKeyFrame);
+
+        // Play both animations simultaneously using ParallelTransition
+        ParallelTransition parallelTransition = new ParallelTransition(minHeightAnimation, maxHeightAnimation);
+        parallelTransition.play();
+    }
+
+    @Override
+    public void fadeOutLoadingBar(double durationSeconds) {
+        FadeTransition fadeTransition = new FadeTransition(Duration.seconds(durationSeconds), loadingBar);
+        fadeTransition.setFromValue(1.0);
+        fadeTransition.setToValue(0.0);
+        fadeTransition.setOnFinished(event -> {
+            // Reset the loading bar
+            loadingBar.setMinHeight(0);
+            loadingBar.setMaxHeight(0);
+            loadingBar.setOpacity(1.0);
+        });
+        fadeTransition.play();
     }
 }
