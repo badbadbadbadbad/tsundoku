@@ -3,7 +3,7 @@ package com.github.badbadbadbadbad.tsundoku.controllers;
 import com.github.badbadbadbadbad.tsundoku.models.ConfigModel;
 import com.github.badbadbadbadbad.tsundoku.views.AnimeGridView;
 
-public class ConfigController implements GridFilterListener {
+public class ConfigController implements GridFilterListener, SidebarListener {
     private final ConfigModel configModel;
 
     public ConfigController(ConfigModel configModel) {
@@ -12,6 +12,16 @@ public class ConfigController implements GridFilterListener {
 
     public void listenToAnimeGrid(AnimeGridView animeGridView) {
         animeGridView.addGridFilterListener(this);
+    }
+
+    @Override
+    public void onSidebarMediaModeChanged(String mode) {
+        configModel.setSidebarMediaMode(mode);
+    }
+
+    @Override
+    public void onSidebarBrowseModeChanged(String mode) {
+        configModel.setSidebarBrowseMode(mode);
     }
 
     @Override

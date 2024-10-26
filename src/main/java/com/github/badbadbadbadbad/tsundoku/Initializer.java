@@ -64,6 +64,8 @@ public class Initializer {
             defaultSettings.put("igdbSecret", null);
             defaultSettings.put("mangadexSecret", null);
             defaultSettings.put("profiles", "Default");
+            defaultSettings.put("lastMediaMode", "Anime");
+            defaultSettings.put("lastBrowseMode", "Browse");
 
             // Anime types
             Map<String, Boolean> animeTypeFilters = new HashMap<>();

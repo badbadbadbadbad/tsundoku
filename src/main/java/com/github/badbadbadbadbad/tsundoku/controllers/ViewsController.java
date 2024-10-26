@@ -1,5 +1,6 @@
 package com.github.badbadbadbadbad.tsundoku.controllers;
 
+import com.github.badbadbadbadbad.tsundoku.models.ConfigModel;
 import com.github.badbadbadbadbad.tsundoku.views.AnimeGridView;
 import com.github.badbadbadbadbad.tsundoku.views.SidebarView;
 import javafx.animation.*;
@@ -11,31 +12,33 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-public class ViewsController implements SidebarListener, LoadingBarListener {
+
+public class ViewsController implements LoadingBarListener, ConfigListener {
+
+    private HBox root;
+    private Stage stage;
+
+    private boolean firstTimeStartup = true;
     private final APIController apiController;
     private final ConfigController configController;
     public Region loadingBar;
-    private final String contentType = "ANIME"; // Change later when sidebar listening is added
-    private final String browseType = "BROWSE"; // Change later when sidebar listening and log are added
 
-    public ViewsController(Stage stage, APIController apiController, ConfigController configController) {
+
+    public ViewsController(Stage stage, APIController apiController, ConfigController configController, ConfigModel configModel) {
         this.apiController = apiController;
         this.configController = configController;
+        this.stage = stage;
 
-        HBox root = new HBox();
+        this.root = new HBox();
         root.setId("main-root");
 
         Screen screen = Screen.getPrimary();
         double screenWidth = screen.getBounds().getWidth();
         double screenHeight = screen.getBounds().getHeight();
 
-        SidebarView sidebarView = new SidebarView();
-        Region sidebar = sidebarView.createSidebar();
 
-        Region loadingSeparator = createLoadingSeparator();
-
-        root.getChildren().addAll(sidebar, loadingSeparator);
-        updateMainContent(root, stage);
+        // Starts chain of events that invokes onSidebarModesUpdates() of this class to handle setup of all view elements
+        configModel.addConfigListener(this);
 
 
         Scene scene = new Scene(root);
@@ -74,18 +77,46 @@ public class ViewsController implements SidebarListener, LoadingBarListener {
     }
 
 
-    private void updateMainContent(HBox root, Stage stage) {
+    private void updateMainContent(String mediaMode, String browseMode) {
         Region gridView = null;
 
-        if (contentType.equals("ANIME")) {
-            AnimeGridView animeGridView = new AnimeGridView(apiController);
-            animeGridView.setLoadingBarListener(this);
-            gridView = animeGridView.createGridView(stage);
-            configController.listenToAnimeGrid(animeGridView);
-        } else if (contentType.equals("MANGA")) {
-            System.out.println("Manga clicked");
-        } else if (contentType.equals("GAMES")) {
-            System.out.println("Games clicked");
+        switch (mediaMode) {
+            case "Anime" -> {
+                AnimeGridView animeGridView = new AnimeGridView(apiController); // TODO Give anime grid initial filters
+
+                animeGridView.setLoadingBarListener(this);
+                gridView = animeGridView.createGridView(stage);
+                animeGridView.addGridFilterListener(configController);
+                // configController.listenToAnimeGrid(animeGridView);
+            }
+            case "Manga" -> {
+                AnimeGridView animeGridView = new AnimeGridView(apiController); // TODO Change when Manga grid implemented
+
+                animeGridView.setLoadingBarListener(this);
+                gridView = animeGridView.createGridView(stage);
+                animeGridView.addGridFilterListener(configController);
+            }
+            case "Games" -> {
+                AnimeGridView animeGridView = new AnimeGridView(apiController); // TODO Change when Games grid implemented
+
+                animeGridView.setLoadingBarListener(this);
+                gridView = animeGridView.createGridView(stage);
+                animeGridView.addGridFilterListener(configController);
+            }
+            case "Profile" -> {
+                AnimeGridView animeGridView = new AnimeGridView(apiController); // TODO Change when Profiles view implemented
+
+                animeGridView.setLoadingBarListener(this);
+                gridView = animeGridView.createGridView(stage);
+                animeGridView.addGridFilterListener(configController);
+            }
+            case "Settings" -> {
+                AnimeGridView animeGridView = new AnimeGridView(apiController); // TODO Change when Settings view implemented
+
+                animeGridView.setLoadingBarListener(this);
+                gridView = animeGridView.createGridView(stage);
+                animeGridView.addGridFilterListener(configController);
+            }
         }
 
         if (root.getChildren().size() > 2) { // Content pane exists, remove it and add new one
@@ -129,5 +160,22 @@ public class ViewsController implements SidebarListener, LoadingBarListener {
             loadingBar.setOpacity(1.0);
         });
         fadeTransition.play();
+    }
+
+
+    @Override
+    public void onSidebarModesUpdated(String mediaMode, String browseMode) {
+        if (firstTimeStartup) {
+            SidebarView sidebarView = new SidebarView(mediaMode, browseMode); // TODO Give Sidebar initial media / browse mode
+            sidebarView.setSidebarListener(configController);
+            Region sidebar = sidebarView.createSidebar();
+
+            Region loadingSeparator = createLoadingSeparator();
+
+            root.getChildren().addAll(sidebar, loadingSeparator);
+
+            firstTimeStartup = false;
+        }
+        updateMainContent(mediaMode, browseMode);
     }
 }

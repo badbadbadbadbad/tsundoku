@@ -17,8 +17,18 @@ public class SidebarView {
 
     private SidebarListener sidebarListener;
 
-    private final List<Button> modeButtons = new ArrayList<>();
+    private final List<Button> mediaModeButtons = new ArrayList<>();
     private final List<Button> browseModeButtons = new ArrayList<>();
+    // private String currentMediaMode = "Anime";
+    // private String currentBrowseMode = "Browse";
+
+    private String currentMediaMode; // TODO Inittialize with values from Config
+    private String currentBrowseMode;
+
+    public SidebarView(String mediaMode, String browseMode) {
+        this.currentMediaMode = mediaMode;
+        this.currentBrowseMode = browseMode;
+    }
 
     public Region createSidebar() {
 
@@ -53,19 +63,17 @@ public class SidebarView {
         HBox browseModeButtonBox = new HBox(browseButton, logButton);
 
 
-
-
-        Button gamesButton = createModeButton("Games");
-        Button mangaButton = createModeButton("Manga");
-        Button animeButton = createModeButton("Anime");
+        Button gamesButton = createMediaModeButton("Games");
+        Button mangaButton = createMediaModeButton("Manga");
+        Button animeButton = createMediaModeButton("Anime");
 
         Region stretchRegion = new Region();
         VBox.setVgrow(stretchRegion, Priority.ALWAYS);
 
-        Button profileButton = createModeButton("Profile");
-        Button settingsButton = createModeButton("Settings");
+        Button profileButton = createMediaModeButton("Profile");
+        Button settingsButton = createMediaModeButton("Settings");
 
-        Collections.addAll(modeButtons, gamesButton, mangaButton, animeButton, profileButton, settingsButton);
+        Collections.addAll(mediaModeButtons, gamesButton, mangaButton, animeButton, profileButton, settingsButton);
         sidebar.getChildren().addAll(programLabel, separator, browseModeButtonBox, gamesButton, mangaButton, animeButton, stretchRegion, profileButton, settingsButton);
         return sidebar;
     }
@@ -76,8 +84,14 @@ public class SidebarView {
         button.getStyleClass().addAll("controls-button", "browse-mode-button");
 
         button.setOnAction(e -> {
-            setActiveBrowseModeButton(button);
+            if (!button.getText().equals(currentBrowseMode)) {
+                setActiveBrowseModeButton(button);
+            }
         });
+
+        if (label.equals(currentBrowseMode)) {
+            button.getStyleClass().add("browse-mode-button-active");
+        }
 
         return button;
     }
@@ -87,29 +101,39 @@ public class SidebarView {
             button.getStyleClass().removeAll("browse-mode-button-active");
         }
         selectedButton.getStyleClass().add("browse-mode-button-active");
+        currentBrowseMode = selectedButton.getText();
+        sidebarListener.onSidebarBrowseModeChanged(selectedButton.getText());
     }
 
-    private Button createModeButton(String label) {
+    private Button createMediaModeButton(String label) {
         Button button = new Button(label);
         button.setMaxWidth(Double.MAX_VALUE);
         button.getStyleClass().add("sidebar-button");
 
         button.setOnAction(e -> {
-            setActiveButton(button);
+            if (!button.getText().equals(currentMediaMode)) {
+                setActiveMediaModeButton(button);
+            }
         });
+
+        if (label.equals(currentMediaMode)) {
+            button.getStyleClass().add("sidebar-button-active");
+        }
 
         return button;
     }
 
-    private void setActiveButton(Button selectedButton) {
-        for (Button button : modeButtons) {
+    private void setActiveMediaModeButton(Button selectedButton) {
+        for (Button button : mediaModeButtons) {
             button.getStyleClass().removeAll("sidebar-button-active");
         }
         selectedButton.getStyleClass().add("sidebar-button-active");
+        currentMediaMode = selectedButton.getText();
+        sidebarListener.onSidebarMediaModeChanged(selectedButton.getText());
     }
 
 
-    private void setSidebarListener(SidebarListener sidebarListener) {
+    public void setSidebarListener(SidebarListener sidebarListener) {
         this.sidebarListener = sidebarListener;
     }
 

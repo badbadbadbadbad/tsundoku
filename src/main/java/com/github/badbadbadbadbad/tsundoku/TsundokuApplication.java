@@ -24,7 +24,7 @@ public class TsundokuApplication extends Application {
         ConfigModel configModel = new ConfigModel();
         APIController apiController = new APIController(animeAPImodel, configModel);
         ConfigController configController = new ConfigController(configModel);
-        ViewsController viewsController = new ViewsController(stage, apiController, configController);
+        ViewsController viewsController = new ViewsController(stage, apiController, configController, configModel);
 
         stage.setTitle("tsundoku.");
         stage.show();

@@ -43,7 +43,7 @@ public class APIController implements ConfigListener, APIRequestListener {
     }
 
     @Override
-    public void onAnimeSearchFiltersUpdates(String animeOrderBy, String animeStatus, String animeStartYear, String animeEndYear) {
+    public void onAnimeSearchFiltersUpdated(String animeOrderBy, String animeStatus, String animeStartYear, String animeEndYear) {
         animeAPIModel.setSearchFilters(animeOrderBy, animeStatus, animeStartYear, animeEndYear);
     }
 

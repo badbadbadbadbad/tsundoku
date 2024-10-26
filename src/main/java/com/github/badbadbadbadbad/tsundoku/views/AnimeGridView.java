@@ -11,6 +11,7 @@ import com.github.badbadbadbadbad.tsundoku.external.SmoothScroll;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeListInfo;
 import javafx.animation.*;
 import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
@@ -41,7 +42,7 @@ public class AnimeGridView {
 
     private String searchMode = "SEASON";  // Changes between SEASON, TOP, and SEARCH depending on last mode selected (so pagination calls "current mode")
     private String searchString = "";
-    private static boolean filtersHidden = false;
+    private static boolean filtersHidden = true;
     private boolean apiLock = false;
 
     public AnimeGridView(APIController apiController) {
@@ -113,14 +114,14 @@ public class AnimeGridView {
         });
 
         // Filter toggle button
-        ToggleButton toggleFiltersButton = new ToggleButton("Hide filters");
+        ToggleButton toggleFiltersButton = new ToggleButton("Show filters");
         toggleFiltersButton.getStyleClass().add("controls-button");
 
         // Filter toggle logic
         toggleFiltersButton.setOnAction(e -> {
             toggleFiltersButton.setDisable(true);
 
-            if (toggleFiltersButton.isSelected()) {
+            if (!toggleFiltersButton.isSelected()) {
                 toggleFiltersButton.setText("Show filters");
                 hideFilters(filters, toggleFiltersButton);
             } else {
@@ -165,7 +166,8 @@ public class AnimeGridView {
 
         // Dynamically adjust column amount based on window size
         int filtersAmount = filtersGrid.getChildren().size();
-        stage.widthProperty().addListener((obs, oldWidth, newWidth) -> {
+
+        ChangeListener<Number> widthListener = (obs, oldWidth, newWidth) -> {
             double windowWidth = newWidth.doubleValue();
             int cols, rows;
 
@@ -186,13 +188,21 @@ public class AnimeGridView {
             if (!filtersHidden) {
                 filtersGrid.setMaxHeight(filtersGrid.prefHeight(filtersGrid.getWidth()));
             }
-        });
+        };
+        stage.widthProperty().addListener(widthListener);
+        widthListener.changed(stage.widthProperty(), stage.getWidth(), stage.getWidth());
 
         // Necessary else Windows doesn't do the height on startup properly
         // Thanks, Microsoft
+        /*
         Platform.runLater(() -> {
             filtersGrid.setMaxHeight(filtersGrid.prefHeight(filtersGrid.getWidth()));
         });
+         */
+
+        filtersGrid.setMaxHeight(0);
+        filtersGrid.setOpacity(0.0);
+
 
         return filtersGrid;
     }
@@ -381,6 +391,33 @@ public class AnimeGridView {
         double screenWidth = screen.getBounds().getWidth();
 
         int animesAmount = animeGrid.getChildren().size();
+
+        ChangeListener<Number> widthListener = (obs, oldWidth, newWidth) -> {
+            double windowWidth = newWidth.doubleValue();
+
+            int cols, rows;
+
+            if (windowWidth < screenWidth * 0.6) {
+                cols = 3;
+            } else if (windowWidth < screenWidth * 0.7) {
+                cols = 4;
+            } else if (windowWidth < screenWidth * 0.8) {
+                cols = 5;
+            } else if (windowWidth < screenWidth * 0.9) {
+                cols = 6;
+            } else {
+                cols = 7;
+            }
+
+            rows = (int) Math.ceil((double) animesAmount / cols);
+
+            animeGrid.setColsCount(cols);
+            animeGrid.setRowsCount(rows);
+        };
+        stage.widthProperty().addListener(widthListener);
+        widthListener.changed(stage.widthProperty(), stage.getWidth(), stage.getWidth());
+
+        /*
         stage.widthProperty().addListener((obs, oldWidth, newWidth) -> {
             double windowWidth = newWidth.doubleValue();
 
@@ -403,6 +440,8 @@ public class AnimeGridView {
             animeGrid.setColsCount(cols);
             animeGrid.setRowsCount(rows);
         });
+
+         */
 
 
 

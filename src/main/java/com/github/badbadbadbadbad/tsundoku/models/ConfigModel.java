@@ -25,6 +25,11 @@ public class ConfigModel {
 
     private String profiles;
 
+    // Sidebar listener data
+    private String lastMediaMode;
+    private String lastBrowseMode;
+
+    // Anime grid listener
     private Map<String, Boolean> animeTypeFilters;
     private Map<String, Boolean> animeRatingFilters;
     private String animeOrderBy;
@@ -63,6 +68,8 @@ public class ConfigModel {
                 this.mangadexSecret = (String) settings.get("mangadexSecret");
                 this.profiles = (String) settings.get("profiles");
 
+
+                updateSidebarModes((String) settings.get("lastMediaMode"), (String) settings.get("lastBrowseMode"));
                 updateAnimeFilters((Map<String, Boolean>) settings.get("animeTypeFilters"), (Map<String, Boolean>) settings.get("animeRatingFilters"));
                 updateAnimeSearchFilters((Map<String, String>) settings.get("animeSearchFilters"));
             } catch (IOException e) {
@@ -83,6 +90,8 @@ public class ConfigModel {
             settings.put("igdbSecret", this.igdbSecret);
             settings.put("mangadexSecret", this.mangadexSecret);
             settings.put("profiles", this.profiles);
+            settings.put("lastMediaMode", this.lastMediaMode);
+            settings.put("lastBrowseMode", this.lastBrowseMode);
 
             settings.put("animeTypeFilters", this.animeTypeFilters);
             settings.put("animeRatingFilters", this.animeRatingFilters);
@@ -101,6 +110,17 @@ public class ConfigModel {
         }
     }
 
+    public void setSidebarMediaMode(String mode) {
+        this.lastMediaMode = mode;
+        notifyListeners();
+        saveConfigFile();
+    }
+
+    public void setSidebarBrowseMode(String mode) {
+        this.lastBrowseMode = mode;
+        notifyListeners();
+        saveConfigFile();
+    }
 
     public void setAnimeOrderBy(String orderBy) {
         this.animeOrderBy = orderBy;
@@ -138,9 +158,15 @@ public class ConfigModel {
         notifyListeners();
     }
 
+    public void updateSidebarModes(String mediaMode, String browseMode) {
+        this.lastMediaMode = mediaMode;
+        this.lastBrowseMode = browseMode;
+        notifyListeners();
+    }
+
     public void addConfigListener(ConfigListener listener) {
         listeners.add(listener);
-        notifyListeners(); // So new listeners get current config data on creation. Kinda sloppy.
+        notifyListeners();
     }
 
     public void removeConfigListener(ConfigListener listener) {
@@ -150,7 +176,8 @@ public class ConfigModel {
     private void notifyListeners() {
         for (ConfigListener listener : listeners) {
             listener.onAnimeTypeAndRatingFiltersUpdated(animeTypeFilters, animeRatingFilters);
-            listener.onAnimeSearchFiltersUpdates(animeOrderBy, animeStatus, animeStartYear, animeEndYear);
+            listener.onAnimeSearchFiltersUpdated(animeOrderBy, animeStatus, animeStartYear, animeEndYear);
+            listener.onSidebarModesUpdated(lastMediaMode, lastBrowseMode);
         }
     }
 }
