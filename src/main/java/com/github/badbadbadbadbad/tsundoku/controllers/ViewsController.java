@@ -83,39 +83,38 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
         switch (mediaMode) {
             case "Anime" -> {
                 AnimeGridView animeGridView = new AnimeGridView(apiController); // TODO Give anime grid initial filters
-
                 animeGridView.setLoadingBarListener(this);
-                gridView = animeGridView.createGridView(stage);
                 animeGridView.addGridFilterListener(configController);
-                // configController.listenToAnimeGrid(animeGridView);
+                animeGridView.setAPIRequestListener(apiController);
+                gridView = animeGridView.createGridView(stage);
             }
             case "Manga" -> {
-                AnimeGridView animeGridView = new AnimeGridView(apiController); // TODO Change when Manga grid implemented
-
+                AnimeGridView animeGridView = new AnimeGridView(apiController); // TODO Give anime grid initial filters
                 animeGridView.setLoadingBarListener(this);
-                gridView = animeGridView.createGridView(stage);
                 animeGridView.addGridFilterListener(configController);
+                animeGridView.setAPIRequestListener(apiController);
+                gridView = animeGridView.createGridView(stage);
             }
             case "Games" -> {
-                AnimeGridView animeGridView = new AnimeGridView(apiController); // TODO Change when Games grid implemented
-
+                AnimeGridView animeGridView = new AnimeGridView(apiController); // TODO Give anime grid initial filters
                 animeGridView.setLoadingBarListener(this);
-                gridView = animeGridView.createGridView(stage);
                 animeGridView.addGridFilterListener(configController);
+                animeGridView.setAPIRequestListener(apiController);
+                gridView = animeGridView.createGridView(stage);
             }
             case "Profile" -> {
-                AnimeGridView animeGridView = new AnimeGridView(apiController); // TODO Change when Profiles view implemented
-
+                AnimeGridView animeGridView = new AnimeGridView(apiController); // TODO Give anime grid initial filters
                 animeGridView.setLoadingBarListener(this);
-                gridView = animeGridView.createGridView(stage);
                 animeGridView.addGridFilterListener(configController);
+                animeGridView.setAPIRequestListener(apiController);
+                gridView = animeGridView.createGridView(stage);
             }
             case "Settings" -> {
-                AnimeGridView animeGridView = new AnimeGridView(apiController); // TODO Change when Settings view implemented
-
+                AnimeGridView animeGridView = new AnimeGridView(apiController); // TODO Give anime grid initial filters
                 animeGridView.setLoadingBarListener(this);
-                gridView = animeGridView.createGridView(stage);
                 animeGridView.addGridFilterListener(configController);
+                animeGridView.setAPIRequestListener(apiController);
+                gridView = animeGridView.createGridView(stage);
             }
         }
 

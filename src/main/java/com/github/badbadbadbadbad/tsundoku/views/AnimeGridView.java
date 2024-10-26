@@ -14,6 +14,7 @@ import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.value.ChangeListener;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
@@ -69,8 +70,6 @@ public class AnimeGridView {
         HBox buttonBox = createButtons();
         HBox searchAndFilterToggleBox = createSearchAndFilterToggle(filters);
 
-        // TODO Change when viewsController is implemented
-        setAPIRequestListener(apiController);
 
         // Blocking call on CompletableFuture for first setup
         // Probably change later when functionality for media type tab switching is in
@@ -95,6 +94,7 @@ public class AnimeGridView {
     private HBox createSearchAndFilterToggle(FlowGridPane filters) {
         HBox searchAndModeBox = new HBox();
         searchAndModeBox.setSpacing(10);
+        searchAndModeBox.setPadding(new Insets(0, 0, 15, 0));
 
         // Search bar
         TextField searchBar = new TextField();
@@ -297,12 +297,18 @@ public class AnimeGridView {
         KeyFrame hidden = new KeyFrame(Duration.millis(100), new KeyValue(filters.maxHeightProperty(), 0));
         Timeline move = new Timeline(visible, hidden);
 
+        // Filters bottom padding
+        KeyFrame paddingVisible = new KeyFrame(Duration.ZERO, new KeyValue(filters.paddingProperty(), new Insets(0, 0, 15, 0)));
+        KeyFrame paddingHidden = new KeyFrame(Duration.millis(100), new KeyValue(filters.paddingProperty(), new Insets(0, 0, 0, 0)));
+        Timeline movePadding = new Timeline(paddingVisible, paddingHidden);
+
         // Cooldown
         PauseTransition cooldown = new PauseTransition(Duration.millis(200));
         cooldown.setOnFinished(event -> button.setDisable(false));
 
         // Gather animations
-        SequentialTransition st = new SequentialTransition(fade, move);
+        ParallelTransition test = new ParallelTransition(move, movePadding);
+        SequentialTransition st = new SequentialTransition(fade, test);
         ParallelTransition pt = new ParallelTransition(cooldown, st);
 
         pt.play();
@@ -323,12 +329,18 @@ public class AnimeGridView {
         KeyFrame visible = new KeyFrame(Duration.millis(100), new KeyValue(filters.maxHeightProperty(), filters.prefHeight(filters.getWidth())));
         Timeline move = new Timeline(hidden, visible);
 
+        // Filters bottom padding
+        KeyFrame paddingHidden = new KeyFrame(Duration.ZERO, new KeyValue(filters.paddingProperty(), new Insets(0, 0, 0, 0)));
+        KeyFrame paddingVisible = new KeyFrame(Duration.millis(100), new KeyValue(filters.paddingProperty(), new Insets(0, 0, 15, 0)));
+        Timeline movePadding = new Timeline(paddingHidden, paddingVisible);
+
         // Cooldown
         PauseTransition cooldown = new PauseTransition(Duration.millis(200));
         cooldown.setOnFinished(event -> button.setDisable(false));
 
         // Gather animations
-        SequentialTransition st = new SequentialTransition(move, fade);
+        ParallelTransition test = new ParallelTransition(move, movePadding);
+        SequentialTransition st = new SequentialTransition(test, fade);
         ParallelTransition pt = new ParallelTransition(cooldown, st);
 
         pt.play();
