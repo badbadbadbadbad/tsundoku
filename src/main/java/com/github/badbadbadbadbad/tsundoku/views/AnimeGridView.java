@@ -11,6 +11,8 @@ import com.github.badbadbadbadbad.tsundoku.external.SmoothScroll;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeListInfo;
 import javafx.animation.*;
 import javafx.application.Platform;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -42,7 +44,8 @@ public class AnimeGridView {
 
     private String searchMode = "SEASON";  // Changes between SEASON, TOP, and SEARCH depending on last mode selected (so pagination calls "current mode")
     private String searchString = "";
-    private static boolean filtersHidden = true;
+    // private static boolean filtersHidden = true;
+    private static final BooleanProperty filtersHidden = new SimpleBooleanProperty(true);
     private boolean apiLock = false;
 
     public AnimeGridView(APIController apiController) {
@@ -185,7 +188,7 @@ public class AnimeGridView {
             filtersGrid.setRowsCount(rows);
 
             // Necessary for the fade animation to work
-            if (!filtersHidden) {
+            if (!filtersHidden.get()) {
                 filtersGrid.setMaxHeight(filtersGrid.prefHeight(filtersGrid.getWidth()));
             }
         };
@@ -269,13 +272,20 @@ public class AnimeGridView {
             });
         }
 
+        // Even when filters are hidden, mouse cursor changes to text field cursor when hovering
+        // where the number filters would be.
+        filtersHidden.addListener((obs, oldValue, newValue) -> {
+            textField.setDisable(newValue);
+        });
+        textField.setDisable(filtersHidden.get());
+
         return new VBox(5, label, textField);
     }
 
 
     private void hideFilters(FlowGridPane filters, ToggleButton button) {
 
-        filtersHidden = true;
+        filtersHidden.set(true);
 
         // Fade animation
         FadeTransition fade = new FadeTransition(Duration.millis(150), filters);
@@ -301,7 +311,7 @@ public class AnimeGridView {
 
     private void showFilters(FlowGridPane filters, ToggleButton button) {
 
-        filtersHidden = false;
+        filtersHidden.set(false);
 
         // Fade animation
         FadeTransition fade = new FadeTransition(Duration.millis(150), filters);
@@ -416,33 +426,6 @@ public class AnimeGridView {
         };
         stage.widthProperty().addListener(widthListener);
         widthListener.changed(stage.widthProperty(), stage.getWidth(), stage.getWidth());
-
-        /*
-        stage.widthProperty().addListener((obs, oldWidth, newWidth) -> {
-            double windowWidth = newWidth.doubleValue();
-
-            int cols, rows;
-
-            if (windowWidth < screenWidth * 0.6) {
-                cols = 3;
-            } else if (windowWidth < screenWidth * 0.7) {
-                cols = 4;
-            } else if (windowWidth < screenWidth * 0.8) {
-                cols = 5;
-            } else if (windowWidth < screenWidth * 0.9) {
-                cols = 6;
-            } else {
-                cols = 7;
-            }
-
-            rows = (int) Math.ceil((double) animesAmount / cols);
-
-            animeGrid.setColsCount(cols);
-            animeGrid.setRowsCount(rows);
-        });
-
-         */
-
 
 
         pagination = createPagination(animeListInfo.getLastPage());
