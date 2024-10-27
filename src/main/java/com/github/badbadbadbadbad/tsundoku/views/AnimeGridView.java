@@ -36,7 +36,6 @@ public class AnimeGridView {
     private final List<GridFilterListener> gridFilterListeners = new ArrayList<>();
     private APIRequestListener apiRequestListener = null; // TODO Change when ViewsController is implemented
     private LoadingBarListener loadingBarListener = null;
-    private final APIController apiController;
 
     AnimeListInfo animeListInfo;
     private FlowGridPane animeGrid;
@@ -49,9 +48,6 @@ public class AnimeGridView {
     private static final BooleanProperty filtersHidden = new SimpleBooleanProperty(true);
     private boolean apiLock = false;
 
-    public AnimeGridView(APIController apiController) {
-        this.apiController = apiController;
-    }
 
     public Region createGridView(Stage stage) {
         VBox root = new VBox();
@@ -103,7 +99,11 @@ public class AnimeGridView {
         HBox.setHgrow(searchBar, Priority.ALWAYS);
 
         searchBar.textProperty().addListener((observable, oldValue, newValue) -> {
-            searchString = newValue;
+            if (newValue.matches("[\\p{IsHan}\\p{IsHiragana}\\p{IsKatakana}\\p{IsHangul}\\p{Alnum} ]*")) {
+                searchString = newValue;
+            } else {
+                searchBar.setText(oldValue);
+            }
         });
 
         // Search should trigger on enter press
