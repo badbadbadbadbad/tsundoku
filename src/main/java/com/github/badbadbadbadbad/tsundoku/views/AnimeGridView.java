@@ -108,7 +108,7 @@ public class AnimeGridView {
 
         // Search should trigger on enter press
         searchBar.setOnAction(event -> {
-            if(!apiLock) {
+            if(!apiLock && !searchString.isEmpty()) {
                 searchMode = "SEARCH";
                 apiLock = true;
 
@@ -376,7 +376,7 @@ public class AnimeGridView {
         });
 
         searchButton.setOnAction(event -> {
-            if(!apiLock) {
+            if(!apiLock && !searchString.isEmpty()) {
                 searchMode = "SEARCH";
                 apiLock = true;
 
