@@ -15,8 +15,8 @@ import javafx.util.Duration;
 
 public class ViewsController implements LoadingBarListener, ConfigListener {
 
-    private HBox root;
-    private Stage stage;
+    private final HBox root;
+    private final Stage stage;
 
     private boolean firstTimeStartup = true;
     private final APIController apiController;
@@ -45,6 +45,7 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
         scene.getStylesheets().add(getClass().getResource("/CSS/styles.css").toExternalForm());
         scene.setFill(Color.rgb(35, 36, 42)); // To prevent white flicker on expanding resize
 
+        // Remember height and position from last session?
         stage.setWidth(screenWidth / 1.5);
         stage.setHeight(screenHeight / 1.5);
         stage.setMinWidth(screenWidth / 2);
@@ -58,20 +59,20 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
 
         // Empty loading bar as separator between sidebar and content
         Region background = new Region();
-        background.setMinWidth(2);
         background.setBackground(new Background(new BackgroundFill(Color.BLACK, CornerRadii.EMPTY, Insets.EMPTY)));
 
         // Loading bar overlaid on empty loading bar
         loadingBar = new Region();
-        loadingBar.setMinWidth(2);
         loadingBar.setMinHeight(0);
         loadingBar.setMaxHeight(0);
         loadingBar.setBackground(new Background(new BackgroundFill(Color.GOLDENROD, CornerRadii.EMPTY, Insets.EMPTY)));
 
         StackPane separator = new StackPane(background, loadingBar);
-        separator.setMinWidth(2);
-        separator.setMaxWidth(2);
-        separator.setPrefWidth(2);
+
+
+        background.getStyleClass().add("loading-seperator");
+        loadingBar.getStyleClass().add("loading-seperator");
+        separator.getStyleClass().add("loading-seperator");
 
         return separator;
     }
@@ -82,38 +83,23 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
 
         switch (mediaMode) {
             case "Anime" -> {
-                AnimeGridView animeGridView = new AnimeGridView(); // TODO Give anime grid initial filters
-                animeGridView.setLoadingBarListener(this);
-                animeGridView.addGridFilterListener(configController);
-                animeGridView.setAPIRequestListener(apiController);
+                AnimeGridView animeGridView = new AnimeGridView(this, apiController, configController); // TODO Give anime grid initial filters
                 gridView = animeGridView.createGridView(stage);
             }
             case "Manga" -> {
-                AnimeGridView animeGridView = new AnimeGridView(); // TODO Give anime grid initial filters
-                animeGridView.setLoadingBarListener(this);
-                animeGridView.addGridFilterListener(configController);
-                animeGridView.setAPIRequestListener(apiController);
+                AnimeGridView animeGridView = new AnimeGridView(this, apiController, configController);
                 gridView = animeGridView.createGridView(stage);
             }
             case "Games" -> {
-                AnimeGridView animeGridView = new AnimeGridView(); // TODO Give anime grid initial filters
-                animeGridView.setLoadingBarListener(this);
-                animeGridView.addGridFilterListener(configController);
-                animeGridView.setAPIRequestListener(apiController);
+                AnimeGridView animeGridView = new AnimeGridView(this, apiController, configController);
                 gridView = animeGridView.createGridView(stage);
             }
             case "Profile" -> {
-                AnimeGridView animeGridView = new AnimeGridView(); // TODO Give anime grid initial filters
-                animeGridView.setLoadingBarListener(this);
-                animeGridView.addGridFilterListener(configController);
-                animeGridView.setAPIRequestListener(apiController);
+                AnimeGridView animeGridView = new AnimeGridView(this, apiController, configController);
                 gridView = animeGridView.createGridView(stage);
             }
             case "Settings" -> {
-                AnimeGridView animeGridView = new AnimeGridView(); // TODO Give anime grid initial filters
-                animeGridView.setLoadingBarListener(this);
-                animeGridView.addGridFilterListener(configController);
-                animeGridView.setAPIRequestListener(apiController);
+                AnimeGridView animeGridView = new AnimeGridView(this, apiController, configController);
                 gridView = animeGridView.createGridView(stage);
             }
         }
@@ -125,7 +111,7 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
     }
 
     @Override
-    public void animateLoadingBar(double fromPercent, double toPercent, double durationSeconds) {
+    public void animateLoadingBar(double toPercent, double durationSeconds) {
         // Calculate the heights as a percentage of the parent region's height
         double parentHeight = loadingBar.getParent().getLayoutBounds().getHeight();
         double toHeight = (toPercent / 100.0) * parentHeight;
@@ -165,7 +151,7 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
     @Override
     public void onSidebarModesUpdated(String mediaMode, String browseMode) {
         if (firstTimeStartup) {
-            SidebarView sidebarView = new SidebarView(mediaMode, browseMode); // TODO Give Sidebar initial media / browse mode
+            SidebarView sidebarView = new SidebarView(mediaMode, browseMode);
             sidebarView.setSidebarListener(configController);
             Region sidebar = sidebarView.createSidebar();
 

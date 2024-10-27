@@ -1,17 +1,12 @@
 package com.github.badbadbadbadbad.tsundoku.controllers;
 
 import com.github.badbadbadbadbad.tsundoku.models.ConfigModel;
-import com.github.badbadbadbadbad.tsundoku.views.AnimeGridView;
 
 public class ConfigController implements GridFilterListener, SidebarListener {
     private final ConfigModel configModel;
 
     public ConfigController(ConfigModel configModel) {
         this.configModel = configModel;
-    }
-
-    public void listenToAnimeGrid(AnimeGridView animeGridView) {
-        animeGridView.addGridFilterListener(this);
     }
 
     @Override

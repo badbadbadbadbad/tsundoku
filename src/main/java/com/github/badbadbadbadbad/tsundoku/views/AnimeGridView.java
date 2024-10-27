@@ -1,7 +1,6 @@
 package com.github.badbadbadbadbad.tsundoku.views;
 
 
-import com.github.badbadbadbadbad.tsundoku.controllers.APIController;
 import com.github.badbadbadbadbad.tsundoku.controllers.APIRequestListener;
 import com.github.badbadbadbadbad.tsundoku.controllers.GridFilterListener;
 import com.github.badbadbadbadbad.tsundoku.controllers.LoadingBarListener;
@@ -15,15 +14,20 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.geometry.Insets;
+import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.layout.Region;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.TextAlignment;
+import javafx.stage.Popup;
+import javafx.stage.PopupWindow;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,9 +37,9 @@ import java.util.concurrent.CompletableFuture;
 public class AnimeGridView {
 
     private final double RATIO = 318.0 / 225.0; // The aspect ratio to use for anime images. Close to most cover images.
-    private final List<GridFilterListener> gridFilterListeners = new ArrayList<>();
-    private APIRequestListener apiRequestListener = null; // TODO Change when ViewsController is implemented
-    private LoadingBarListener loadingBarListener = null;
+    private final GridFilterListener gridFilterListener;
+    private final APIRequestListener apiRequestListener;
+    private final LoadingBarListener loadingBarListener;
 
     AnimeListInfo animeListInfo;
     private FlowGridPane animeGrid;
@@ -44,15 +48,25 @@ public class AnimeGridView {
 
     private String searchMode = "SEASON";  // Changes between SEASON, TOP, and SEARCH depending on last mode selected (so pagination calls "current mode")
     private String searchString = "";
-    // private static boolean filtersHidden = true;
+
     private static final BooleanProperty filtersHidden = new SimpleBooleanProperty(true);
     private boolean apiLock = false;
+
+    private Stage stage;
+
+    public AnimeGridView(LoadingBarListener loadingBarListener, APIRequestListener apiRequestListener, GridFilterListener gridFilterListener) {
+        this.loadingBarListener = loadingBarListener;
+        this.apiRequestListener = apiRequestListener;
+        this.gridFilterListener = gridFilterListener;
+    }
 
 
     public Region createGridView(Stage stage) {
         VBox root = new VBox();
         VBox.setVgrow(root, Priority.ALWAYS);
         HBox.setHgrow(root, Priority.ALWAYS);
+
+        this.stage = stage;
 
 
         // StackPane wrapper to allow for popup functionality when grid element is clicked
@@ -67,11 +81,22 @@ public class AnimeGridView {
         HBox searchAndFilterToggleBox = createSearchAndFilterToggle(filters);
 
 
-        // Blocking call on CompletableFuture for first setup
-        // Probably change later when functionality for media type tab switching is in
+        // Blocking call on CompletableFuture for first setup to ensure data is there for display
+        loadingBarListener.animateLoadingBar(50, 0.1);
         animeListInfo = apiRequestListener.getCurrentAnimeSeason(1).join();
-        // animeListInfo = apiController.getCurrentAnimeSeason(1).join();
+        apiLock = true;
+
         ScrollPane animeGrid = createBrowseGrid(stage, animeListInfo);
+
+        PauseTransition pause = new PauseTransition(Duration.seconds(0.1));
+        pause.setOnFinished(ev -> {
+            loadingBarListener.animateLoadingBar(100, 0.1);
+            loadingBarListener.fadeOutLoadingBar(0.3);
+            PauseTransition loadingBarFadeOutTimer = new PauseTransition(Duration.seconds(0.3));
+            loadingBarFadeOutTimer.setOnFinished(e -> apiLock = false);
+            loadingBarFadeOutTimer.play();
+        });
+        pause.play();
 
 
         VBox controls = new VBox();
@@ -225,15 +250,11 @@ public class AnimeGridView {
         // Filter change listeners
         if (labelText.equals("Order by")) {
             comboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
-                for (GridFilterListener listener: gridFilterListeners) {
-                    listener.onAnimeOrderByChanged(newVal);
-                }
+                gridFilterListener.onAnimeOrderByChanged(newVal);
             });
         } else if (labelText.equals("Status")) {
             comboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
-                for (GridFilterListener listener: gridFilterListeners) {
-                    listener.onAnimeStatusChanged(newVal);
-                }
+                gridFilterListener.onAnimeStatusChanged(newVal);
             });
         }
 
@@ -260,15 +281,11 @@ public class AnimeGridView {
         // Filter change listeners
         if (labelText.equals("Start year")) {
             textField.textProperty().addListener((obs, oldVal, newVal) -> {
-                for (GridFilterListener listener: gridFilterListeners) {
-                    listener.onAnimeStartYearChanged(newVal);
-                }
+                gridFilterListener.onAnimeStartYearChanged(newVal);
             });
         } else if (labelText.equals("End year")) {
             textField.textProperty().addListener((obs, oldVal, newVal) -> {
-                for (GridFilterListener listener: gridFilterListeners) {
-                    listener.onAnimeEndYearChanged(newVal);
-                }
+                gridFilterListener.onAnimeEndYearChanged(newVal);
             });
         }
 
@@ -523,13 +540,13 @@ public class AnimeGridView {
         FadeTransition fadeInBackground = createFadeInTransition(darkBackground, 0.2, 0.8);
         fadeInBackground.play();
 
-        loadingBarListener.animateLoadingBar(0, 50, 0.2);
+        loadingBarListener.animateLoadingBar(50, 0.2);
 
         // API call
         getPageForCurrentQuery(page).thenAccept(info -> {
 
             // Middle load animation
-            loadingBarListener.animateLoadingBar(50, 80, 0.2);
+            loadingBarListener.animateLoadingBar(80, 0.2);
 
             // Update grid in the background
             reloadAnimeGridAsync(info.getAnimeList());
@@ -544,7 +561,7 @@ public class AnimeGridView {
                     pause.setOnFinished(ev -> {
 
 
-                        loadingBarListener.animateLoadingBar(80, 100, 0.1);
+                        loadingBarListener.animateLoadingBar(100, 0.1);
 
                         FadeTransition fadeOutBackground = createFadeOutTransition(darkBackground, 0.3, 0.8);
                         fadeOutBackground.play();
@@ -729,6 +746,59 @@ public class AnimeGridView {
         clip.setArcWidth(40);
         animeBox.setClip(clip);
 
+
+        // Label testLabel = new Label("Testljkahsd;as;lkasd;lkjasdf;lkjasdf;");
+        Label testLabel = new Label(anime.getTitle());
+        testLabel.setStyle("-fx-font: 30 arial; -fx-background-color: rgba(0, 0, 0, 0.7); -fx-border-radius: 20;" +
+                "-fx-background-radius: 20; -fx-border-color: lightgray; -fx-border-width: 3px;");
+        testLabel.setMaxHeight(Double.MAX_VALUE);
+        testLabel.setMaxWidth(Double.MAX_VALUE);
+        // testLabel.setMinHeight(0);
+        // testLabel.setMinWidth(0);
+        // testLabel.setPrefWidth(animeBox.getPrefWidth());
+        // testLabel.setPrefHeight(animeBox.getPrefHeight());
+        // VBox.setVgrow(testLabel, Priority.ALWAYS);
+        // HBox.setHgrow(testLabel, Priority.ALWAYS);
+        testLabel.setAlignment(Pos.CENTER);
+        testLabel.setTextAlignment(TextAlignment.CENTER);
+        testLabel.setWrapText(true);
+        testLabel.setOpacity(0.0);
+
+
+        AnchorPane ap = new AnchorPane();
+        ap.setMaxHeight(Double.MAX_VALUE);
+        ap.setMaxWidth(Double.MAX_VALUE);
+        ap.setStyle("-fx-border-radius: 20; -fx-background-radius: 20; -fx-border-color: lightgray; -fx-border-width: 1px;");
+        VBox.setVgrow(ap, Priority.ALWAYS);
+        HBox.setHgrow(ap, Priority.ALWAYS);
+        AnchorPane.setBottomAnchor(testLabel, 2.0);
+        AnchorPane.setTopAnchor(testLabel, 2.0);
+        AnchorPane.setLeftAnchor(testLabel, 2.0);
+        AnchorPane.setRightAnchor(testLabel, 2.0);
+
+
+        ap.getChildren().add(testLabel);
+        animeBox.getChildren().add(ap);
+
+        // animeBox.widthProperty().addListener((obs, oldWidth, newWidth) -> testLabel.setPrefWidth(newWidth.doubleValue()));
+        // animeBox.heightProperty().addListener((obs, oldHeight, newHeight) -> testLabel.setPrefHeight(newHeight.doubleValue()));
+
+
+        // animeBox.getChildren().add(testLabel);
+
+        animeBox.setMaxWidth(Double.MAX_VALUE);
+        animeBox.setPrefWidth(Region.USE_COMPUTED_SIZE);
+        animeBox.setMinWidth(0);
+
+        testLabel.setMaxHeight(animeBox.getHeight());
+        testLabel.setMaxWidth(animeBox.getWidth());
+        // testLabel.setMinHeight(animeBox.getHeight());
+        // testLabel.setMinWidth(animeBox.getWidth());
+
+
+        animeBox.setOnMouseEntered(event -> testLabel.setOpacity(1.0));
+        animeBox.setOnMouseExited(event -> testLabel.setOpacity(0.0));
+
         animeBox.widthProperty().addListener((obs, oldWidth, newWidth) -> {
             // Platform.runLater needed to trigger layout update post-resizing
             // Has a chance to get a bit wonky on window snaps otherwise
@@ -737,6 +807,25 @@ public class AnimeGridView {
                 animeBox.setMinHeight(newHeight);
                 animeBox.setPrefHeight(newHeight);
                 animeBox.setMaxHeight(newHeight);
+
+
+                animeBox.setMaxWidth(Double.MAX_VALUE);
+                animeBox.setPrefWidth(Region.USE_COMPUTED_SIZE);
+                animeBox.setMinWidth(0);
+
+
+
+
+                testLabel.setMaxHeight(animeBox.getHeight());
+                testLabel.setMaxWidth(animeBox.getWidth());
+                testLabel.setMinHeight(animeBox.getHeight());
+                testLabel.setMinWidth(animeBox.getWidth());
+
+
+
+                // testLabel.setMaxWidth(animeBox.getWidth());
+                // testLabel.setMaxHeight(animeBox.getHeight());
+                // testLabel.setMaxWidth(newWidth.doubleValue());
             });
         });
 
@@ -825,21 +914,4 @@ public class AnimeGridView {
         return fadeOut;
     }
 
-
-    public void addGridFilterListener(GridFilterListener listener) {
-        gridFilterListeners.add(listener);
-    }
-
-    public void removeGridFilterListener(GridFilterListener listener) {
-        gridFilterListeners.remove(listener);
-    }
-
-    public void setAPIRequestListener(APIRequestListener listener) {
-        // apiRequestListeners.add(listener);
-        this.apiRequestListener = listener;
-    }
-
-    public void setLoadingBarListener(LoadingBarListener listener) {
-        this.loadingBarListener = listener;
-    }
 }

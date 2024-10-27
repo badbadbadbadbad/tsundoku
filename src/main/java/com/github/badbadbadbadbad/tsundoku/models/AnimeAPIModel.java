@@ -97,7 +97,7 @@ public class AnimeAPIModel {
 
     public CompletableFuture<AnimeListInfo> getSearchByName(String query, int page) {
         String urlString = BASE_URL + "/anime?page=" + page + "&q=" + URLEncoder.encode("\"" + query + "\"", StandardCharsets.UTF_8);
-        urlString += decodeOrderBy() + decodeStatus() + decodeStartYear() + decodeEndYear(); // Search query filters and order
+        urlString += decodeOrderBy() + decodeStatus() + decodeStartYear() + decodeEndYear(); // Order and filters for search query
 
 
         URI uri = URI.create(urlString);

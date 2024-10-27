@@ -2,7 +2,6 @@ package com.github.badbadbadbadbad.tsundoku.models;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.badbadbadbadbad.tsundoku.controllers.APIController;
 import com.github.badbadbadbadbad.tsundoku.controllers.ConfigListener;
 
 import java.io.File;
@@ -18,7 +17,6 @@ public class ConfigModel {
     private final String configFilePath;
 
     private final List<ConfigListener> listeners = new ArrayList<>();
-    private APIController apiController;
 
     private String igdbSecret;
     private String mangadexSecret;
@@ -55,6 +53,7 @@ public class ConfigModel {
             return homeDir + "/.local/share/" + appName;
         }
     }
+
 
     private void readConfigFile() {
         File configFile = new File(configFilePath);
@@ -112,41 +111,41 @@ public class ConfigModel {
 
     public void setSidebarMediaMode(String mode) {
         this.lastMediaMode = mode;
-        notifyListeners();
+        notifyListenersSidebarChange();
         saveConfigFile();
     }
 
     public void setSidebarBrowseMode(String mode) {
         this.lastBrowseMode = mode;
-        notifyListeners();
+        notifyListenersSidebarChange();
         saveConfigFile();
     }
 
     public void setAnimeOrderBy(String orderBy) {
         this.animeOrderBy = orderBy;
-        notifyListeners();
+        notifyListenersAPIChange();
         saveConfigFile();
     }
 
     public void setAnimeStatus(String status) {
         this.animeStatus = status;
-        notifyListeners();
+        notifyListenersAPIChange();
     }
 
     public void setAnimeStartYear(String startYear) {
         this.animeStartYear = startYear;
-        notifyListeners();
+        notifyListenersAPIChange();
     }
 
     public void setAnimeEndYear(String endYear) {
         this.animeEndYear = endYear;
-        notifyListeners();
+        notifyListenersAPIChange();
     }
 
     public void updateAnimeFilters(Map<String, Boolean> newTypeFilters, Map<String, Boolean> newRatingFilters) {
         this.animeTypeFilters = newTypeFilters;
         this.animeRatingFilters = newRatingFilters;
-        notifyListeners();
+        notifyListenersAPIChange();
     }
 
 
@@ -155,28 +154,35 @@ public class ConfigModel {
         this.animeStatus = newSearchFilters.get("Status");
         this.animeStartYear = newSearchFilters.get("Start year");
         this.animeEndYear = newSearchFilters.get("End year");
-        notifyListeners();
+        notifyListenersAPIChange();
     }
 
     public void updateSidebarModes(String mediaMode, String browseMode) {
         this.lastMediaMode = mediaMode;
         this.lastBrowseMode = browseMode;
-        notifyListeners();
+        notifyListenersSidebarChange();
     }
 
     public void addConfigListener(ConfigListener listener) {
         listeners.add(listener);
-        notifyListeners();
+        notifyListenersAPIChange();
+        notifyListenersSidebarChange();
     }
 
     public void removeConfigListener(ConfigListener listener) {
         listeners.remove(listener);
     }
 
-    private void notifyListeners() {
+
+    private void notifyListenersAPIChange() {
         for (ConfigListener listener : listeners) {
             listener.onAnimeTypeAndRatingFiltersUpdated(animeTypeFilters, animeRatingFilters);
             listener.onAnimeSearchFiltersUpdated(animeOrderBy, animeStatus, animeStartYear, animeEndYear);
+        }
+    }
+
+    private void notifyListenersSidebarChange() {
+        for (ConfigListener listener : listeners) {
             listener.onSidebarModesUpdated(lastMediaMode, lastBrowseMode);
         }
     }

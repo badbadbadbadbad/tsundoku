@@ -263,7 +263,6 @@ public class AnimePopupView {
             label.getStyleClass().add("filter-label");
             Label content = new Label(contentText);
             content.getStyleClass().add("filter-label");
-            // VBox propertyBox = new VBox(5, label, content);
             return new VBox(5, label, content);
         };
 

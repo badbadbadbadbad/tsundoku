@@ -9,7 +9,6 @@ import javafx.stage.Screen;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Consumer;
 
 public class SidebarView {
 
@@ -19,10 +18,8 @@ public class SidebarView {
 
     private final List<Button> mediaModeButtons = new ArrayList<>();
     private final List<Button> browseModeButtons = new ArrayList<>();
-    // private String currentMediaMode = "Anime";
-    // private String currentBrowseMode = "Browse";
 
-    private String currentMediaMode; // TODO Inittialize with values from Config
+    private String currentMediaMode;
     private String currentBrowseMode;
 
     public SidebarView(String mediaMode, String browseMode) {
@@ -56,20 +53,20 @@ public class SidebarView {
         browseButton.setId("browse-mode-browse-button");
         logButton.setId("browse-mode-log-button");
 
-
         Collections.addAll(browseModeButtons, browseButton, logButton);
-
-        // Treat them as one component
         HBox browseModeButtonBox = new HBox(browseButton, logButton);
 
 
+        // Media type buttons
         Button gamesButton = createMediaModeButton("Games");
         Button mangaButton = createMediaModeButton("Manga");
         Button animeButton = createMediaModeButton("Anime");
 
+        // Empty space between media types and meta stuff
         Region stretchRegion = new Region();
         VBox.setVgrow(stretchRegion, Priority.ALWAYS);
 
+        // Meta stuff buttons
         Button profileButton = createMediaModeButton("Profile");
         Button settingsButton = createMediaModeButton("Settings");
 
@@ -78,9 +75,9 @@ public class SidebarView {
         return sidebar;
     }
 
+    // TODO Combine button creator functions
     private Button createBrowseModeButton(String label) {
         Button button = new Button(label);
-        // button.setMaxWidth(Double.MAX_VALUE);
         button.getStyleClass().addAll("controls-button", "browse-mode-button");
 
         button.setOnAction(e -> {
