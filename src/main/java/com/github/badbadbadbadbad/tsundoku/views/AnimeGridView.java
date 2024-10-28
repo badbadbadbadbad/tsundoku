@@ -747,30 +747,22 @@ public class AnimeGridView {
         animeBox.setClip(clip);
 
 
-        // Label testLabel = new Label("Testljkahsd;as;lkasd;lkjasdf;lkjasdf;");
+        // Label with anime name to be shown on animeBox hover
         Label testLabel = new Label(anime.getTitle());
-        testLabel.setStyle("-fx-font: 30 arial; -fx-background-color: rgba(0, 0, 0, 0.7); -fx-border-radius: 20;" +
-                "-fx-background-radius: 20; -fx-border-color: lightgray; -fx-border-width: 4px;");
-        testLabel.setMaxHeight(Double.MAX_VALUE);
-        testLabel.setMaxWidth(Double.MAX_VALUE);
-        // testLabel.setMinHeight(0);
-        // testLabel.setMinWidth(0);
-        // testLabel.setPrefWidth(animeBox.getPrefWidth());
-        // testLabel.setPrefHeight(animeBox.getPrefHeight());
-        // VBox.setVgrow(testLabel, Priority.ALWAYS);
-        // HBox.setHgrow(testLabel, Priority.ALWAYS);
         testLabel.setAlignment(Pos.CENTER);
-        testLabel.setTextAlignment(TextAlignment.CENTER);
-        testLabel.setWrapText(true);
-        testLabel.setOpacity(0.0);
+        testLabel.getStyleClass().add("grid-media-box-text");
+        testLabel.setOpacity(0.0); // Seperate out to allow for fade animation
 
 
+        // AnchorPane wrapper to hold the label because JavaFX freaks out with animeBox sizing otherwise
         AnchorPane ap = new AnchorPane();
         ap.setMaxHeight(Double.MAX_VALUE);
         ap.setMaxWidth(Double.MAX_VALUE);
-        ap.setStyle("-fx-border-radius: 20; -fx-background-radius: 20;"); // -fx-border-color: lightgray; -fx-border-width: 1px;
         VBox.setVgrow(ap, Priority.ALWAYS);
         HBox.setHgrow(ap, Priority.ALWAYS);
+        ap.getStyleClass().add("grid-media-box-anchor");
+
+        // We set the anchors to grow two pixels outwards because the animeBox borders look a little aliased otherwise.
         AnchorPane.setBottomAnchor(testLabel, -2.0);
         AnchorPane.setTopAnchor(testLabel, -2.0);
         AnchorPane.setLeftAnchor(testLabel, -2.0);
@@ -780,24 +772,20 @@ public class AnimeGridView {
         ap.getChildren().add(testLabel);
         animeBox.getChildren().add(ap);
 
-        // animeBox.widthProperty().addListener((obs, oldWidth, newWidth) -> testLabel.setPrefWidth(newWidth.doubleValue()));
-        // animeBox.heightProperty().addListener((obs, oldHeight, newHeight) -> testLabel.setPrefHeight(newHeight.doubleValue()));
+
+        // This fixes the different label sizes causing different animeBox sizes.
+        // I don't know why, and I don't care.
+        testLabel.setMaxWidth(0.0);
 
 
-        // animeBox.getChildren().add(testLabel);
+        // Fade events for the label popup
+        FadeTransition fadeIn = new FadeTransition(Duration.seconds(0.2), testLabel);
+        fadeIn.setToValue(1.0);
+        FadeTransition fadeOut = new FadeTransition(Duration.seconds(0.2), testLabel);
+        fadeOut.setToValue(0.0);
+        animeBox.setOnMouseEntered(event -> fadeIn.playFromStart());
+        animeBox.setOnMouseExited(event -> fadeOut.playFromStart());
 
-        animeBox.setMaxWidth(Double.MAX_VALUE);
-        animeBox.setPrefWidth(Region.USE_COMPUTED_SIZE);
-        animeBox.setMinWidth(0);
-
-        testLabel.setMaxHeight(animeBox.getHeight());
-        testLabel.setMaxWidth(animeBox.getWidth());
-        // testLabel.setMinHeight(animeBox.getHeight());
-        // testLabel.setMinWidth(animeBox.getWidth());
-
-
-        animeBox.setOnMouseEntered(event -> testLabel.setOpacity(1.0));
-        animeBox.setOnMouseExited(event -> testLabel.setOpacity(0.0));
 
         animeBox.widthProperty().addListener((obs, oldWidth, newWidth) -> {
             // Platform.runLater needed to trigger layout update post-resizing
@@ -807,30 +795,6 @@ public class AnimeGridView {
                 animeBox.setMinHeight(newHeight);
                 animeBox.setPrefHeight(newHeight);
                 animeBox.setMaxHeight(newHeight);
-
-
-                /*
-                animeBox.setMaxWidth(Double.MAX_VALUE);
-                animeBox.setPrefWidth(Region.USE_COMPUTED_SIZE);
-                animeBox.setMinWidth(0);
-
-                 */
-
-
-
-                /*
-                testLabel.setMaxHeight(animeBox.getHeight());
-                testLabel.setMaxWidth(animeBox.getWidth());
-                testLabel.setMinHeight(animeBox.getHeight());
-                testLabel.setMinWidth(animeBox.getWidth());
-
-                 */
-
-
-
-                // testLabel.setMaxWidth(animeBox.getWidth());
-                // testLabel.setMaxHeight(animeBox.getHeight());
-                // testLabel.setMaxWidth(newWidth.doubleValue());
             });
         });
 

@@ -166,6 +166,23 @@
     -fx-border-width: 1px;
 }
 
+.grid-media-box-anchor {
+    -fx-border-radius: 20;
+    -fx-background-radius: 20;
+}
+
+.grid-media-box-text {
+    -fx-font: 30 arial;
+    -fx-background-color: rgba(0, 0, 0, 0.7);
+    -fx-border-radius: 20;
+    -fx-background-radius: 20;
+    -fx-border-color: lightgray;
+    -fx-border-width: 4px;
+    -fx-padding: 0 10 0 10;
+    -fx-text-alignment: center;
+    -fx-wrap-text: true;
+}
+
 .pagination-button {
     -fx-min-width: 40;
     -fx-max-width: 65;
