@@ -83,24 +83,24 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
 
         switch (mediaMode) {
             case "Anime" -> {
-                AnimeGridView animeGridView = new AnimeGridView(this, apiController, configController); // TODO Give anime grid initial filters
-                gridView = animeGridView.createGridView(stage);
+                AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController); // TODO Give anime grid initial filters
+                gridView = animeGridView.createGridView();
             }
             case "Manga" -> {
-                AnimeGridView animeGridView = new AnimeGridView(this, apiController, configController);
-                gridView = animeGridView.createGridView(stage);
+                AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController);
+                gridView = animeGridView.createGridView();
             }
             case "Games" -> {
-                AnimeGridView animeGridView = new AnimeGridView(this, apiController, configController);
-                gridView = animeGridView.createGridView(stage);
+                AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController);
+                gridView = animeGridView.createGridView();
             }
             case "Profile" -> {
-                AnimeGridView animeGridView = new AnimeGridView(this, apiController, configController);
-                gridView = animeGridView.createGridView(stage);
+                AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController);
+                gridView = animeGridView.createGridView();
             }
             case "Settings" -> {
-                AnimeGridView animeGridView = new AnimeGridView(this, apiController, configController);
-                gridView = animeGridView.createGridView(stage);
+                AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController);
+                gridView = animeGridView.createGridView();
             }
         }
 

@@ -14,16 +14,12 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.geometry.Insets;
-import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.layout.Region;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.text.TextAlignment;
-import javafx.stage.Popup;
-import javafx.stage.PopupWindow;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -36,14 +32,15 @@ import java.util.concurrent.CompletableFuture;
 
 public class AnimeGridView {
 
-    private final double RATIO = 318.0 / 225.0; // The aspect ratio to use for anime images. Close to most cover images.
+    private final double RATIO = 318.0 / 225.0; // The aspect ratio to use for anime images. This doesn't match all exactly, but is close enough.
+
+    private final Stage stage;
     private final GridFilterListener gridFilterListener;
     private final APIRequestListener apiRequestListener;
     private final LoadingBarListener loadingBarListener;
 
-    AnimeListInfo animeListInfo;
     private FlowGridPane animeGrid;
-    private HBox pagination;
+    private HBox paginationButtons;
     private StackPane stackPane;
 
     private String searchMode = "SEASON";  // Changes between SEASON, TOP, and SEARCH depending on last mode selected (so pagination calls "current mode")
@@ -52,21 +49,20 @@ public class AnimeGridView {
     private static final BooleanProperty filtersHidden = new SimpleBooleanProperty(true);
     private boolean apiLock = false;
 
-    private Stage stage;
 
-    public AnimeGridView(LoadingBarListener loadingBarListener, APIRequestListener apiRequestListener, GridFilterListener gridFilterListener) {
+    public AnimeGridView(Stage stage, LoadingBarListener loadingBarListener, APIRequestListener apiRequestListener, GridFilterListener gridFilterListener) {
+        this.stage = stage;
         this.loadingBarListener = loadingBarListener;
         this.apiRequestListener = apiRequestListener;
         this.gridFilterListener = gridFilterListener;
     }
 
 
-    public Region createGridView(Stage stage) {
+    public Region createGridView() {
+
         VBox root = new VBox();
         VBox.setVgrow(root, Priority.ALWAYS);
         HBox.setHgrow(root, Priority.ALWAYS);
-
-        this.stage = stage;
 
 
         // StackPane wrapper to allow for popup functionality when grid element is clicked
@@ -76,17 +72,23 @@ public class AnimeGridView {
         stackPane.getChildren().add(root);
 
 
-        FlowGridPane filters = createFilters(stage);
+        // Controls above the grid
+        FlowGridPane filters = createFilters();
         HBox buttonBox = createButtons();
         HBox searchAndFilterToggleBox = createSearchAndFilterToggle(filters);
 
+        VBox controls = new VBox();
+        controls.getStyleClass().add("content-pane-controls");
+        controls.setMinHeight(Control.USE_PREF_SIZE);
+        controls.getChildren().addAll(searchAndFilterToggleBox, filters, buttonBox);
+
 
         // Blocking call on CompletableFuture for first setup to ensure data is there for display
+        // Together with loading bar animation (not working as well here, could expand later)
         loadingBarListener.animateLoadingBar(50, 0.1);
-        animeListInfo = apiRequestListener.getCurrentAnimeSeason(1).join();
+        AnimeListInfo animeListInfo = apiRequestListener.getCurrentAnimeSeason(1).join();
+        ScrollPane animeGrid = createBrowseGrid(animeListInfo);
         apiLock = true;
-
-        ScrollPane animeGrid = createBrowseGrid(stage, animeListInfo);
 
         PauseTransition pause = new PauseTransition(Duration.seconds(0.1));
         pause.setOnFinished(ev -> {
@@ -99,23 +101,15 @@ public class AnimeGridView {
         pause.play();
 
 
-        VBox controls = new VBox();
-        controls.getStyleClass().add("content-pane-controls");
-        controls.setMinHeight(Control.USE_PREF_SIZE);
-
-
-        controls.getChildren().addAll(searchAndFilterToggleBox, filters, buttonBox);
         root.getChildren().addAll(controls, animeGrid);
-
-
         return stackPane;
     }
 
 
     private HBox createSearchAndFilterToggle(FlowGridPane filters) {
+        // Wrapper
         HBox searchAndModeBox = new HBox();
-        searchAndModeBox.setSpacing(10);
-        searchAndModeBox.setPadding(new Insets(0, 0, 15, 0));
+        searchAndModeBox.getStyleClass().add("search-bar-and-filter-toggle");
 
         // Search bar
         TextField searchBar = new TextField();
@@ -123,6 +117,7 @@ public class AnimeGridView {
         searchBar.setPromptText("Enter query..");
         HBox.setHgrow(searchBar, Priority.ALWAYS);
 
+        // Regex to allow only english alphanumeric, JP / CN / KR characters, and spaces
         searchBar.textProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue.matches("[\\p{IsHan}\\p{IsHiragana}\\p{IsKatakana}\\p{IsHangul}\\p{Alnum} ]*")) {
                 searchString = newValue;
@@ -131,7 +126,7 @@ public class AnimeGridView {
             }
         });
 
-        // Search should trigger on enter press
+        // Search should trigger on enter press (but not when search empty to avoid unnecessary API calls)
         searchBar.setOnAction(event -> {
             if(!apiLock && !searchString.isEmpty()) {
                 searchMode = "SEARCH";
@@ -163,16 +158,16 @@ public class AnimeGridView {
     }
 
 
-    private FlowGridPane createFilters(Stage stage) {
+    private FlowGridPane createFilters() {
         FlowGridPane filtersGrid = new FlowGridPane(2, 3);
         filtersGrid.setHgap(10);
         filtersGrid.setVgap(10);
         filtersGrid.setMaxWidth(Double.MAX_VALUE);
         filtersGrid.setMinHeight(0); // Necessary for fade animation
 
-
-        Screen screen = Screen.getPrimary();
-        double screenWidth = screen.getBounds().getWidth();
+        // We initialize with filters hidden
+        filtersGrid.setMaxHeight(0);
+        filtersGrid.setOpacity(0.0);
 
         // Filters
         VBox orderByFilter = createDropdownFilter("Order by", new String[]{
@@ -180,19 +175,19 @@ public class AnimeGridView {
                 "Rating: Highest", "Rating: Lowest",
                 "Popular: Most", "Popular: Least"}, "Popular: Most");
 
-        VBox startYearFilter = createNumberFilter("Start year");
-        VBox endYearFilter = createNumberFilter("End year");
-
         VBox statusFilter = createDropdownFilter("Status",
                 new String[]{"Any", "Complete", "Airing", "Upcoming"}, "Any");
 
+        VBox startYearFilter = createNumberFilter("Start year");
+        VBox endYearFilter = createNumberFilter("End year");
 
 
         filtersGrid.getChildren().addAll(orderByFilter, statusFilter, startYearFilter, endYearFilter);
 
 
-
         // Dynamically adjust column amount based on window size
+        Screen screen = Screen.getPrimary();
+        double screenWidth = screen.getBounds().getWidth();
         int filtersAmount = filtersGrid.getChildren().size();
 
         ChangeListener<Number> widthListener = (obs, oldWidth, newWidth) -> {
@@ -218,18 +213,7 @@ public class AnimeGridView {
             }
         };
         stage.widthProperty().addListener(widthListener);
-        widthListener.changed(stage.widthProperty(), stage.getWidth(), stage.getWidth());
-
-        // Necessary else Windows doesn't do the height on startup properly
-        // Thanks, Microsoft
-        /*
-        Platform.runLater(() -> {
-            filtersGrid.setMaxHeight(filtersGrid.prefHeight(filtersGrid.getWidth()));
-        });
-         */
-
-        filtersGrid.setMaxHeight(0);
-        filtersGrid.setOpacity(0.0);
+        widthListener.changed(stage.widthProperty(), stage.getWidth(), stage.getWidth()); // Activate once immediately
 
 
         return filtersGrid;
@@ -294,7 +278,7 @@ public class AnimeGridView {
         filtersHidden.addListener((obs, oldValue, newValue) -> {
             textField.setDisable(newValue);
         });
-        textField.setDisable(filtersHidden.get());
+        textField.setDisable(filtersHidden.get()); // Since filters are hidden on startup
 
         return new VBox(5, label, textField);
     }
@@ -417,18 +401,19 @@ public class AnimeGridView {
     }
 
 
-    private ScrollPane createBrowseGrid(Stage stage, AnimeListInfo animeListInfo) {
+    private ScrollPane createBrowseGrid(AnimeListInfo animeListInfo) {
 
-        animeGrid = new FlowGridPane(2, 3);
+        animeGrid = new FlowGridPane(2, 3);  // Default values here shouldn't matter
         animeGrid.setHgap(20);
         animeGrid.setVgap(20);
         animeGrid.setMaxWidth(Double.MAX_VALUE);
 
+        // Load anime grid with grid items
         reloadAnimeGrid(animeListInfo.getAnimeList());
 
+        // Change grid column amount based on window width
         Screen screen = Screen.getPrimary();
         double screenWidth = screen.getBounds().getWidth();
-
         int animesAmount = animeGrid.getChildren().size();
 
         ChangeListener<Number> widthListener = (obs, oldWidth, newWidth) -> {
@@ -457,20 +442,21 @@ public class AnimeGridView {
         widthListener.changed(stage.widthProperty(), stage.getWidth(), stage.getWidth());
 
 
-        pagination = createPagination(animeListInfo.getLastPage());
+        // Pagination element
+        HBox pagination = createPagination(animeListInfo.getLastPage());
+
+
+        // Wrapper around anime grid and pagination
         VBox wrapper = new VBox(10, animeGrid, pagination);
         wrapper.setMaxWidth(Double.MAX_VALUE);
 
 
+        // ScrollPane since grid will usually be too large
         ScrollPane scrollPane = new ScrollPane(wrapper);
         scrollPane.getStyleClass().add("grid-scroll-pane");
-        scrollPane.setFitToWidth(true);
-        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        // VBox.setVgrow(scrollPane, Priority.NEVER);
         VBox.setVgrow(scrollPane, Priority.ALWAYS);
 
-        // Smooth scroll listener
+        // Smooth scroll listener because JavaFX does not hav smooth scrolling..
         // in /util/, SmoothScroll
         new SmoothScroll(scrollPane, wrapper);
 
@@ -479,22 +465,21 @@ public class AnimeGridView {
 
 
     private HBox createPagination(int pages) {
-        int selectedPage = 1;
 
+        // Wrapper (full width HBox)
         HBox pagination = new HBox();
-        pagination.setMinHeight(50);
-        pagination.setMaxHeight(50);
-        pagination.setStyle("-fx-padding: 0 0 10px 0;");
+        pagination.getStyleClass().add("pagination-wrapper");
         pagination.setMaxWidth(Double.MAX_VALUE);
         HBox.setHgrow(pagination, Priority.ALWAYS);
-        pagination.setAlignment(Pos.CENTER);
 
-        HBox paginationButtons = new HBox(10);
-        paginationButtons.setMinHeight(40);
-        paginationButtons.setMaxHeight(40);
-
+        // Wrapper (only the button box)
+        paginationButtons = new HBox(10);
+        paginationButtons.getStyleClass().add("pagination-buttons");
         pagination.getChildren().add(paginationButtons);
-        updatePaginationButtons(paginationButtons, selectedPage, pages);
+
+        // Make the actual buttons
+        updatePaginationButtons(paginationButtons, 1, pages);
+
         return pagination;
     }
 
@@ -553,7 +538,7 @@ public class AnimeGridView {
 
             Platform.runLater(() -> {
                 // Update pagination. Maybe move later? Needs testing
-                updatePaginationButtons(pagination, page, info.getLastPage());
+                updatePaginationButtons(paginationButtons, page, info.getLastPage());
 
                 // Inner runLater for animation end after everything is loaded. Needs testing if inner runLater is needed.
                 Platform.runLater(() -> {

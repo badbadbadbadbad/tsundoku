@@ -61,6 +61,11 @@
     -fx-alignment: center;
 }
 
+.search-bar-and-filter-toggle {
+    -fx-spacing: 10;
+    -fx-padding: 0 0 15 0;
+}
+
 #search-bar {
     -fx-background-color: #333;
     -fx-text-fill: white;
@@ -121,6 +126,9 @@
     -fx-border-color: -content-color;
     -fx-font-size: 4;
     -fx-padding: 0 6px 0 10px; /* Weird padding so left and (right - scrollbar width) look the same */
+    -fx-fit-to-width: true;
+    -fx-vbar-policy: as-needed;
+    -fx-hbar-policy: never;
 }
 
 .scroll-bar:horizontal, .scroll-bar:vertical{
@@ -181,6 +189,18 @@
     -fx-padding: 0 10 0 10;
     -fx-text-alignment: center;
     -fx-wrap-text: true;
+}
+
+.pagination-wrapper {
+    -fx-min-height: 50;
+    -fx-max-height: 50;
+    -fx-padding: 0 0 10 0;
+    -fx-alignment: center;
+}
+
+.pagination-buttons {
+    -fx-min-height: 40;
+    -fx-max-height: 40;
 }
 
 .pagination-button {
