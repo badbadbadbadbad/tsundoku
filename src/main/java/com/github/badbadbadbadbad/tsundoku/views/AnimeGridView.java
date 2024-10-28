@@ -750,7 +750,7 @@ public class AnimeGridView {
         // Label testLabel = new Label("Testljkahsd;as;lkasd;lkjasdf;lkjasdf;");
         Label testLabel = new Label(anime.getTitle());
         testLabel.setStyle("-fx-font: 30 arial; -fx-background-color: rgba(0, 0, 0, 0.7); -fx-border-radius: 20;" +
-                "-fx-background-radius: 20; -fx-border-color: lightgray; -fx-border-width: 3px;");
+                "-fx-background-radius: 20; -fx-border-color: lightgray; -fx-border-width: 4px;");
         testLabel.setMaxHeight(Double.MAX_VALUE);
         testLabel.setMaxWidth(Double.MAX_VALUE);
         // testLabel.setMinHeight(0);
@@ -768,13 +768,13 @@ public class AnimeGridView {
         AnchorPane ap = new AnchorPane();
         ap.setMaxHeight(Double.MAX_VALUE);
         ap.setMaxWidth(Double.MAX_VALUE);
-        ap.setStyle("-fx-border-radius: 20; -fx-background-radius: 20; -fx-border-color: lightgray; -fx-border-width: 1px;");
+        ap.setStyle("-fx-border-radius: 20; -fx-background-radius: 20;"); // -fx-border-color: lightgray; -fx-border-width: 1px;
         VBox.setVgrow(ap, Priority.ALWAYS);
         HBox.setHgrow(ap, Priority.ALWAYS);
-        AnchorPane.setBottomAnchor(testLabel, 2.0);
-        AnchorPane.setTopAnchor(testLabel, 2.0);
-        AnchorPane.setLeftAnchor(testLabel, 2.0);
-        AnchorPane.setRightAnchor(testLabel, 2.0);
+        AnchorPane.setBottomAnchor(testLabel, -2.0);
+        AnchorPane.setTopAnchor(testLabel, -2.0);
+        AnchorPane.setLeftAnchor(testLabel, -2.0);
+        AnchorPane.setRightAnchor(testLabel, -2.0);
 
 
         ap.getChildren().add(testLabel);
@@ -809,17 +809,22 @@ public class AnimeGridView {
                 animeBox.setMaxHeight(newHeight);
 
 
+                /*
                 animeBox.setMaxWidth(Double.MAX_VALUE);
                 animeBox.setPrefWidth(Region.USE_COMPUTED_SIZE);
                 animeBox.setMinWidth(0);
 
+                 */
 
 
 
+                /*
                 testLabel.setMaxHeight(animeBox.getHeight());
                 testLabel.setMaxWidth(animeBox.getWidth());
                 testLabel.setMinHeight(animeBox.getHeight());
                 testLabel.setMinWidth(animeBox.getWidth());
+
+                 */
 
 
 
