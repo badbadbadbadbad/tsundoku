@@ -5,17 +5,19 @@ import com.github.badbadbadbadbad.tsundoku.controllers.APIRequestListener;
 import com.github.badbadbadbadbad.tsundoku.controllers.GridFilterListener;
 import com.github.badbadbadbadbad.tsundoku.controllers.LoadingBarListener;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
+import com.github.badbadbadbadbad.tsundoku.models.AnimeListInfo;
 import com.github.badbadbadbadbad.tsundoku.external.FlowGridPane;
 import com.github.badbadbadbadbad.tsundoku.external.SmoothScroll;
-import com.github.badbadbadbadbad.tsundoku.models.AnimeListInfo;
 import javafx.animation.*;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.value.ChangeListener;
+import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.layout.Region;
@@ -39,6 +41,7 @@ public class AnimeGridView {
     private final APIRequestListener apiRequestListener;
     private final LoadingBarListener loadingBarListener;
 
+    private ScrollPane scrollPane;
     private FlowGridPane animeGrid;
     private HBox paginationButtons;
     private StackPane stackPane;
@@ -87,7 +90,8 @@ public class AnimeGridView {
         // Together with loading bar animation (not working as well here, could expand later)
         loadingBarListener.animateLoadingBar(50, 0.1);
         AnimeListInfo animeListInfo = apiRequestListener.getCurrentAnimeSeason(1).join();
-        ScrollPane animeGrid = createBrowseGrid(animeListInfo);
+        // ScrollPane animeGrid = createBrowseGrid(animeListInfo);
+        this.scrollPane = createBrowseGrid(animeListInfo);
         apiLock = true;
 
         PauseTransition pause = new PauseTransition(Duration.seconds(0.1));
@@ -101,7 +105,10 @@ public class AnimeGridView {
         pause.play();
 
 
-        root.getChildren().addAll(controls, animeGrid);
+        // root.getChildren().addAll(controls, animeGrid);
+        root.getChildren().addAll(controls, scrollPane);
+
+
         return stackPane;
     }
 
@@ -312,6 +319,12 @@ public class AnimeGridView {
         SequentialTransition st = new SequentialTransition(fade, test);
         ParallelTransition pt = new ParallelTransition(cooldown, st);
 
+
+        // TODO Is this right here?
+        pt.setOnFinished(e -> {
+            updateVisibleGridItems(scrollPane);
+        });
+
         pt.play();
     }
 
@@ -343,6 +356,11 @@ public class AnimeGridView {
         ParallelTransition test = new ParallelTransition(move, movePadding);
         SequentialTransition st = new SequentialTransition(test, fade);
         ParallelTransition pt = new ParallelTransition(cooldown, st);
+
+        // TODO Is this right here?
+        pt.setOnFinished(e -> {
+            updateVisibleGridItems(scrollPane);
+        });
 
         pt.play();
     }
@@ -409,7 +427,7 @@ public class AnimeGridView {
         animeGrid.setMaxWidth(Double.MAX_VALUE);
 
         // Load anime grid with grid items
-        reloadAnimeGrid(animeListInfo.getAnimeList());
+        reloadAnimeGridAsync(animeListInfo.getAnimeList()).join();
 
         // Change grid column amount based on window width
         Screen screen = Screen.getPrimary();
@@ -437,6 +455,7 @@ public class AnimeGridView {
 
             animeGrid.setColsCount(cols);
             animeGrid.setRowsCount(rows);
+
         };
         stage.widthProperty().addListener(widthListener);
         widthListener.changed(stage.widthProperty(), stage.getWidth(), stage.getWidth());
@@ -456,11 +475,59 @@ public class AnimeGridView {
         scrollPane.getStyleClass().add("grid-scroll-pane");
         VBox.setVgrow(scrollPane, Priority.ALWAYS);
 
+
+        // New: Try to set non-visible grid items to not render to improve performance on large grids
+        scrollPane.vvalueProperty().addListener((obs, oldValue, newValue) -> {
+            updateVisibleGridItems(scrollPane);
+        });
+
+
+        // Grid item image load / unload trigger when the grid size changes
+        animeGrid.widthProperty().addListener(e -> updateVisibleGridItems(scrollPane));
+        animeGrid.heightProperty().addListener(e -> updateVisibleGridItems(scrollPane));
+
+
+
         // Smooth scroll listener because JavaFX does not hav smooth scrolling..
         // in /util/, SmoothScroll
         new SmoothScroll(scrollPane, wrapper);
 
         return scrollPane;
+    }
+
+
+    // Idea: https://stackoverflow.com/a/30780960
+    // Triggered on scroll, window resize, and filter hide / unhide
+    // Checks for all nodes if they intersect the scrollPane.
+    // Images are only loaded on the animeGrid boxes if they are currently in the viewport.
+    private void updateVisibleGridItems(ScrollPane scrollPane) {
+
+        Bounds paneBounds = scrollPane.localToScene(scrollPane.getBoundsInLocal());
+
+        if (scrollPane.getContent() instanceof Parent) {
+            for (Node n : animeGrid.getChildren()) {
+                Bounds nodeBounds = n.localToScene(n.getBoundsInLocal());
+
+                boolean inViewport = paneBounds.intersects(nodeBounds);
+                String imageUrl = (String) n.getUserData();
+
+                if (inViewport && !n.isVisible()) {
+                    n.setStyle("-fx-background-image: url('" + imageUrl + "');");
+                    n.setVisible(true);
+
+                    // TODO This fade-animation can be removed later, it's for testing right now. Probably expensive. Unsure.
+                    FadeTransition fadeIn = new FadeTransition(Duration.seconds(0.5), n);
+                    fadeIn.setFromValue(0.0);
+                    fadeIn.setToValue(1.0);
+                    fadeIn.play();
+
+                } else if (!inViewport && n.isVisible()) {
+                    n.setVisible(false);
+                    n.setStyle("-fx-background-image: none;");
+                }
+            }
+        }
+
     }
 
 
@@ -478,18 +545,18 @@ public class AnimeGridView {
         pagination.getChildren().add(paginationButtons);
 
         // Make the actual buttons
-        updatePaginationButtons(paginationButtons, 1, pages);
+        updatePaginationButtons(1, pages);
 
         return pagination;
     }
 
 
-    private void updatePaginationButtons(HBox paginationButtons, int selectedPage, int pages) {
+    private void updatePaginationButtons(int selectedPage, int pages) {
         paginationButtons.getChildren().clear();
 
         // Only need "first page" button if it's not already the selected one
         if (selectedPage > 2) {
-            paginationButtons.getChildren().add(createPageButton(1, pages));
+            paginationButtons.getChildren().add(createPageButton(1));
         }
 
         // Low numbers ellipsis button
@@ -499,7 +566,7 @@ public class AnimeGridView {
 
         // Selected page as well as its prev and next
         for (int i = Math.max(1, selectedPage - 1); i <= Math.min(pages, selectedPage + 1); i++) {
-            Button butt = createPageButton(i, pages);
+            Button butt = createPageButton(i);
             if (i == selectedPage) {
                 butt.getStyleClass().add("pagination-button-active");
             }
@@ -514,7 +581,7 @@ public class AnimeGridView {
 
         // Only need "last page" button if it's not already the selected one
         if (selectedPage < pages - 1) {
-            paginationButtons.getChildren().add(createPageButton(pages, pages));
+            paginationButtons.getChildren().add(createPageButton(pages));
         }
     }
 
@@ -527,7 +594,7 @@ public class AnimeGridView {
 
         loadingBarListener.animateLoadingBar(50, 0.2);
 
-        // API call
+        // Async API call
         getPageForCurrentQuery(page).thenAccept(info -> {
 
             // Middle load animation
@@ -538,7 +605,7 @@ public class AnimeGridView {
 
             Platform.runLater(() -> {
                 // Update pagination. Maybe move later? Needs testing
-                updatePaginationButtons(paginationButtons, page, info.getLastPage());
+                updatePaginationButtons(page, info.getLastPage());
 
                 // Inner runLater for animation end after everything is loaded. Needs testing if inner runLater is needed.
                 Platform.runLater(() -> {
@@ -574,22 +641,17 @@ public class AnimeGridView {
         }
     }
 
-    // TODO OLD VERSION, REMOVE OR MAKE BLOCKING FOR INITIAL CALL
-    private void reloadAnimeGrid(List<AnimeInfo> animeList) {
 
-        CompletableFuture.supplyAsync(() -> {
-            List<VBox> animeBoxes = new ArrayList<>();
-            for (AnimeInfo anime : animeList) {
-                animeBoxes.add(createAnimeBox(anime, stackPane));
-            }
-            return animeBoxes;
-        }).thenAccept(animeBoxes -> {
-            Platform.runLater(() -> {
-                animeGrid.getChildren().clear();
-                animeGrid.getChildren().addAll(animeBoxes);
-            });
-        });
-
+    // Make the creation of the grid after the API returns data async so the program doesn't freeze.
+    private CompletableFuture<Void> reloadAnimeGridAsync(List<AnimeInfo> animeList) {
+        return CompletableFuture.supplyAsync(() -> createAnimeGridItems(animeList))
+                .thenAccept(animeBoxes -> {
+                    Platform.runLater(() -> {
+                        animeGrid.getChildren().clear();
+                        animeGrid.getChildren().addAll(animeBoxes);
+                        adjustGridItemHeights(); // Adjust the heights after adding to the scene graph
+                    });
+                });
     }
 
 
@@ -600,18 +662,6 @@ public class AnimeGridView {
             animeBoxes.add(animeBox);
         }
         return animeBoxes;
-    }
-
-
-    private void reloadAnimeGridAsync(List<AnimeInfo> animeList) {
-        CompletableFuture.supplyAsync(() -> createAnimeGridItems(animeList))
-                .thenAccept(animeBoxes -> {
-                    Platform.runLater(() -> {
-                        animeGrid.getChildren().clear();
-                        animeGrid.getChildren().addAll(animeBoxes);
-                        adjustGridItemHeights(); // Adjust the heights after adding to the scene graph
-                    });
-                });
     }
 
 
@@ -628,7 +678,7 @@ public class AnimeGridView {
     }
 
 
-    private Button createPageButton(int page, int pages) {
+    private Button createPageButton(int page) {
         Button pageButton =  new Button(String.valueOf(page));
         pageButton.getStyleClass().add("pagination-button");
 
@@ -647,6 +697,7 @@ public class AnimeGridView {
         Button ellipsisButton =  new Button("...");
         ellipsisButton.getStyleClass().add("pagination-button");
 
+        // On click, turn the ellipsis button into a number input to get to specific pages
         ellipsisButton.setOnAction(event -> {
             TextField pageInputField = createPageInputField(paginationButtons, pages);
             int index = paginationButtons.getChildren().indexOf(ellipsisButton);
@@ -660,20 +711,16 @@ public class AnimeGridView {
 
     private TextField createPageInputField(HBox paginationButtons, int pages) {
         TextField pageInputField = new TextField();
-        pageInputField.setMinWidth(60);
-        pageInputField.setMaxWidth(60);
-        pageInputField.setMinHeight(40);
-        pageInputField.setMaxHeight(40);
-        pageInputField.setStyle("-fx-font-size: 16px;");
+        pageInputField.getStyleClass().add("pagination-input-field");
 
-        // Numbers only regex
+        // Numbers only regex for page input (as pages are always numbers..)
         pageInputField.textProperty().addListener((observable, oldValue, newValue) -> {
             if (!newValue.matches("\\d*")) {
                 pageInputField.setText(newValue.replaceAll("\\D", ""));
             }
         });
 
-        // Focus lost
+        // Handle focus loss just like enter press, invoke the page being called
         pageInputField.focusedProperty().addListener((observable, oldValue, newValue) -> {
             if (!newValue) {
                 handlePageInput(paginationButtons, pageInputField, pages);
@@ -691,14 +738,12 @@ public class AnimeGridView {
         String input = pageInputField.getText();
         int index = paginationButtons.getChildren().indexOf(pageInputField);
 
-        if (index == -1) {
-            return;
-        }
 
-        if (input.isEmpty()) {
+        if (input.isEmpty()) { // If no input, just turn input field back to ellipsis button
             paginationButtons.getChildren().set(index, createEllipsisButton(paginationButtons, pages));
         } else {
             try {
+                // Clamp input to [first page, last page] and handle it instead of throwing the input away
                 int clampedPage = Math.clamp(Integer.parseInt(input), 1, pages);
 
                 if(!apiLock) {
@@ -707,7 +752,7 @@ public class AnimeGridView {
                 }
 
             } catch (NumberFormatException e) {
-                // Number formatting issues _shouldn't_ exist, but provide failsafe anyway
+                // Number formatting issues _shouldn't_ exist to my knowledge, but provide failsafe anyway
                 paginationButtons.getChildren().set(index, createEllipsisButton(paginationButtons, pages));
             }
 
@@ -718,10 +763,13 @@ public class AnimeGridView {
     private VBox createAnimeBox(AnimeInfo anime, StackPane stackPane) {
 
         // Make image into VBox background, CSS cover sizing to look okay
+        // Yes, JavaFX has an Image class, but I could not get it to work properly
         VBox animeBox = new VBox();
         animeBox.setAlignment(Pos.CENTER);
-        animeBox.setStyle("-fx-background-image: url('" + anime.getImageUrl() + "');");
+        // animeBox.setStyle("-fx-background-image: url('" + anime.getImageUrl() + "');");
         animeBox.getStyleClass().add("grid-media-box");
+        animeBox.setUserData(anime.getImageUrl());
+
 
         // Clipping rectangle because JavaFX doesn't have any kind of background image clipping. WHY??
         Rectangle clip = new Rectangle();
@@ -747,6 +795,7 @@ public class AnimeGridView {
         HBox.setHgrow(ap, Priority.ALWAYS);
         ap.getStyleClass().add("grid-media-box-anchor");
 
+
         // We set the anchors to grow two pixels outwards because the animeBox borders look a little aliased otherwise.
         AnchorPane.setBottomAnchor(testLabel, -2.0);
         AnchorPane.setTopAnchor(testLabel, -2.0);
@@ -759,7 +808,7 @@ public class AnimeGridView {
 
 
         // This fixes the different label sizes causing different animeBox sizes.
-        // I don't know why, and I don't care.
+        // I don't know why..
         testLabel.setMaxWidth(0.0);
 
 
@@ -788,6 +837,10 @@ public class AnimeGridView {
             createPopupScreen(anime, stackPane);
         });
 
+
+        // Initialize as non-visible so the scrollpane image loading listener updates it correctly
+        animeBox.setVisible(false);
+
         return animeBox;
     }
 
@@ -801,8 +854,8 @@ public class AnimeGridView {
         HBox.setHgrow(darkBackground, Priority.ALWAYS);
 
         // The actual popup
-        AnimePopupView animePopupView = new AnimePopupView();
-        VBox popupBox = animePopupView.createPopup(anime);
+        AnimePopupView animePopupView = new AnimePopupView(anime);
+        VBox popupBox = animePopupView.createPopup();
 
         // Initially transparent for fade-in effect
         darkBackground.setOpacity(0);

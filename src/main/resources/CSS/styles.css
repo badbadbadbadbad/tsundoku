@@ -171,7 +171,7 @@
 
     /* Experiment with borders more later */
     -fx-border-color: lightgray;
-    -fx-border-width: 1px;
+    -fx-border-width: 2px;
 }
 
 .grid-media-box-anchor {
@@ -180,15 +180,15 @@
 }
 
 .grid-media-box-text {
-    -fx-font: 30 arial;
-    -fx-background-color: rgba(0, 0, 0, 0.7);
-    -fx-border-radius: 20;
-    -fx-background-radius: 20;
-    -fx-border-color: lightgray;
-    -fx-border-width: 4px;
-    -fx-padding: 0 10 0 10;
+    -fx-font-size: 25;
     -fx-text-alignment: center;
     -fx-wrap-text: true;
+    -fx-background-color: rgba(0, 0, 0, 0.8);
+    -fx-border-radius: 20;
+    -fx-background-radius: 20;
+    -fx-border-color: goldenrod;
+    -fx-border-width: 4px;
+    -fx-padding: 0 10 0 10;
 }
 
 .pagination-wrapper {
@@ -214,6 +214,15 @@
     -fx-font-size: 16px;
 }
 
+.pagination-input-field {
+    -fx-min-width: 60;
+    -fx-max-width: 60;
+    -fx-min-height: 40;
+    -fx-max-height: 40;
+    -fx-font-size: 16;
+    -fx-alignment: center;
+}
+
 .pagination-button-active {
     -fx-background-color: goldenrod;
 }
@@ -226,6 +235,7 @@
     -fx-background-color: -sidebar-color;
     -fx-border-radius: 10;
     -fx-background-radius: 10;
+    -fx-alignment: center;
 }
 
 .grid-media-popup-title {

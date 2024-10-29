@@ -19,26 +19,38 @@ import java.util.function.BiFunction;
 
 public class AnimePopupView {
     double RATIO = 318.0 / 225.0; // The aspect ratio to use for anime images. Close to most cover images.
+    private final VBox popupBox;
+    private final AnimeInfo anime;
 
-    public VBox createPopup(AnimeInfo anime) {
-        VBox popupBox = new VBox();
+    public AnimePopupView(AnimeInfo anime) {
+        this.popupBox = new VBox();
+        this.anime = anime;
+    }
+
+    public VBox createPopup() {
+        final double screenWidth = Screen.getPrimary().getVisualBounds().getWidth();
+        final double screenHeight = Screen.getPrimary().getVisualBounds().getHeight();
+
+        // Full popup container
         popupBox.getStyleClass().add("grid-media-popup");
-        popupBox.setMinWidth(Screen.getPrimary().getVisualBounds().getWidth() * 0.35);
-        popupBox.setMaxWidth(Screen.getPrimary().getVisualBounds().getWidth() * 0.35);
-        popupBox.setMinHeight(Screen.getPrimary().getVisualBounds().getHeight() * 0.5);
-        popupBox.setMaxHeight(Screen.getPrimary().getVisualBounds().getHeight() * 0.5);
-        popupBox.setAlignment(Pos.CENTER);
+        popupBox.setMinWidth(screenWidth * 0.35);
+        popupBox.setMaxWidth(screenWidth * 0.35);
+        popupBox.setMinHeight(screenHeight * 0.5);
+        popupBox.setMaxHeight(screenHeight * 0.5);
 
-        Label title = createPopupTitle(anime, popupBox);
-        HBox contentWrapper = createPopupContent(anime, popupBox);
+        // Title
+        Label title = createPopupTitle();
+
+        // Remaining content
+        HBox contentWrapper = createPopupContent();
 
         popupBox.getChildren().addAll(title, contentWrapper);
 
         return popupBox;
     }
 
-    private Label createPopupTitle(AnimeInfo anime, VBox popupBox) {
-        // Title
+
+    private Label createPopupTitle() {
         Label titleLabel = new Label(anime.getTitle());
         titleLabel.setMaxWidth(Double.MAX_VALUE);
         titleLabel.setMinHeight(popupBox.getMaxHeight() * 0.1);
@@ -53,6 +65,7 @@ public class AnimePopupView {
 
         return titleLabel;
     }
+
 
     private void adjustFontSizeToContainer(Label label, double containerWidth, double minFontSize) {
         Font font = label.getFont();
@@ -71,27 +84,29 @@ public class AnimePopupView {
         label.setFont(Font.font(fontFamily, fontSize));
     }
 
-    private HBox createPopupContent(AnimeInfo anime, VBox popupBox) {
+
+    private HBox createPopupContent() {
         HBox contentWrapper = new HBox();
         HBox.setHgrow(contentWrapper, Priority.ALWAYS);
         VBox.setVgrow(contentWrapper, Priority.ALWAYS);
 
-        VBox leftContent = createLeftPopupContent(anime, popupBox);
-        VBox rightContent = createRightPopupContent(anime);
+        VBox leftContent = createLeftPopupContent();
+        VBox rightContent = createRightPopupContent();
 
         contentWrapper.getChildren().addAll(leftContent, rightContent);
 
         return contentWrapper;
     }
 
-    private VBox createLeftPopupContent(AnimeInfo anime, VBox popupBox) {
+
+    private VBox createLeftPopupContent() {
         VBox imageAndSelfStatsWrapper = new VBox();
         VBox.setVgrow(imageAndSelfStatsWrapper, Priority.ALWAYS);
         imageAndSelfStatsWrapper.setMinWidth(popupBox.getMaxWidth() * 0.3);
         imageAndSelfStatsWrapper.setMaxWidth(popupBox.getMaxWidth() * 0.3);
         imageAndSelfStatsWrapper.getStyleClass().add("grid-media-popup-left");
 
-        VBox image = createCoverImage(anime, imageAndSelfStatsWrapper);
+        VBox image = createCoverImage(imageAndSelfStatsWrapper);
         ComboBox<String> status = createStatusBox();
         HBox rating = createRatingBox();
         HBox progress = createProgressTracker(0, "episodes");
@@ -101,7 +116,8 @@ public class AnimePopupView {
         return imageAndSelfStatsWrapper;
     }
 
-    private VBox createCoverImage(AnimeInfo anime, VBox wrapper) {
+
+    private VBox createCoverImage(VBox wrapper) {
         VBox imageBox = new VBox();
         imageBox.setStyle("-fx-background-image: url('" + anime.getImageUrl() + "');");
         imageBox.getStyleClass().add("grid-media-box");
@@ -125,6 +141,7 @@ public class AnimePopupView {
 
         return imageBox;
     }
+
 
     private ComboBox<String> createStatusBox() {
         ComboBox<String> status = new ComboBox<>();
@@ -193,7 +210,6 @@ public class AnimePopupView {
         });
 
 
-
         // The text. Replace "<X>" with total episode / chapter / volume count later.
         Label progressLabel = new Label(" / <X> " + unit);
         progressLabel.setStyle("-fx-text-fill: white");
@@ -206,23 +222,23 @@ public class AnimePopupView {
         return progressTracker;
     }
 
-    private VBox createRightPopupContent(AnimeInfo anime) {
+    private VBox createRightPopupContent() {
         VBox metaStatsAndSaveWrapper = new VBox();
         VBox.setVgrow(metaStatsAndSaveWrapper, Priority.ALWAYS);
         HBox.setHgrow(metaStatsAndSaveWrapper, Priority.ALWAYS);
         metaStatsAndSaveWrapper.getStyleClass().add("grid-media-popup-right");
 
-        ScrollPane synopsis = createSynopsis(anime.getSynopsis());
-        FlowGridPane metaInfo = createMetaInfo(anime);
+        ScrollPane synopsis = createSynopsis();
+        FlowGridPane metaInfo = createMetaInfo();
         HBox saveButton = createSaveButton(metaStatsAndSaveWrapper);
 
         metaStatsAndSaveWrapper.getChildren().addAll(metaInfo, synopsis, saveButton);
         return metaStatsAndSaveWrapper;
     }
 
-    private ScrollPane createSynopsis(String synopsis) {
+    private ScrollPane createSynopsis() {
 
-        Label synopsisLabel = new Label(synopsis);
+        Label synopsisLabel = new Label(anime.getSynopsis());
         synopsisLabel.setWrapText(true);
         synopsisLabel.setStyle("-fx-text-fill: white; -fx-font-size: 16;");
         VBox content = new VBox(synopsisLabel);
@@ -245,7 +261,7 @@ public class AnimePopupView {
 
 
 
-    private FlowGridPane createMetaInfo(AnimeInfo anime) {
+    private FlowGridPane createMetaInfo() {
         FlowGridPane metaInfo = new FlowGridPane(3, 2);
         metaInfo.setHgap(20);
         metaInfo.setVgap(20);
