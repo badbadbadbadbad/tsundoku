@@ -69,15 +69,16 @@ public class Initializer {
 
             // Anime types
             Map<String, Boolean> animeTypeFilters = new HashMap<>();
-            animeTypeFilters.put("tv", true);
-            animeTypeFilters.put("movie", true);
-            animeTypeFilters.put("ova", true);
-            animeTypeFilters.put("special", true);
-            animeTypeFilters.put("ona", true);
-            animeTypeFilters.put("music", false);
-            animeTypeFilters.put("cm", false);
-            animeTypeFilters.put("pv", false);
-            animeTypeFilters.put("tv special", true);
+            animeTypeFilters.put("TV", true);
+            animeTypeFilters.put("Movie", true);
+            animeTypeFilters.put("OVA", true);
+            animeTypeFilters.put("Special", true);
+            animeTypeFilters.put("ONA", true);
+            animeTypeFilters.put("Music", false);
+            animeTypeFilters.put("CM", false);
+            animeTypeFilters.put("PV", false);
+            animeTypeFilters.put("TV Special", false);
+            animeTypeFilters.put("Not yet provided", false);
 
             // Anime age ratings
             Map<String, Boolean> animeRatingFilters = new HashMap<>();
@@ -87,7 +88,7 @@ public class Initializer {
             animeRatingFilters.put("R17+", true);
             animeRatingFilters.put("R+", false);
             animeRatingFilters.put("Rx", false);
-            animeRatingFilters.put("Not yet rated", true);
+            animeRatingFilters.put("Not yet provided", true);
 
             // Anime search filters
             Map<String, String> animeSearchFilters = new HashMap<>();
@@ -131,9 +132,23 @@ public class Initializer {
                 + ");";
 
         String sqlCreateAnimeTable = "CREATE TABLE IF NOT EXISTS anime ("
-                + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                + "name TEXT NOT NULL, "
-                + "status TEXT NOT NULL"
+                + "id INTEGER PRIMARY KEY, "
+                + "ownRating TEXT, "
+                + "ownStatus TEXT, "
+                + "episodesProgress INTEGER, "
+                + "title TEXT, "
+                + "titleJapanese TEXT, "
+                + "titleEnglish TEXT, "
+                + "imageUrl TEXT, "
+                + "publicationStatus TEXT, "
+                + "episodesTotal INTEGER, "
+                + "source TEXT, "
+                + "ageRating TEXT, "
+                + "synopsis TEXT, "
+                + "release TEXT, "
+                + "studios TEXT, "
+                + "type TEXT, "
+                + "lastUpdate TEXT DEFAULT CURRENT_DATE"
                 + ");";
 
         try (Connection conn = DriverManager.getConnection(url);

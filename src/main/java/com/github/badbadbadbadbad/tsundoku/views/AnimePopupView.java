@@ -1,11 +1,14 @@
 package com.github.badbadbadbadbad.tsundoku.views;
 
+import com.github.badbadbadbadbad.tsundoku.controllers.PopupListener;
 import com.github.badbadbadbadbad.tsundoku.external.FlowGridPane;
 import com.github.badbadbadbadbad.tsundoku.external.SmoothScroll;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
@@ -19,12 +22,18 @@ import java.util.function.BiFunction;
 
 public class AnimePopupView {
     double RATIO = 318.0 / 225.0; // The aspect ratio to use for anime images. Close to most cover images.
-    private final VBox popupBox;
-    private final AnimeInfo anime;
 
-    public AnimePopupView(AnimeInfo anime) {
+    private final PopupListener popupListener;
+    private final AnimeInfo anime;
+    private final VBox darkBackground;              // The background surrounding the popup. Needed to call the destruction event.
+
+    private final VBox popupBox;
+
+    public AnimePopupView(AnimeInfo anime, PopupListener popupListener, VBox darkBackground) {
         this.popupBox = new VBox();
+        this.popupListener = popupListener;
         this.anime = anime;
+        this.darkBackground = darkBackground;
     }
 
     public VBox createPopup() {
@@ -109,7 +118,7 @@ public class AnimePopupView {
         VBox image = createCoverImage(imageAndSelfStatsWrapper);
         ComboBox<String> status = createStatusBox();
         HBox rating = createRatingBox();
-        HBox progress = createProgressTracker(0, "episodes");
+        HBox progress = createProgressTracker("episodes");
 
         imageAndSelfStatsWrapper.getChildren().addAll(image, status, rating, progress);
 
@@ -145,16 +154,39 @@ public class AnimePopupView {
 
     private ComboBox<String> createStatusBox() {
         ComboBox<String> status = new ComboBox<>();
-        status.getItems().add("Untracked");
-        status.setValue("Untracked");
         status.setMinHeight(30);
         status.setMaxHeight(30);
         status.setMaxWidth(Double.MAX_VALUE);
         VBox.setVgrow(status, Priority.ALWAYS);
         status.setStyle("-fx-background-radius: 10;");
+        // Colors for the future:
+        // Untracked: Grey
+        // Backlog: Tsundoku gold (goldenrod)
+        // In progress: Blue?
+        // Completed: Green
+        // Paused: Blue?
+        // Dropped: Red
+
+        // Always possible
+        status.getItems().addAll("Untracked", "Backlog");
+
+        // Can be completed as long as it finished releasing. Include "Not yet provided" for entries with missing data
+        if (anime.getPublicationStatus().equals("Complete") || anime.getPublicationStatus().equals("Not yet provided"))
+            status.getItems().add("Completed");
+
+        // Can be watched as long as it started releasing. Include "Not yet provided" for entries with missing data
+        if (!anime.getPublicationStatus().equals("Upcoming"))
+            status.getItems().addAll("In progress", "Paused", "Dropped");
+
+
+        status.setValue("Untracked");
+        anime.setOwnStatus("Untracked");
+
+        status.setOnAction(e -> anime.setOwnStatus(status.getValue()));
 
         return status;
     }
+
 
     private HBox createRatingBox() {
         HBox rating = new HBox();
@@ -166,15 +198,15 @@ public class AnimePopupView {
 
         Button heartButton = new Button();
         heartButton.setGraphic(new FontIcon(Dashicons.HEART));
-        heartButton.getStyleClass().addAll("ratings-button", "ikonli-heart-active");
+        heartButton.getStyleClass().addAll("ratings-button", "ikonli-heart-inactive", "heart");
 
         Button thumbsUpButton = new Button();
         thumbsUpButton.setGraphic(new FontIcon(FluentUiFilledMZ.THUMB_LIKE_24));
-        thumbsUpButton.getStyleClass().addAll("ratings-button", "ikonli-thumb-active");
+        thumbsUpButton.getStyleClass().addAll("ratings-button", "ikonli-thumb-inactive", "like");
 
         Button thumbsDownButton = new Button();
         thumbsDownButton.setGraphic(new FontIcon(FluentUiFilledMZ.THUMB_DISLIKE_24));
-        thumbsDownButton.getStyleClass().addAll("ratings-button", "ikonli-thumb-active");
+        thumbsDownButton.getStyleClass().addAll("ratings-button", "ikonli-thumb-inactive", "dislike");
 
         HBox.setHgrow(heartButton, Priority.ALWAYS);
         HBox.setHgrow(thumbsUpButton, Priority.ALWAYS);
@@ -185,10 +217,53 @@ public class AnimePopupView {
 
         rating.getChildren().addAll(heartButton, thumbsUpButton, thumbsDownButton);
 
+        heartButton.setOnAction(event -> handleRatingButtonClick(heartButton, "ikonli-heart-active", thumbsUpButton, thumbsDownButton));
+        thumbsUpButton.setOnAction(event -> handleRatingButtonClick(thumbsUpButton, "ikonli-thumb-active", heartButton, thumbsDownButton));
+        thumbsDownButton.setOnAction(event -> handleRatingButtonClick(thumbsDownButton, "ikonli-thumb-active", heartButton, thumbsUpButton));
+
+
+        anime.setOwnRating("Unscored");
+
         return rating;
     }
 
-    private HBox createProgressTracker(int progressValue, String unit) {
+    // Rework this a bit more in the future when sure of color scheme
+    private void handleRatingButtonClick(Button clickedButton, String activeClass, Button... otherButtons) {
+
+        // Set all rating buttons to unlicked state
+        for (Button button : otherButtons) {
+            if (button.getStyleClass().contains("ikonli-heart-active")) {
+                button.getStyleClass().remove("ikonli-heart-active");
+                button.getStyleClass().add("ikonli-heart-inactive");
+            } else if (button.getStyleClass().contains("ikonli-thumb-active")) {
+                button.getStyleClass().remove("ikonli-thumb-active");
+                button.getStyleClass().add("ikonli-thumb-inactive");
+            }
+
+        }
+
+        // Set clicked button to clicked state
+        if (clickedButton.getStyleClass().contains("ikonli-heart-inactive")) {
+            clickedButton.getStyleClass().remove("ikonli-heart-inactive");
+            clickedButton.getStyleClass().add(activeClass);
+        } else if (clickedButton.getStyleClass().contains("ikonli-thumb-inactive")) {
+            clickedButton.getStyleClass().remove("ikonli-thumb-inactive");
+            clickedButton.getStyleClass().add(activeClass);
+        }
+
+        // Update anime data with clicked state
+        if (clickedButton.getStyleClass().contains("heart")) {
+            anime.setOwnRating("Heart");
+        } else if (clickedButton.getStyleClass().contains("like")) {
+            anime.setOwnRating("Like");
+        } else if (clickedButton.getStyleClass().contains("dislike")) {
+            anime.setOwnRating("Dislike");
+        }
+
+    }
+
+
+    private HBox createProgressTracker(String unit) {
         // Wrapper
         HBox progressTracker = new HBox();
         progressTracker.setMinHeight(30);
@@ -197,21 +272,33 @@ public class AnimePopupView {
         VBox.setVgrow(progressTracker, Priority.ALWAYS);
 
         // Input for current progress.
-        TextField numberInput = new TextField(String.valueOf(progressValue));
+        TextField numberInput = new TextField(String.valueOf(0));
         numberInput.setMinHeight(30);
         numberInput.setMaxHeight(30);
         numberInput.setStyle("-fx-background-radius: 10; -fx-border-radius: 10;");
         HBox.setHgrow(numberInput, Priority.ALWAYS);
 
+        anime.setEpisodesProgress(0);
+
         numberInput.textProperty().addListener((observable, oldValue, newValue) -> {
             if (!newValue.matches("\\d*")) {
                 numberInput.setText(newValue.replaceAll("\\D", ""));
             }
+
+            int number;
+            if (numberInput.getText().equals("")) // Interpret empty field as "0"
+                number = 0;
+            else
+                number = Integer.parseInt(numberInput.getText());
+
+            if (number > anime.getEpisodesTotal()) // Clamp value to at most the total amount of episodes
+                number = anime.getEpisodesTotal();
+
+            anime.setEpisodesProgress(number);
         });
 
 
-        // The text. Replace "<X>" with total episode / chapter / volume count later.
-        Label progressLabel = new Label(" / <X> " + unit);
+        Label progressLabel = new Label(" / " + anime.getEpisodesTotal() + " " + unit);
         progressLabel.setStyle("-fx-text-fill: white");
         progressLabel.setMinHeight(30);
         progressLabel.setMaxHeight(30);
@@ -221,6 +308,7 @@ public class AnimePopupView {
         progressTracker.getChildren().addAll(numberInput, progressLabel);
         return progressTracker;
     }
+
 
     private VBox createRightPopupContent() {
         VBox metaStatsAndSaveWrapper = new VBox();
@@ -235,6 +323,7 @@ public class AnimePopupView {
         metaStatsAndSaveWrapper.getChildren().addAll(metaInfo, synopsis, saveButton);
         return metaStatsAndSaveWrapper;
     }
+
 
     private ScrollPane createSynopsis() {
 
@@ -260,7 +349,6 @@ public class AnimePopupView {
     }
 
 
-
     private FlowGridPane createMetaInfo() {
         FlowGridPane metaInfo = new FlowGridPane(3, 2);
         metaInfo.setHgap(20);
@@ -284,7 +372,7 @@ public class AnimePopupView {
 
         metaInfo.getChildren().addAll(
                 createPropertyBox.apply("Release", anime.getRelease()),
-                createPropertyBox.apply("Total Episodes", anime.getEpisodesTotal()),
+                createPropertyBox.apply("Total Episodes", String.valueOf(anime.getEpisodesTotal())),
                 createPropertyBox.apply("Publication Status", anime.getPublicationStatus()),
                 createPropertyBox.apply("Source", anime.getSource()),
                 createPropertyBox.apply("Age Rating", anime.getAgeRating()),
@@ -308,6 +396,18 @@ public class AnimePopupView {
         saveButtonWrapper.setAlignment(Pos.CENTER_RIGHT);
         saveButton.getStyleClass().add("controls-button");
         saveButton.prefHeightProperty().bind(saveButtonWrapper.heightProperty().subtract(10));
+
+
+        // Call the same popup destruction as clicking the darkener around the popup does
+        saveButton.setOnAction(e -> {
+
+            // TODO Activate when implemented..
+            // popupListener.onAnimeSaveButtonPressed(this.anime);
+
+            // Destroy darkener background and popup after invoking changes saved
+            darkBackground.fireEvent(new MouseEvent(MouseEvent.MOUSE_CLICKED, 0, 0, 0, 0, MouseButton.PRIMARY, 1,
+                true, true, true, true, true, true, true, true, true, true, null));
+        });
 
         saveButtonWrapper.getChildren().add(saveButton);
         return saveButtonWrapper;

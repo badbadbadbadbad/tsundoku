@@ -138,32 +138,58 @@ public class AnimeAPIModel {
         if (dataArray.isArray()) {
             for (JsonNode animeNode : dataArray) {
 
+                // ID, guaranteed to be an existing integer
                 int id = animeNode.get("mal_id").asInt();
-                String imageUrl = animeNode.get("images").get("jpg").get("large_image_url").asText();
-                // String imageUrl = animeNode.get("images").get("jpg").get("image_url").asText();
-                String publicationStatus = animeNode.get("status").asText();
-                String source = animeNode.get("source").asText();
-                String synopsis = animeNode.get("synopsis").asText();
-                String animeType = animeNode.get("type").asText().toLowerCase();
 
+                // Image URL, String or null
+                String imageUrl = animeNode.get("images").get("jpg").get("large_image_url").asText();
+                if (imageUrl.equals("null"))
+                    imageUrl = "Not yet provided";
+
+                // Publication status, enum of "Finished Airing", "Currently Airing", "Not yet aired" or null
+                String publicationStatusFull = animeNode.get("status").asText();
+                String publicationStatus = (publicationStatusFull.equals("null")) ? "Not yet provided" :
+                        publicationStatusFull.replace("Finished Airing", "Complete")
+                                .replace("Currently Airing", "Airing")
+                                .replace("Not yet aired", "Upcoming");
+
+                // Source, String or null
+                String source = animeNode.get("source").asText();
+                if (source.equals("null"))
+                    source = "Not yet provided";
+
+                // Synopsis, String or null
+                String synopsis = animeNode.get("synopsis").asText();
+                if (synopsis.equals("null"))
+                    synopsis = "Not yet provided";
+
+                // Type of anime, enum of "TV", "Movie", "OVA", "Special", "ONA", "Music", "CM", "PV", "TV Special" or null
+                String animeType = animeNode.get("type").asText();
+                if (animeType.equals("null"))
+                    animeType = "Not yet provided";
+
+                // Release season + year. MAL is bad at filling the data in here, so we have to attempt to calculate it from a few fields.
+                // Ends up as a "<Season> <Year>" string, like "Winter 2023", or "Not yet provided"
                 String releaseSeason = animeNode.get("season").asText();
                 int releaseYear = animeNode.get("year").asInt();
-                String release;
-                if (releaseSeason.equals("null") || releaseYear == 0) {
-                    release = "Not yet provided";
-                } else {
-                    release = releaseSeason.substring(0, 1).toUpperCase() + releaseSeason.substring(1) + " " + releaseYear;
-                }
+                int releaseMonthFromProp = animeNode.get("aired").get("prop").get("from").get("month").asInt();
+                int releaseYearFromProp = animeNode.get("aired").get("prop").get("from").get("year").asInt();
+                String release = calculateReleaseSeason(releaseSeason, releaseYear, releaseMonthFromProp, releaseYearFromProp);
 
-                String episodesTotal = animeNode.get("episodes").asText();
-                episodesTotal = episodesTotal.equals("null") ? "Not yet known" : episodesTotal;
+                // Total amount of episodes. "1" for movies. Apparently this can be null, so we just set it to 1 as an ugly base case for those.
+                int episodesTotal = animeNode.get("episodes").asInt();
+                if (episodesTotal == 0)
+                    episodesTotal = 1;
 
+                // List of studios involved in anime creation, we comma-seperate it.
+                // Not sure if object can be empty, so if no studios are provided, set to "Not yet provided".
                 List<String> studioNames = new ArrayList<>();
                 animeNode.get("studios").forEach(studio -> studioNames.add(studio.get("name").asText()));
-                String studios = String.join(", ", studioNames);
+                String studios = studioNames.isEmpty() ? "Not yet provided" : String.join(", ", studioNames);
 
+                // Age rating. Wordy enum of values, so we shorten them. Can also be null, which we turn to "Not yet provided".
                 String ageRatingFull = animeNode.get("rating").asText();
-                String ageRating = (ageRatingFull.equals("null")) ? "Not yet rated" :
+                String ageRating = (ageRatingFull.equals("null")) ? "Not yet provided" :
                         ageRatingFull.replace("G - All Ages", "G")
                         .replace("PG - Children", "PG")
                         .replace("PG-13 - Teens 13 or older", "PG13")
@@ -171,22 +197,23 @@ public class AnimeAPIModel {
                         .replace("R+ - Mild Nudity", "R+")
                         .replace("Rx - Hentai", "Rx");
 
-                String title = null;
-                String titleJapanese = "None provided";
-                String titleEnglish = "None provided";
+                // Titles. Note that JP and EN titles may not exist, hence the default case for them.
+                // The "normal" title (Roumaji in MAL) _should_ always exist, but we still provide a dumb base case because Jikan API is unclear.
+                String title = "No title provided";
+                String titleJapanese = "Not yet provided";
+                String titleEnglish = "Not yet provided";
                 for (JsonNode titleNode : animeNode.get("titles")) {
                     String titleType = titleNode.get("type").asText();
                     String titleText = titleNode.get("title").asText();
 
-                    if ("Default".equals(titleType)) {
+                    if (titleType.equals("Default")) {
                         title = titleText;
-                    } else if ("Japanese".equals(titleType)) {
+                    } else if (titleType.equals("Japanese")) {
                         titleJapanese = titleText;
-                    } else if ("English".equals(titleType)) {
+                    } else if (titleType.equals("English")) {
                         titleEnglish = titleText;
                     }
                 }
-
 
                 AnimeInfo anime = new AnimeInfo(id, title, titleJapanese, titleEnglish, imageUrl, publicationStatus,
                         episodesTotal, source, ageRating, synopsis, release, studios, animeType);
@@ -198,6 +225,41 @@ public class AnimeAPIModel {
 
         List<AnimeInfo> filteredAnimeList = filterByTypeAndRating(animeList);
         return new AnimeListInfo(removeDuplicates(filteredAnimeList), lastPage);
+    }
+
+
+    // MAL data can be pretty decroded. This attempts to use provided release timings to get a usable "Season + Year" string from it.
+    private String calculateReleaseSeason(String releaseSeason, int releaseYear, int releaseMonthFromProp, int releaseYearFromProp) {
+        String release;
+
+        // If the releaseSeason and releaseYear are provided, just use them
+        if (!(releaseSeason.equals("null")) && !(releaseYear == 0)) {
+            release = releaseSeason.substring(0, 1).toUpperCase() + releaseSeason.substring(1) + " " + releaseYear;
+        }
+
+        // If they are not provided, the "aired" field sometimes contains month and year of airing
+        else if (!(releaseMonthFromProp == 0) && !(releaseYearFromProp == 0)) {
+
+            // This is _generally_ how seasons are split by months.
+            if (releaseMonthFromProp < 4) {
+                releaseSeason = "Winter";
+            } else if (releaseMonthFromProp < 7) {
+                releaseSeason = "Spring";
+            } else if (releaseMonthFromProp < 10) {
+                releaseSeason = "Summer";
+            } else {
+                releaseSeason = "Fall";
+            }
+
+            release = releaseSeason + " " + releaseYearFromProp;
+        }
+
+        // If both methods fail, then we just accept the data sucks here
+        else {
+            release = "Not yet provided";
+        }
+
+        return release;
     }
 
 

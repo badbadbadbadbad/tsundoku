@@ -261,8 +261,14 @@
     -fx-border: none;
 }
 
-.ikonli-inactive .ikonli-font-icon {
+
+.ikonli-heart-inactive .ikonli-font-icon {
     -fx-icon-color: gray;
+    -fx-icon-size: 24px;
+}
+
+.ikonli-heart-inactive .ikonli-font-icon:hover {
+    -fx-icon-color: rgba(166, 165, 164, 0.8); /* brighter pink: rgba(255, 0, 111, 0.5) */
     -fx-icon-size: 24px;
 }
 
@@ -271,10 +277,23 @@
     -fx-icon-size: 24px;
 }
 
+.ikonli-thumb-inactive .ikonli-font-icon {
+    -fx-icon-color: gray;
+    -fx-icon-size: 24px;
+}
+
+.ikonli-thumb-inactive .ikonli-font-icon:hover {
+    -fx-icon-color: rgba(166, 165, 164, 0.8); /* goldenrod: 218, 165, 32*/
+    -fx-icon-size: 24px;
+}
+
 .ikonli-thumb-active .ikonli-font-icon {
     -fx-icon-color: goldenrod;
     -fx-icon-size: 24px;
 }
+
+
+
 
 .grid-media-popup-right {
     -fx-border-color: red;

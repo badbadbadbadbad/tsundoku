@@ -109,6 +109,7 @@ public class ConfigModel {
         }
     }
 
+
     public void setSidebarMediaMode(String mode) {
         this.lastMediaMode = mode;
         notifyListenersSidebarChange();

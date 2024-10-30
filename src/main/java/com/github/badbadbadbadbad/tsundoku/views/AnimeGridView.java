@@ -4,6 +4,7 @@ package com.github.badbadbadbadbad.tsundoku.views;
 import com.github.badbadbadbadbad.tsundoku.controllers.APIRequestListener;
 import com.github.badbadbadbadbad.tsundoku.controllers.GridFilterListener;
 import com.github.badbadbadbadbad.tsundoku.controllers.LoadingBarListener;
+import com.github.badbadbadbadbad.tsundoku.controllers.PopupListener;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeListInfo;
 import com.github.badbadbadbadbad.tsundoku.external.FlowGridPane;
@@ -22,6 +23,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.layout.Region;
 import javafx.scene.shape.Rectangle;
+import javafx.stage.Popup;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -40,6 +42,7 @@ public class AnimeGridView {
     private final GridFilterListener gridFilterListener;
     private final APIRequestListener apiRequestListener;
     private final LoadingBarListener loadingBarListener;
+    private final PopupListener popupListener;
 
     private ScrollPane scrollPane;
     private FlowGridPane animeGrid;
@@ -53,11 +56,12 @@ public class AnimeGridView {
     private boolean apiLock = false;
 
 
-    public AnimeGridView(Stage stage, LoadingBarListener loadingBarListener, APIRequestListener apiRequestListener, GridFilterListener gridFilterListener) {
+    public AnimeGridView(Stage stage, LoadingBarListener loadingBarListener, APIRequestListener apiRequestListener, GridFilterListener gridFilterListener, PopupListener popupListener) {
         this.stage = stage;
         this.loadingBarListener = loadingBarListener;
         this.apiRequestListener = apiRequestListener;
         this.gridFilterListener = gridFilterListener;
+        this.popupListener = popupListener;
     }
 
 
@@ -509,10 +513,10 @@ public class AnimeGridView {
                 Bounds nodeBounds = n.localToScene(n.getBoundsInLocal());
 
                 boolean inViewport = paneBounds.intersects(nodeBounds);
-                String imageUrl = (String) n.getUserData();
+                AnimeInfo anime = (AnimeInfo) n.getUserData();
 
                 if (inViewport && !n.isVisible()) {
-                    n.setStyle("-fx-background-image: url('" + imageUrl + "');");
+                    n.setStyle("-fx-background-image: url('" + anime.getImageUrl() + "');");
                     n.setVisible(true);
 
                     // TODO This fade-animation can be removed later, it's for testing right now. Probably expensive. Unsure.
@@ -768,7 +772,7 @@ public class AnimeGridView {
         animeBox.setAlignment(Pos.CENTER);
         // animeBox.setStyle("-fx-background-image: url('" + anime.getImageUrl() + "');");
         animeBox.getStyleClass().add("grid-media-box");
-        animeBox.setUserData(anime.getImageUrl());
+        animeBox.setUserData(anime);
 
 
         // Clipping rectangle because JavaFX doesn't have any kind of background image clipping. WHY??
@@ -854,7 +858,7 @@ public class AnimeGridView {
         HBox.setHgrow(darkBackground, Priority.ALWAYS);
 
         // The actual popup
-        AnimePopupView animePopupView = new AnimePopupView(anime);
+        AnimePopupView animePopupView = new AnimePopupView(anime, popupListener, darkBackground);
         VBox popupBox = animePopupView.createPopup();
 
         // Initially transparent for fade-in effect

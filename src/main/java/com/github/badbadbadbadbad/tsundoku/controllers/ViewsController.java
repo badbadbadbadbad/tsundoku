@@ -21,12 +21,14 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
     private boolean firstTimeStartup = true;
     private final APIController apiController;
     private final ConfigController configController;
+    private final DatabaseController databaseController;
     public Region loadingBar;
 
 
-    public ViewsController(Stage stage, APIController apiController, ConfigController configController, ConfigModel configModel) {
+    public ViewsController(Stage stage, APIController apiController, ConfigController configController, ConfigModel configModel, DatabaseController databaseController) {
         this.apiController = apiController;
         this.configController = configController;
+        this.databaseController = databaseController;
         this.stage = stage;
 
         this.root = new HBox();
@@ -83,23 +85,23 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
 
         switch (mediaMode) {
             case "Anime" -> {
-                AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController); // TODO Give anime grid initial filters
+                AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController); // TODO Give anime grid initial filters
                 gridView = animeGridView.createGridView();
             }
             case "Manga" -> {
-                AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController);
+                AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController);
                 gridView = animeGridView.createGridView();
             }
             case "Games" -> {
-                AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController);
+                AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController);
                 gridView = animeGridView.createGridView();
             }
             case "Profile" -> {
-                AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController);
+                AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController);
                 gridView = animeGridView.createGridView();
             }
             case "Settings" -> {
-                AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController);
+                AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController);
                 gridView = animeGridView.createGridView();
             }
         }
