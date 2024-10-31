@@ -24,7 +24,8 @@ public class AnimePopupView {
     double RATIO = 318.0 / 225.0; // The aspect ratio to use for anime images. Close to most cover images.
 
     private final PopupListener popupListener;
-    private final AnimeInfo anime;
+    private final AnimeInfo anime;                  // The anime data of the grid item that was clicked to create this popup
+    private final AnimeInfo databaseAnime;          // The anime data of the matching anime, received from the local database, if it exists.
     private final VBox darkBackground;              // The background surrounding the popup. Needed to call the destruction event.
 
     private final VBox popupBox;
@@ -34,6 +35,8 @@ public class AnimePopupView {
         this.popupListener = popupListener;
         this.anime = anime;
         this.darkBackground = darkBackground;
+
+        this.databaseAnime = popupListener.requestAnimeFromDatabase(anime.getId());
     }
 
     public VBox createPopup() {
@@ -179,8 +182,14 @@ public class AnimePopupView {
             status.getItems().addAll("In progress", "Paused", "Dropped");
 
 
-        status.setValue("Untracked");
-        anime.setOwnStatus("Untracked");
+        if (databaseAnime != null) {
+            status.setValue(databaseAnime.getOwnStatus());
+            anime.setOwnStatus(databaseAnime.getOwnStatus());
+        } else {
+            status.setValue("Untracked");
+            anime.setOwnStatus("Untracked");
+        }
+
 
         status.setOnAction(e -> anime.setOwnStatus(status.getValue()));
 
@@ -222,7 +231,22 @@ public class AnimePopupView {
         thumbsDownButton.setOnAction(event -> handleRatingButtonClick(thumbsDownButton, "ikonli-thumb-active", heartButton, thumbsUpButton));
 
 
+
         anime.setOwnRating("Unscored");
+
+
+
+        if (databaseAnime != null) {
+            String ownRating = databaseAnime.getOwnRating();
+            System.out.println(ownRating);
+            if (ownRating.equals("Heart")) {
+                heartButton.fire();
+            } else if (ownRating.equals("Liked")) {
+                thumbsUpButton.fire();
+            } else if (ownRating.equals("Disliked")) {
+                thumbsDownButton.fire();
+            }
+        }
 
         return rating;
     }
@@ -255,9 +279,9 @@ public class AnimePopupView {
         if (clickedButton.getStyleClass().contains("heart")) {
             anime.setOwnRating("Heart");
         } else if (clickedButton.getStyleClass().contains("like")) {
-            anime.setOwnRating("Like");
+            anime.setOwnRating("Liked");
         } else if (clickedButton.getStyleClass().contains("dislike")) {
-            anime.setOwnRating("Dislike");
+            anime.setOwnRating("Disliked");
         }
 
     }
@@ -278,12 +302,21 @@ public class AnimePopupView {
         numberInput.setStyle("-fx-background-radius: 10; -fx-border-radius: 10;");
         HBox.setHgrow(numberInput, Priority.ALWAYS);
 
-        anime.setEpisodesProgress(0);
+
+        // If anime exists in database, take progress value from there
+        if (databaseAnime != null) {
+            anime.setEpisodesProgress(databaseAnime.getEpisodesProgress());
+            numberInput.setText(String.valueOf(databaseAnime.getEpisodesProgress()));
+        } else {
+            anime.setEpisodesProgress(0);
+        }
+
 
         numberInput.textProperty().addListener((observable, oldValue, newValue) -> {
             if (!newValue.matches("\\d*")) {
                 numberInput.setText(newValue.replaceAll("\\D", ""));
             }
+
 
             int number;
             if (numberInput.getText().equals("")) // Interpret empty field as "0"
@@ -291,8 +324,8 @@ public class AnimePopupView {
             else
                 number = Integer.parseInt(numberInput.getText());
 
-            if (number > anime.getEpisodesTotal()) // Clamp value to at most the total amount of episodes
-                number = anime.getEpisodesTotal();
+
+            number = Math.min(number, anime.getEpisodesTotal()); // Clamp value to at most the total amount of episodes
 
             anime.setEpisodesProgress(number);
         });
@@ -401,7 +434,7 @@ public class AnimePopupView {
         // Call the same popup destruction as clicking the darkener around the popup does
         saveButton.setOnAction(e -> {
 
-            // TODO Activate when implemented..
+            // Pass the anime data to the database model, where it will be processed accordingly
             popupListener.onAnimeSaveButtonPressed(this.anime);
 
             // Destroy darkener background and popup after invoking changes saved

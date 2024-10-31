@@ -12,10 +12,8 @@ public class DatabaseController implements PopupListener {
     }
 
     @Override
-    public AnimeInfo onAnimePopupCreation() {
-        AnimeInfo animeInfo = null;
-
-        return animeInfo;
+    public AnimeInfo requestAnimeFromDatabase(int id) {
+        return databaseModel.getAnimeEntryFromDatabase(id);
     }
 
     @Override
