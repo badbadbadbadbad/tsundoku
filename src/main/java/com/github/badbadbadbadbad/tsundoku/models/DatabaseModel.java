@@ -35,6 +35,67 @@ public class DatabaseModel {
             anime.setEpisodesProgress(anime.getEpisodesTotal());
         }
 
+        String sqlDelete = "DELETE FROM anime WHERE id = ?";
+        String sqlUpsert = """
+        INSERT INTO anime (id, ownRating, ownStatus, episodesProgress, title, titleJapanese, titleEnglish, imageUrl,
+                           publicationStatus, episodesTotal, source, ageRating, synopsis, release, studios, type, lastUpdate)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_DATE)
+        ON CONFLICT(id) DO UPDATE SET
+            ownRating = excluded.ownRating,
+            ownStatus = excluded.ownStatus,
+            episodesProgress = excluded.episodesProgress,
+            title = excluded.title,
+            titleJapanese = excluded.titleJapanese,
+            titleEnglish = excluded.titleEnglish,
+            imageUrl = excluded.imageUrl,
+            publicationStatus = excluded.publicationStatus,
+            episodesTotal = excluded.episodesTotal,
+            source = excluded.source,
+            ageRating = excluded.ageRating,
+            synopsis = excluded.synopsis,
+            release = excluded.release,
+            studios = excluded.studios,
+            type = excluded.type,
+            lastUpdate = CURRENT_DATE;""";
+
+        try (Connection conn = DriverManager.getConnection(url)) {
+            if (anime.getOwnStatus().equals("Untracked")) {
+                try (PreparedStatement pstmt = conn.prepareStatement(sqlDelete)) {
+                    pstmt.setInt(1, anime.getId());
+                    pstmt.executeUpdate();
+                }
+            } else {
+                try (PreparedStatement pstmt = conn.prepareStatement(sqlUpsert)) {
+                    pstmt.setInt(1, anime.getId());
+                    pstmt.setString(2, anime.getOwnRating());
+                    pstmt.setString(3, anime.getOwnStatus());
+                    pstmt.setInt(4, anime.getEpisodesProgress());
+                    pstmt.setString(5, anime.getTitle());
+                    pstmt.setString(6, anime.getTitleJapanese());
+                    pstmt.setString(7, anime.getTitleEnglish());
+                    pstmt.setString(8, anime.getImageUrl());
+                    pstmt.setString(9, anime.getPublicationStatus());
+                    pstmt.setInt(10, anime.getEpisodesTotal());
+                    pstmt.setString(11, anime.getSource());
+                    pstmt.setString(12, anime.getAgeRating());
+                    pstmt.setString(13, anime.getSynopsis());
+                    pstmt.setString(14, anime.getRelease());
+                    pstmt.setString(15, anime.getStudios());
+                    pstmt.setString(16, anime.getType());
+                    pstmt.executeUpdate();
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+
+
+        /*
+        if (anime.getOwnStatus().equals("Completed")) {
+            anime.setEpisodesProgress(anime.getEpisodesTotal());
+        }
+
         String sqlInsert = "INSERT INTO anime (id, ownRating, ownStatus, episodesProgress, title, titleJapanese, titleEnglish, imageUrl, " +
                 "publicationStatus, episodesTotal, source, ageRating, synopsis, release, studios, type, lastUpdate) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_DATE)";
@@ -63,6 +124,8 @@ public class DatabaseModel {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+
+         */
 
 
         /*

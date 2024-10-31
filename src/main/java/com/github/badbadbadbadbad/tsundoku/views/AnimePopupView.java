@@ -402,7 +402,7 @@ public class AnimePopupView {
         saveButton.setOnAction(e -> {
 
             // TODO Activate when implemented..
-            // popupListener.onAnimeSaveButtonPressed(this.anime);
+            popupListener.onAnimeSaveButtonPressed(this.anime);
 
             // Destroy darkener background and popup after invoking changes saved
             darkBackground.fireEvent(new MouseEvent(MouseEvent.MOUSE_CLICKED, 0, 0, 0, 0, MouseButton.PRIMARY, 1,
