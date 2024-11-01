@@ -50,8 +50,8 @@ public class SidebarView {
         Button browseButton = createBrowseModeButton("Browse");
         Button logButton = createBrowseModeButton("Log");
 
-        browseButton.setId("browse-mode-browse-button");
-        logButton.setId("browse-mode-log-button");
+        browseButton.setId("sidebar-browse-mode-browse-button");
+        logButton.setId("sidebar-browse-mode-log-button");
 
         Collections.addAll(browseModeButtons, browseButton, logButton);
         HBox browseModeButtonBox = new HBox(browseButton, logButton);
@@ -78,7 +78,8 @@ public class SidebarView {
     // TODO Combine button creator functions
     private Button createBrowseModeButton(String label) {
         Button button = new Button(label);
-        button.getStyleClass().addAll("controls-button", "browse-mode-button");
+        // button.getStyleClass().addAll("controls-button", "sidebar-browse-mode-button");
+        button.getStyleClass().add("sidebar-browse-mode-button");
 
         button.setOnAction(e -> {
             if (!button.getText().equals(currentBrowseMode)) {
@@ -87,7 +88,7 @@ public class SidebarView {
         });
 
         if (label.equals(currentBrowseMode)) {
-            button.getStyleClass().add("browse-mode-button-active");
+            button.getStyleClass().add("sidebar-browse-mode-button-active");
         }
 
         return button;
@@ -95,9 +96,9 @@ public class SidebarView {
 
     private void setActiveBrowseModeButton(Button selectedButton) {
         for (Button button : browseModeButtons) {
-            button.getStyleClass().removeAll("browse-mode-button-active");
+            button.getStyleClass().removeAll("sidebar-browse-mode-button-active");
         }
-        selectedButton.getStyleClass().add("browse-mode-button-active");
+        selectedButton.getStyleClass().add("sidebar-browse-mode-button-active");
         currentBrowseMode = selectedButton.getText();
         sidebarListener.onSidebarBrowseModeChanged(selectedButton.getText());
     }
@@ -105,7 +106,7 @@ public class SidebarView {
     private Button createMediaModeButton(String label) {
         Button button = new Button(label);
         button.setMaxWidth(Double.MAX_VALUE);
-        button.getStyleClass().add("sidebar-button");
+        button.getStyleClass().add("sidebar-media-button");
 
         button.setOnAction(e -> {
             if (!button.getText().equals(currentMediaMode)) {
@@ -114,7 +115,7 @@ public class SidebarView {
         });
 
         if (label.equals(currentMediaMode)) {
-            button.getStyleClass().add("sidebar-button-active");
+            button.getStyleClass().add("sidebar-media-button-active");
         }
 
         return button;
@@ -122,9 +123,9 @@ public class SidebarView {
 
     private void setActiveMediaModeButton(Button selectedButton) {
         for (Button button : mediaModeButtons) {
-            button.getStyleClass().removeAll("sidebar-button-active");
+            button.getStyleClass().removeAll("sidebar-media-button-active");
         }
-        selectedButton.getStyleClass().add("sidebar-button-active");
+        selectedButton.getStyleClass().add("sidebar-media-button-active");
         currentMediaMode = selectedButton.getText();
         sidebarListener.onSidebarMediaModeChanged(selectedButton.getText());
     }

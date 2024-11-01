@@ -33,6 +33,7 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
 
         this.root = new HBox();
         root.setId("main-root");
+        root.getStyleClass().add("root");
 
         Screen screen = Screen.getPrimary();
         double screenWidth = screen.getBounds().getWidth();

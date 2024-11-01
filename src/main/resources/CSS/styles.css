@@ -1,11 +1,61 @@
 .root {
-    -main-background-color: #23242A;
-    -sidebar-color: #2d2f38;
-    -content-color: #1e1e1e;
+    -main-background-color: #1e1e25; /* old: #23242A */
+
+    -sidebar-color: #202532;
+    -sidebar-button-hover-color: #283148;
+    -sidebar-button-active-color: #2b395c;
+    -sidebar-browse-button-inactive-color: #232b3d;
+
+    -content-color: #1e1e25;
+
+
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+    -fx-focus-traversable: false;
+    -fx-background-insets: 0 0 0 0;
+}
+
+.button {
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+    -fx-focus-traversable: false;
+    -fx-border-color: transparent;
+    -fx-border-width: 0 0 0 0;
+    -fx-background-insets: 0 0 0 0;
+}
+
+.scroll-pane {
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+    -fx-focus-traversable: false;
+    -fx-border-color: transparent;
+    -fx-border-width: 0 0 0 0;
+    -fx-background-insets: 0 0 0 0;
+}
+
+.combo-box {
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+    -fx-focus-traversable: false;
+    -fx-border-color: transparent;
+    -fx-border-width: 0 0 0 0;
+    -fx-background-insets: 0 0 0 0;
+}
+
+.text-field{
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+    -fx-focus-traversable: false;
+    -fx-border-color: transparent;
+    -fx-border-width: 0 0 0 0;
+    -fx-background-insets: 0 0 0 0;
 }
 
 #main-root {
     -fx-background-color: -main-background-color;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+    -fx-focus-traversable: false;
 }
 
 #sidebar {
@@ -22,8 +72,10 @@
 }
 
 .separator {
-    -fx-pref-height: 1px;
-    -fx-background-color: orange;
+    -fx-min-height: 2px;
+    -fx-pref-height: 2px;
+    -fx-max-height: 2px;
+    -fx-background-color: goldenrod;
 }
 
 .loading-seperator {
@@ -32,23 +84,62 @@
     -fx-max-width: 2px;
 }
 
-.sidebar-button {
+/* No pseudo selectors in JavaFX, yay.. */
+#sidebar-browse-mode-browse-button {
+    -fx-border-radius: 5px 0 0 5px;
+    -fx-background-radius: 5px 0 0 5px;
+}
+
+#sidebar-browse-mode-log-button {
+    -fx-border-radius: 0 5px 5px 0;
+    -fx-background-radius: 0 5px 5px 0;
+}
+
+
+.sidebar-browse-mode-button {
+    -fx-background-color: -sidebar-browse-button-inactive-color;
+    -fx-text-fill: white;
+    -fx-pref-height: 35px;
+    -fx-pref-width: 120px;
+    -fx-background-insets: 0;
+}
+
+
+.sidebar-browse-mode-button:hover {
+    -fx-background-color: -sidebar-button-hover-color;
+}
+
+.sidebar-browse-mode-button-active {
+    -fx-background-color: -sidebar-button-active-color;
+}
+
+.sidebar-browse-mode-button-active:hover {
+    -fx-background-color: -sidebar-button-active-color;
+}
+
+
+.sidebar-media-button {
     -fx-background-color: transparent;
     -fx-text-fill: white;
     -fx-font-size: 18px;
 }
 
-.sidebar-button:hover {
-    -fx-background-color: #353538;
+.sidebar-media-button:hover {
+    -fx-background-color: -sidebar-button-hover-color; /* old: #353538 */
 }
 
-.sidebar-button-active {
-    -fx-background-color: #45454A;
+.sidebar-media-button-active {
+    -fx-background-color: -sidebar-button-active-color; /* old : #45454A */
 }
 
-.sidebar-button-active:hover {
-    -fx-background-color: #57575e;
+
+.sidebar-media-button-active:hover {
+    -fx-background-color: -sidebar-button-active-color;
 }
+
+
+
+
 
 .content-pane {
     -fx-background-color: -content-color;
@@ -59,6 +150,11 @@
     -fx-padding: 20px;
     /* -fx-spacing: 15px; */
     -fx-alignment: center;
+}
+
+.content-pane-controls-bottom-border {
+    -fx-border-color: goldenrod;
+    -fx-border-width: 0 0 1 0;
 }
 
 .search-bar-and-filter-toggle {
@@ -76,37 +172,11 @@
 .controls-button {
     -fx-background-color: #444;
     -fx-text-fill: white;
-    -fx-focus-color: transparent;
-    -fx-faint-focus-color: transparent;
     -fx-pref-height: 35px;
     -fx-pref-width: 120px;
     -fx-background-insets: 0; /* Override default JavaFX styling that makes buttons larger than desired */
 }
 
-
-/* No pseudo selectors in JavaFX, yay.. */
-#browse-mode-browse-button {
-    -fx-border-radius: 10px 0 0 10px;
-    -fx-background-radius: 10px 0 0 10px;
-}
-
-#browse-mode-log-button {
-    -fx-border-radius: 0 10px 10px 0;
-    -fx-background-radius: 0 10px 10px 0;
-}
-
-
-.browse-mode-button:hover {
-    -fx-background-color: #555;
-}
-
-.browse-mode-button-active {
-    -fx-background-color: #666;
-}
-
-.browse-mode-button-active:hover {
-    -fx-background-color: #777;
-}
 
 
 .filter-label {
@@ -267,7 +337,7 @@
     -fx-icon-size: 24px;
 }
 
-.ikonli-heart-inactive .ikonli-font-icon:hover {
+.ikonli-heart-inactive:hover .ikonli-font-icon {
     -fx-icon-color: rgba(166, 165, 164, 0.8); /* brighter pink: rgba(255, 0, 111, 0.5) */
     -fx-icon-size: 24px;
 }
@@ -277,12 +347,19 @@
     -fx-icon-size: 24px;
 }
 
+.ikonli-thumb-inactive {
+    -fx-border-width: 0 0 0 1;
+    -fx-border-color: red;
+}
+
 .ikonli-thumb-inactive .ikonli-font-icon {
     -fx-icon-color: gray;
     -fx-icon-size: 24px;
+    -fx-border-width: 0 0 0 1;
+    -fx-border-color: red;
 }
 
-.ikonli-thumb-inactive .ikonli-font-icon:hover {
+.ikonli-thumb-inactive:hover .ikonli-font-icon {
     -fx-icon-color: rgba(166, 165, 164, 0.8); /* goldenrod: 218, 165, 32*/
     -fx-icon-size: 24px;
 }

@@ -161,7 +161,7 @@ public class AnimePopupView {
         status.setMaxHeight(30);
         status.setMaxWidth(Double.MAX_VALUE);
         VBox.setVgrow(status, Priority.ALWAYS);
-        status.setStyle("-fx-background-radius: 10;");
+        status.setStyle("-fx-background-radius: 10; -fx-border-width: 0 0 0 0; -fx-border-color: transparent; -fx-unfocus-color: transparent;-fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
         // Colors for the future:
         // Untracked: Grey
         // Backlog: Tsundoku gold (goldenrod)
@@ -235,10 +235,8 @@ public class AnimePopupView {
         anime.setOwnRating("Unscored");
 
 
-
         if (databaseAnime != null) {
             String ownRating = databaseAnime.getOwnRating();
-            System.out.println(ownRating);
             if (ownRating.equals("Heart")) {
                 heartButton.fire();
             } else if (ownRating.equals("Liked")) {
@@ -405,7 +403,7 @@ public class AnimePopupView {
 
         metaInfo.getChildren().addAll(
                 createPropertyBox.apply("Release", anime.getRelease()),
-                createPropertyBox.apply("Total Episodes", String.valueOf(anime.getEpisodesTotal())),
+                createPropertyBox.apply("Type", anime.getType()),
                 createPropertyBox.apply("Publication Status", anime.getPublicationStatus()),
                 createPropertyBox.apply("Source", anime.getSource()),
                 createPropertyBox.apply("Age Rating", anime.getAgeRating()),

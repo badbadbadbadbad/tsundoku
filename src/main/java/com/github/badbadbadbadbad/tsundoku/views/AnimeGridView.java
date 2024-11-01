@@ -13,6 +13,7 @@ import javafx.animation.*;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
@@ -22,8 +23,8 @@ import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.layout.Region;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
-import javafx.stage.Popup;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -87,6 +88,7 @@ public class AnimeGridView {
         VBox controls = new VBox();
         controls.getStyleClass().add("content-pane-controls");
         controls.setMinHeight(Control.USE_PREF_SIZE);
+
         controls.getChildren().addAll(searchAndFilterToggleBox, filters, buttonBox);
 
 
@@ -94,7 +96,6 @@ public class AnimeGridView {
         // Together with loading bar animation (not working as well here, could expand later)
         loadingBarListener.animateLoadingBar(50, 0.1);
         AnimeListInfo animeListInfo = apiRequestListener.getCurrentAnimeSeason(1).join();
-        // ScrollPane animeGrid = createBrowseGrid(animeListInfo);
         this.scrollPane = createBrowseGrid(animeListInfo);
         apiLock = true;
 
@@ -109,10 +110,33 @@ public class AnimeGridView {
         pause.play();
 
 
-        // root.getChildren().addAll(controls, animeGrid);
-        root.getChildren().addAll(controls, scrollPane);
+        // ScrollPane listener to give controls a bottom border when scrolling
+        Region separator = new Region();
+        separator.getStyleClass().add("separator");
+        separator.setOpacity(0.0);
+
+        FadeTransition fadeIn = new FadeTransition(Duration.seconds(0.3), separator);
+        fadeIn.setFromValue(0.0);
+        fadeIn.setToValue(1.0);
+
+        FadeTransition fadeOut = new FadeTransition(Duration.seconds(0.3), separator);
+        fadeOut.setFromValue(1.0);
+        fadeOut.setToValue(0.0);
+
+        scrollPane.vvalueProperty().addListener((obs, oldValue, newValue) -> {
+            if (newValue.doubleValue() > 0) {
+                if (separator.getOpacity() == 0.0) {
+                    fadeIn.playFromStart();
+                }
+            } else {
+                if (separator.getOpacity() == 1.0) {
+                    fadeOut.playFromStart();
+                }
+            }
+        });
 
 
+        root.getChildren().addAll(controls, separator, scrollPane);
         return stackPane;
     }
 
