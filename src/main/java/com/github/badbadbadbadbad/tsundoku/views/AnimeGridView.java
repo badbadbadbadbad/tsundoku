@@ -53,6 +53,7 @@ public class AnimeGridView {
     private String searchMode = "SEASON";  // Changes between SEASON, TOP, and SEARCH depending on last mode selected (so pagination calls "current mode")
     private String searchString = "";
 
+    private ChangeListener<Number> filtersWidthListener;
     private static final BooleanProperty filtersHidden = new SimpleBooleanProperty(true);
     private boolean apiLock = false;
 
@@ -115,11 +116,11 @@ public class AnimeGridView {
         separator.getStyleClass().add("separator");
         separator.setOpacity(0.0);
 
-        FadeTransition fadeIn = new FadeTransition(Duration.seconds(0.3), separator);
+        FadeTransition fadeIn = new FadeTransition(Duration.seconds(0.2), separator);
         fadeIn.setFromValue(0.0);
         fadeIn.setToValue(1.0);
 
-        FadeTransition fadeOut = new FadeTransition(Duration.seconds(0.3), separator);
+        FadeTransition fadeOut = new FadeTransition(Duration.seconds(0.2), separator);
         fadeOut.setFromValue(1.0);
         fadeOut.setToValue(0.0);
 
@@ -149,7 +150,7 @@ public class AnimeGridView {
         // Search bar
         TextField searchBar = new TextField();
         searchBar.setId("search-bar");
-        searchBar.setPromptText("Enter query..");
+        searchBar.setPromptText("Enter search query..");
         HBox.setHgrow(searchBar, Priority.ALWAYS);
 
         // Regex to allow only english alphanumeric, JP / CN / KR characters, and spaces
@@ -213,8 +214,8 @@ public class AnimeGridView {
         VBox statusFilter = createDropdownFilter("Status",
                 new String[]{"Any", "Complete", "Airing", "Upcoming"}, "Any");
 
-        VBox startYearFilter = createNumberFilter("Start year");
-        VBox endYearFilter = createNumberFilter("End year");
+        VBox startYearFilter = createNumberFilter("Start year ≥");
+        VBox endYearFilter = createNumberFilter("End year ≤");
 
 
         filtersGrid.getChildren().addAll(orderByFilter, statusFilter, startYearFilter, endYearFilter);
@@ -225,17 +226,14 @@ public class AnimeGridView {
         double screenWidth = screen.getBounds().getWidth();
         int filtersAmount = filtersGrid.getChildren().size();
 
-        ChangeListener<Number> widthListener = (obs, oldWidth, newWidth) -> {
+        this.filtersWidthListener = (obs, oldWidth, newWidth) -> {
             double windowWidth = newWidth.doubleValue();
             int cols, rows;
 
-            if (windowWidth < screenWidth * 0.625) {
-                cols = 2;  // Minimum 2 columns
-            } else if (windowWidth < screenWidth * 0.75) {
-                cols = 3;
-            } else {
+            if (windowWidth < screenWidth * 0.66)
+                cols = 2;
+            else
                 cols = 4;
-            }
 
             rows = (int) Math.ceil((double) filtersAmount / cols); // Need an int value, but need float division, hence ugly casting..
 
@@ -247,8 +245,8 @@ public class AnimeGridView {
                 filtersGrid.setMaxHeight(filtersGrid.prefHeight(filtersGrid.getWidth()));
             }
         };
-        stage.widthProperty().addListener(widthListener);
-        widthListener.changed(stage.widthProperty(), stage.getWidth(), stage.getWidth()); // Activate once immediately
+        stage.widthProperty().addListener(filtersWidthListener);
+        filtersWidthListener.changed(stage.widthProperty(), stage.getWidth(), stage.getWidth()); // Activate once immediately
 
 
         return filtersGrid;
@@ -262,7 +260,7 @@ public class AnimeGridView {
         ComboBox<String> comboBox = new ComboBox<>();
         comboBox.getItems().addAll(options);
         comboBox.setValue(defaultValue);
-        comboBox.getStyleClass().add("filter-box");
+        comboBox.getStyleClass().add("filter-combo-box");
         comboBox.setMaxWidth(Double.MAX_VALUE);
         VBox.setVgrow(comboBox, Priority.ALWAYS);
 
@@ -286,7 +284,7 @@ public class AnimeGridView {
         label.getStyleClass().add("filter-label");
 
         TextField textField = new TextField("");
-        textField.getStyleClass().add("filter-box");
+        textField.getStyleClass().add("filter-text-box");
         textField.setMaxWidth(Double.MAX_VALUE);
         VBox.setVgrow(textField, Priority.ALWAYS);
 
@@ -388,6 +386,11 @@ public class AnimeGridView {
         // TODO Is this right here?
         pt.setOnFinished(e -> {
             updateVisibleGridItems(scrollPane);
+        });
+
+        // Filters are a bit squished after clicking "show filters" button until a resize if this is not done
+        test.setOnFinished(e -> {
+            filters.setMaxHeight(filters.prefHeight(filters.getWidth()));
         });
 
         pt.play();
@@ -670,7 +673,6 @@ public class AnimeGridView {
     }
 
 
-    // Make the creation of the grid after the API returns data async so the program doesn't freeze.
     private CompletableFuture<Void> reloadAnimeGridAsync(List<AnimeInfo> animeList) {
         return CompletableFuture.supplyAsync(() -> createAnimeGridItems(animeList))
                 .thenAccept(animeBoxes -> {
@@ -794,7 +796,6 @@ public class AnimeGridView {
         // Yes, JavaFX has an Image class, but I could not get it to work properly
         VBox animeBox = new VBox();
         animeBox.setAlignment(Pos.CENTER);
-        // animeBox.setStyle("-fx-background-image: url('" + anime.getImageUrl() + "');");
         animeBox.getStyleClass().add("grid-media-box");
         animeBox.setUserData(anime);
 
@@ -803,8 +804,11 @@ public class AnimeGridView {
         Rectangle clip = new Rectangle();
         clip.widthProperty().bind(animeBox.widthProperty());
         clip.heightProperty().bind(animeBox.heightProperty());
+
+        // Needs to be set here, it doesn't work if set in CSS. Thanks, JavaFX.
         clip.setArcHeight(40);
         clip.setArcWidth(40);
+
         animeBox.setClip(clip);
 
 

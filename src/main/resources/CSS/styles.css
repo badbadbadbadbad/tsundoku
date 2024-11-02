@@ -1,21 +1,38 @@
+/* The root class is used to define colors for the scope of all CSS */
 .root {
-    -main-background-color: #1e1e25; /* old: #23242A */
+    /* This is the default stage colour. */
+    /* Should be same as -content-color for the fading seperator under grid controls */
+    -main-background-color: #1e1e25;
 
+
+    /* Sidebar colours */
     -sidebar-color: #202532;
     -sidebar-button-hover-color: #283148;
     -sidebar-button-active-color: #2b395c;
     -sidebar-browse-button-inactive-color: #232b3d;
 
+
+    /* Content grid controls colours */
+    -content-grid-filters-input-color: #333;
+    -content-grid-filters-button-color: #444;
+    -content-grid-filters-button-hover-color: #FFFFFF;
+
+    /* Content grid colours */
     -content-color: #1e1e25;
+}
 
-
+/* Global styling for all elements as a type */
+/* Mostly to disable annoying default styling */
+.button {
     -fx-focus-color: transparent;
     -fx-faint-focus-color: transparent;
     -fx-focus-traversable: false;
+    -fx-border-color: transparent;
+    -fx-border-width: 0 0 0 0;
     -fx-background-insets: 0 0 0 0;
 }
 
-.button {
+.toggle-button {
     -fx-focus-color: transparent;
     -fx-faint-focus-color: transparent;
     -fx-focus-traversable: false;
@@ -58,6 +75,7 @@
     -fx-focus-traversable: false;
 }
 
+/* Sidebar things */
 #sidebar {
     -fx-background-color: -sidebar-color;
     -fx-padding: 10px;
@@ -84,8 +102,7 @@
     -fx-max-width: 2px;
 }
 
-/* No pseudo selectors in JavaFX, yay.. */
-#sidebar-browse-mode-browse-button {
+#sidebar-browse-mode-browse-button { /* No pseudo selectors in JavaFX, yay.. */
     -fx-border-radius: 5px 0 0 5px;
     -fx-background-radius: 5px 0 0 5px;
 }
@@ -95,15 +112,14 @@
     -fx-background-radius: 0 5px 5px 0;
 }
 
-
 .sidebar-browse-mode-button {
     -fx-background-color: -sidebar-browse-button-inactive-color;
     -fx-text-fill: white;
     -fx-pref-height: 35px;
     -fx-pref-width: 120px;
     -fx-background-insets: 0;
+    -fx-font-size: 20px;
 }
-
 
 .sidebar-browse-mode-button:hover {
     -fx-background-color: -sidebar-button-hover-color;
@@ -117,11 +133,10 @@
     -fx-background-color: -sidebar-button-active-color;
 }
 
-
 .sidebar-media-button {
     -fx-background-color: transparent;
     -fx-text-fill: white;
-    -fx-font-size: 18px;
+    -fx-font-size: 26px;
 }
 
 .sidebar-media-button:hover {
@@ -139,16 +154,14 @@
 
 
 
-
-
+/* Content grid controls */
 .content-pane {
     -fx-background-color: -content-color;
 }
 
 .content-pane-controls {
     -fx-background-color: -content-color;
-    -fx-padding: 20px;
-    /* -fx-spacing: 15px; */
+    -fx-padding: 15px;
     -fx-alignment: center;
 }
 
@@ -163,33 +176,97 @@
 }
 
 #search-bar {
-    -fx-background-color: #333;
+    -fx-font-size: 16px;
+    -fx-background-color: -content-grid-filters-input-color;
+    -fx-pref-height: 35px;
     -fx-text-fill: white;
     -fx-prompt-text-fill: rgba(255, 255, 255, 0.5);
-    -fx-pref-height: 35px;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
 }
 
 .controls-button {
-    -fx-background-color: #444;
+    -fx-font-size: 16px;
+    -fx-background-color: -content-grid-filters-button-color;
     -fx-text-fill: white;
     -fx-pref-height: 35px;
     -fx-pref-width: 120px;
-    -fx-background-insets: 0; /* Override default JavaFX styling that makes buttons larger than desired */
 }
 
-
+.controls-button:hover {
+}
 
 .filter-label {
-    -fx-text-fill: white;
-    -fx-font-size: 10pt;
+    -fx-font-size: 14px;
+    -fx-text-fill: rgba(255, 255, 255, 0.7);
 }
 
-.filter-box {
+.filter-combo-box {
+    -fx-font-size: 16px;
+    -fx-background-color: -content-grid-filters-input-color;
     -fx-pref-height: 35px;
     -fx-pref-width: 200px;
-    -fx-font-size: 13pt;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
 }
 
+
+.filter-combo-box .text-input {
+    -fx-background-color: -content-grid-filters-input-color;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+}
+
+
+
+.filter-combo-box .combo-box-popup {
+    -fx-background-color: -content-grid-filters-input-color;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+}
+
+.filter-combo-box .combo-box-popup .list-view {
+    -fx-background-color: -content-grid-filters-input-color;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+    -fx-background-insets: 3 0 0 0;
+    -fx-padding: 3 0 0 0;
+}
+
+
+.filter-combo-box .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-pref-height: 35px;
+    -fx-padding: 5 10 5 10;
+}
+
+.filter-combo-box .list-cell:hover {
+    -fx-background-color: -content-grid-filters-button-color;
+    -fx-text-fill: white;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+}
+
+.filter-combo-box .arrow-button .arrow {
+    -fx-background-color: white;
+}
+
+
+.filter-text-box {
+    -fx-font-size: 16px;
+    -fx-background-color: -content-grid-filters-input-color;
+    -fx-text-fill: white;
+    -fx-pref-height: 35px;
+    -fx-pref-width: 200px;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+}
+
+
+
+
+/* Content grid */
 .grid-scroll-pane {
     -fx-background: -content-color;
     -fx-background-color: -content-color;
@@ -243,6 +320,7 @@
     -fx-border-color: lightgray;
     -fx-border-width: 2px;
 }
+
 
 .grid-media-box-anchor {
     -fx-border-radius: 20;
