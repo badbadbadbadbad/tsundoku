@@ -18,6 +18,9 @@ import org.kordamp.ikonli.dashicons.Dashicons;
 import org.kordamp.ikonli.fluentui.FluentUiFilledMZ;
 import org.kordamp.ikonli.javafx.FontIcon;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.BiFunction;
 
 public class AnimePopupView {
@@ -29,6 +32,7 @@ public class AnimePopupView {
     private final VBox darkBackground;              // The background surrounding the popup. Needed to call the destruction event.
 
     private final VBox popupBox;
+    private final List<Button> ratingButtons = new ArrayList<>();
 
     public AnimePopupView(AnimeInfo anime, PopupListener popupListener, VBox darkBackground) {
         this.popupBox = new VBox();
@@ -132,7 +136,7 @@ public class AnimePopupView {
     private VBox createCoverImage(VBox wrapper) {
         VBox imageBox = new VBox();
         imageBox.setStyle("-fx-background-image: url('" + anime.getImageUrl() + "');");
-        imageBox.getStyleClass().add("grid-media-box");
+        imageBox.getStyleClass().add("popup-media-box");
 
         wrapper.widthProperty().addListener((obs, oldWidth, newWidth) -> {
             double imageBoxWidth = newWidth.doubleValue() - wrapper.getPadding().getLeft() * 2;
@@ -147,8 +151,8 @@ public class AnimePopupView {
         Rectangle clip = new Rectangle();
         clip.widthProperty().bind(imageBox.widthProperty());
         clip.heightProperty().bind(imageBox.heightProperty());
-        clip.setArcHeight(40);
-        clip.setArcWidth(40);
+        clip.setArcHeight(10);
+        clip.setArcWidth(10);
         imageBox.setClip(clip);
 
         return imageBox;
@@ -157,12 +161,11 @@ public class AnimePopupView {
 
     private ComboBox<String> createStatusBox() {
         ComboBox<String> status = new ComboBox<>();
-        status.setMinHeight(30);
-        status.setMaxHeight(30);
         status.setMaxWidth(Double.MAX_VALUE);
         VBox.setVgrow(status, Priority.ALWAYS);
-        status.setStyle("-fx-background-radius: 10; -fx-border-width: 0 0 0 0; -fx-border-color: transparent; -fx-unfocus-color: transparent;-fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
-        // Colors for the future:
+        status.getStyleClass().add("status-combo-box");
+
+        // Colors for the future?
         // Untracked: Grey
         // Backlog: Tsundoku gold (goldenrod)
         // In progress: Blue?
@@ -199,23 +202,21 @@ public class AnimePopupView {
 
     private HBox createRatingBox() {
         HBox rating = new HBox();
-        rating.setMinHeight(30);
-        rating.setMaxHeight(30);
         rating.setMaxWidth(Double.MAX_VALUE);
         VBox.setVgrow(rating, Priority.ALWAYS);
-        rating.setStyle("-fx-background-radius: 10; -fx-background-color: lightgrey;");
+        rating.getStyleClass().add("ratings-box");
 
         Button heartButton = new Button();
         heartButton.setGraphic(new FontIcon(Dashicons.HEART));
-        heartButton.getStyleClass().addAll("ratings-button", "ikonli-heart-inactive", "heart");
+        heartButton.getStyleClass().addAll("ratings-button", "heart");
 
         Button thumbsUpButton = new Button();
         thumbsUpButton.setGraphic(new FontIcon(FluentUiFilledMZ.THUMB_LIKE_24));
-        thumbsUpButton.getStyleClass().addAll("ratings-button", "ikonli-thumb-inactive", "like");
+        thumbsUpButton.getStyleClass().addAll("ratings-button", "like");
 
         Button thumbsDownButton = new Button();
         thumbsDownButton.setGraphic(new FontIcon(FluentUiFilledMZ.THUMB_DISLIKE_24));
-        thumbsDownButton.getStyleClass().addAll("ratings-button", "ikonli-thumb-inactive", "dislike");
+        thumbsDownButton.getStyleClass().addAll("ratings-button", "dislike");
 
         HBox.setHgrow(heartButton, Priority.ALWAYS);
         HBox.setHgrow(thumbsUpButton, Priority.ALWAYS);
@@ -226,9 +227,11 @@ public class AnimePopupView {
 
         rating.getChildren().addAll(heartButton, thumbsUpButton, thumbsDownButton);
 
-        heartButton.setOnAction(event -> handleRatingButtonClick(heartButton, "ikonli-heart-active", thumbsUpButton, thumbsDownButton));
-        thumbsUpButton.setOnAction(event -> handleRatingButtonClick(thumbsUpButton, "ikonli-thumb-active", heartButton, thumbsDownButton));
-        thumbsDownButton.setOnAction(event -> handleRatingButtonClick(thumbsDownButton, "ikonli-thumb-active", heartButton, thumbsUpButton));
+        Collections.addAll(ratingButtons, heartButton, thumbsUpButton, thumbsDownButton);
+
+        heartButton.setOnAction(event -> handleRatingButtonClick(heartButton));
+        thumbsUpButton.setOnAction(event -> handleRatingButtonClick(thumbsUpButton));
+        thumbsDownButton.setOnAction(event -> handleRatingButtonClick(thumbsDownButton));
 
 
 
@@ -249,36 +252,26 @@ public class AnimePopupView {
         return rating;
     }
 
-    // Rework this a bit more in the future when sure of color scheme
-    private void handleRatingButtonClick(Button clickedButton, String activeClass, Button... otherButtons) {
 
-        // Set all rating buttons to unlicked state
-        for (Button button : otherButtons) {
-            if (button.getStyleClass().contains("ikonli-heart-active")) {
-                button.getStyleClass().remove("ikonli-heart-active");
-                button.getStyleClass().add("ikonli-heart-inactive");
-            } else if (button.getStyleClass().contains("ikonli-thumb-active")) {
-                button.getStyleClass().remove("ikonli-thumb-active");
-                button.getStyleClass().add("ikonli-thumb-inactive");
-            }
+    private void handleRatingButtonClick(Button clickedButton) {
+
+        // Set all rating buttons to unclicked state
+        for (Button button : ratingButtons) {
+            button.getStyleClass().remove("ikonli-heart-active");
+            button.getStyleClass().remove("ikonli-thumb-active");
 
         }
 
-        // Set clicked button to clicked state
-        if (clickedButton.getStyleClass().contains("ikonli-heart-inactive")) {
-            clickedButton.getStyleClass().remove("ikonli-heart-inactive");
-            clickedButton.getStyleClass().add(activeClass);
-        } else if (clickedButton.getStyleClass().contains("ikonli-thumb-inactive")) {
-            clickedButton.getStyleClass().remove("ikonli-thumb-inactive");
-            clickedButton.getStyleClass().add(activeClass);
-        }
-
-        // Update anime data with clicked state
+        // Add active state to clicked button
+        // And set anime data rating to clicked button type
         if (clickedButton.getStyleClass().contains("heart")) {
+            clickedButton.getStyleClass().add("ikonli-heart-active");
             anime.setOwnRating("Heart");
         } else if (clickedButton.getStyleClass().contains("like")) {
+            clickedButton.getStyleClass().add("ikonli-thumb-active");
             anime.setOwnRating("Liked");
         } else if (clickedButton.getStyleClass().contains("dislike")) {
+            clickedButton.getStyleClass().add("ikonli-thumb-active");
             anime.setOwnRating("Disliked");
         }
 
@@ -295,10 +288,8 @@ public class AnimePopupView {
 
         // Input for current progress.
         TextField numberInput = new TextField(String.valueOf(0));
-        numberInput.setMinHeight(30);
-        numberInput.setMaxHeight(30);
-        numberInput.setStyle("-fx-background-radius: 10; -fx-border-radius: 10;");
         HBox.setHgrow(numberInput, Priority.ALWAYS);
+        numberInput.getStyleClass().add("progress-text-field");
 
 
         // If anime exists in database, take progress value from there
@@ -330,10 +321,7 @@ public class AnimePopupView {
 
 
         Label progressLabel = new Label(" / " + anime.getEpisodesTotal() + " " + unit);
-        progressLabel.setStyle("-fx-text-fill: white");
-        progressLabel.setMinHeight(30);
-        progressLabel.setMaxHeight(30);
-        progressLabel.setAlignment(Pos.CENTER_RIGHT);
+        progressLabel.getStyleClass().add("progress-label");
         progressLabel.setMinWidth(Region.USE_PREF_SIZE);
 
         progressTracker.getChildren().addAll(numberInput, progressLabel);
@@ -348,7 +336,7 @@ public class AnimePopupView {
         metaStatsAndSaveWrapper.getStyleClass().add("grid-media-popup-right");
 
         ScrollPane synopsis = createSynopsis();
-        FlowGridPane metaInfo = createMetaInfo();
+        GridPane metaInfo = createMetaInfo();
         HBox saveButton = createSaveButton(metaStatsAndSaveWrapper);
 
         metaStatsAndSaveWrapper.getChildren().addAll(metaInfo, synopsis, saveButton);
@@ -360,17 +348,13 @@ public class AnimePopupView {
 
         Label synopsisLabel = new Label(anime.getSynopsis());
         synopsisLabel.setWrapText(true);
-        synopsisLabel.setStyle("-fx-text-fill: white; -fx-font-size: 16;");
+        synopsisLabel.getStyleClass().add("popup-synopsis");
         VBox content = new VBox(synopsisLabel);
 
 
         ScrollPane scrollPane = new ScrollPane(content);
         scrollPane.getStyleClass().add("popup-scroll-pane");
-        scrollPane.setFitToWidth(true);
-        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         VBox.setVgrow(scrollPane, Priority.ALWAYS);
-        scrollPane.setStyle("-fx-padding: 10;");
 
         // Smooth scroll listener
         // in /external/
@@ -380,35 +364,48 @@ public class AnimePopupView {
     }
 
 
-    private FlowGridPane createMetaInfo() {
-        FlowGridPane metaInfo = new FlowGridPane(3, 2);
-        metaInfo.setHgap(20);
-        metaInfo.setVgap(20);
+    private GridPane createMetaInfo() {
+
+        GridPane metaInfo = new GridPane();
+        metaInfo.setHgap(8);
+        metaInfo.setVgap(8);
         HBox.setHgrow(metaInfo, Priority.ALWAYS);
         metaInfo.setMaxWidth(Double.MAX_VALUE);
 
         metaInfo.setMinHeight(Region.USE_PREF_SIZE);
         metaInfo.setMaxHeight(Region.USE_PREF_SIZE);
 
+        metaInfo.getStyleClass().add("popup-meta-grid");
 
-        metaInfo.setStyle("-fx-padding: 10;");
+
+        ColumnConstraints col1 = new ColumnConstraints();
+        col1.setPercentWidth(25);
+        ColumnConstraints col2 = new ColumnConstraints();
+        col2.setPercentWidth(25);
+        ColumnConstraints col3 = new ColumnConstraints();
+        col3.setPercentWidth(50);
+
+        metaInfo.getColumnConstraints().addAll(col1, col2, col3);
+
 
         BiFunction<String, String, VBox> createPropertyBox = (labelText, contentText) -> {
             Label label = new Label(labelText);
-            label.getStyleClass().add("filter-label");
+            label.getStyleClass().add("popup-meta-grid-header");
             Label content = new Label(contentText);
-            content.getStyleClass().add("filter-label");
-            return new VBox(5, label, content);
+            content.getStyleClass().add("popup-meta-grid-text");
+            return new VBox(3, label, content);
         };
 
-        metaInfo.getChildren().addAll(
-                createPropertyBox.apply("Release", anime.getRelease()),
-                createPropertyBox.apply("Type", anime.getType()),
-                createPropertyBox.apply("Publication Status", anime.getPublicationStatus()),
-                createPropertyBox.apply("Source", anime.getSource()),
-                createPropertyBox.apply("Age Rating", anime.getAgeRating()),
-                createPropertyBox.apply("Studios", anime.getStudios())
-        );
+
+        metaInfo.add(createPropertyBox.apply("Release", anime.getRelease()), 0, 0);
+        metaInfo.add(createPropertyBox.apply("Type", anime.getType()), 1, 0);
+        metaInfo.add(createPropertyBox.apply("Source", anime.getSource()), 2, 0);
+
+        metaInfo.add(createPropertyBox.apply("Status", anime.getPublicationStatus()), 0, 1);
+        metaInfo.add(createPropertyBox.apply("Age Rating", anime.getAgeRating()), 1, 1);
+        metaInfo.add(createPropertyBox.apply("Studios", anime.getStudios()), 2, 1);
+
+
 
         return metaInfo;
     }
@@ -421,9 +418,9 @@ public class AnimePopupView {
         saveButtonWrapper.setPadding(new Insets(10));
         saveButtonWrapper.minHeightProperty().bind(wrapper.heightProperty().multiply(0.1));
         saveButtonWrapper.maxHeightProperty().bind(wrapper.heightProperty().multiply(0.1));
-        saveButtonWrapper.setStyle("-fx-padding: 0 10 10 0; -fx-border-color: white; -fx-border-width: 0 0 2 0;");
+        saveButtonWrapper.setStyle("-fx-padding: 0 0 10 0;");
 
-        Button saveButton = new Button("Save changes");
+        Button saveButton = new Button("Save");
         saveButtonWrapper.setAlignment(Pos.CENTER_RIGHT);
         saveButton.getStyleClass().add("controls-button");
         saveButton.prefHeightProperty().bind(saveButtonWrapper.heightProperty().subtract(10));

@@ -125,15 +125,23 @@ public class AnimeGridView {
         fadeOut.setToValue(0.0);
 
         scrollPane.vvalueProperty().addListener((obs, oldValue, newValue) -> {
-            if (newValue.doubleValue() > 0) {
-                if (separator.getOpacity() == 0.0) {
-                    fadeIn.playFromStart();
+
+            // Platform.runLater else the border starts as shown on scrollPane default position on full grid reload
+
+            Platform.runLater(() -> {
+                // This is so the controls-bottom-border can't start showing if the pane scroll bar is fully vertical (no scrolling possible)
+                boolean canScroll = scrollPane.getContent().getBoundsInLocal().getHeight() > scrollPane.getViewportBounds().getHeight();
+
+                if (newValue.doubleValue() > 0.01 && canScroll) {
+                    if (separator.getOpacity() == 0.0) {
+                        fadeIn.playFromStart();
+                    }
+                } else {
+                    if (separator.getOpacity() == 1.0) {
+                        fadeOut.playFromStart();
+                    }
                 }
-            } else {
-                if (separator.getOpacity() == 1.0) {
-                    fadeOut.playFromStart();
-                }
-            }
+            });
         });
 
 
@@ -296,11 +304,11 @@ public class AnimeGridView {
         });
 
         // Filter change listeners
-        if (labelText.equals("Start year")) {
+        if (labelText.equals("Start year ≥")) {
             textField.textProperty().addListener((obs, oldVal, newVal) -> {
                 gridFilterListener.onAnimeStartYearChanged(newVal);
             });
-        } else if (labelText.equals("End year")) {
+        } else if (labelText.equals("End year ≤")) {
             textField.textProperty().addListener((obs, oldVal, newVal) -> {
                 gridFilterListener.onAnimeEndYearChanged(newVal);
             });
@@ -312,6 +320,18 @@ public class AnimeGridView {
             textField.setDisable(newValue);
         });
         textField.setDisable(filtersHidden.get()); // Since filters are hidden on startup
+
+
+        // Listener to fire searches on enter press.
+        // Feels more natural when it fires not only when in the search bar, but also these year fields.
+        textField.setOnAction(event -> {
+            if(!apiLock && !searchString.isEmpty()) {
+                searchMode = "SEARCH";
+                apiLock = true;
+
+                invokeAnimatedAPICall(1);
+            }
+        });
 
         return new VBox(5, label, textField);
     }
@@ -452,7 +472,7 @@ public class AnimeGridView {
 
     private ScrollPane createBrowseGrid(AnimeListInfo animeListInfo) {
 
-        animeGrid = new FlowGridPane(2, 3);  // Default values here shouldn't matter
+        animeGrid = new FlowGridPane(2, 3);  // Default values here shouldn't matter but are needed, so..
         animeGrid.setHgap(20);
         animeGrid.setVgap(20);
         animeGrid.setMaxWidth(Double.MAX_VALUE);
