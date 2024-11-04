@@ -92,7 +92,7 @@ public class Initializer {
 
             // Anime search filters
             Map<String, String> animeSearchFilters = new HashMap<>();
-            animeSearchFilters.put("Order by", "Popular: Most");
+            animeSearchFilters.put("Order by", "Default");
             animeSearchFilters.put("Status", "Any");
             animeSearchFilters.put("Start year", "");
             animeSearchFilters.put("End year", "");

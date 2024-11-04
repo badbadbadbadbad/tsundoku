@@ -215,9 +215,10 @@ public class AnimeGridView {
 
         // Filters
         VBox orderByFilter = createDropdownFilter("Order by", new String[]{
+                "Default",
                 "Title: Ascending", "Title: Descending",
                 "Rating: Highest", "Rating: Lowest",
-                "Popular: Most", "Popular: Least"}, "Popular: Most");
+                "Popular: Most", "Popular: Least"}, "Default");
 
         VBox statusFilter = createDropdownFilter("Status",
                 new String[]{"Any", "Complete", "Airing", "Upcoming"}, "Any");

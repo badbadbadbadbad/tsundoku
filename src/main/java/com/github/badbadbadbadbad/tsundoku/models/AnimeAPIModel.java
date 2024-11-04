@@ -99,7 +99,7 @@ public class AnimeAPIModel {
         String urlString = BASE_URL + "/anime?page=" + page + "&q=" + URLEncoder.encode("\"" + query + "\"", StandardCharsets.UTF_8);
         urlString += decodeOrderBy() + decodeStatus() + decodeStartYear() + decodeEndYear(); // Order and filters for search query
 
-
+        
         URI uri = URI.create(urlString);
         client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
@@ -270,8 +270,9 @@ public class AnimeAPIModel {
             case "Rating: Highest" -> "&order_by=score&sort=desc";
             case "Rating: Lowest" -> "&order_by=score&sort=asc";
             case "Popular: Least" -> "&order_by=popularity&sort=desc"; // Popularity is a rank in MAL, so "1" is most popular
-            default ->  // Default case: Popular - Most
-                    "&order_by=popularity&sort=asc";
+            case "Popular: Most" -> "&order_by=popularity&sort=asc";
+            default ->  // Default case: No ordering. Jikan API does not document this, but produces fine results.
+                    "";
         };
     }
 
