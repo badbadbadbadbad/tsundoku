@@ -2,43 +2,53 @@
 .root {
     /* The actual colours we use. */
     /* These variables are then used as input for the variables of the other elements. */
-    -less-dark-blue: #0F192E;
+    -darkest-blue: #0A111F;
+    -dark-blue: #0F192E;
+    -normal-blue: #14213D;
+    -light-blue: #19294D;
+    -lightest-blue: #1E325C;
+
     -gold-highlight: #DAA520;  /* Goldenrod my beloved */
+    -red-highlight: #BF0000;
+    -grey-highlight: #858585;
+    -silver-highlight: #ADADAD;
 
     /* This is the default stage colour. */
     /* Should be same as -content-background-color for the fading seperator under grid controls */
-    -main-background-color: #1e1e25;
+    -main-background-color: -darkest-blue;
 
 
     /* Sidebar colours */
-    -sidebar-color: #202532;
-    -sidebar-button-hover-color: #283148;
-    -sidebar-button-active-color: #2b395c;
-    -sidebar-browse-button-inactive-color: #232b3d;
+    -sidebar-color: -dark-blue;
+    -sidebar-button-hover-color: -normal-blue;
+    -sidebar-button-active-color: -lightest-blue;
+    -sidebar-browse-button-inactive-color: transparent;
 
 
     /* Content grid controls colours */
-    -content-grid-filters-input-color: #333;
-    -content-grid-filters-button-color: #444;
-    -content-grid-filters-button-hover-color: #FFFFFF;
+    -content-grid-filters-input-color: -normal-blue;
+    -content-grid-filters-button-color: -lightest-blue;
+    -content-grid-filters-button-hover-color: -light-blue;
 
     /* Content grid colours */
-    -content-background-color: #1e1e25;
-    -grid-box-background-color: #1E325C;
-    -grid-box-border-color: #ADADAD; /* #E5E5E5 */
-    -pagination-input-color: #333;
+    -content-background-color: -darkest-blue;
+    -grid-box-background-color: -lightest-blue;
+    -grid-box-border-color: -silver-highlight;
+    -pagination-input-color: -normal-blue;
+    -pagination-button-color: -lightest-blue;
+    -pagination-button-hover-color: -normal-blue;
 
     /* Popup colours */
-    -popup-main-background-color: #1e1e25;
-    -popup-input-color: #333;
-    -popup-input-hover-color: #444;
-    -popup-rating-background-color: #333;
-    -popup-rating-inactive-color: #ADADAD;
-    -popup-rating-hover-color: #FFFFFF;
-    -popup-rating-active-heart-color: #BF0000;
-    -popup-rating-active-thumbs-color: #DAA520;
-    -popup-progress-color: #333;
-    -popup-scrollpane-color: #444;
+    -popup-main-background-color: -darkest-blue;
+    -popup-input-color: -normal-blue;
+    -popup-input-hover-color: -light-blue;
+    -popup-rating-background-color: -normal-blue;
+    -popup-rating-inactive-color: -grey-highlight;
+    -popup-rating-hover-color: -silver-highlight;
+    -popup-rating-active-heart-color: -red-highlight;
+    -popup-rating-active-thumbs-color: -gold-highlight;
+    -popup-progress-color: -normal-blue;
+    -popup-scrollpane-color: -lightest-blue;
 }
 
 /* ************************************* */
@@ -220,6 +230,7 @@
 }
 
 .controls-button:hover {
+    -fx-background-color: -content-grid-filters-button-hover-color;
 }
 
 .filter-label {
@@ -389,7 +400,7 @@
 }
 
 .pagination-button:hover {
-    -fx-background-color: #FFFFFF;
+    -fx-background-color: -pagination-button-hover-color;
 }
 
 .pagination-input-field {
@@ -404,11 +415,11 @@
 }
 
 .pagination-button-active {
-    -fx-background-color: -gold-highlight;
+    -fx-background-color: -pagination-button-color;
 }
 
 .pagination-button-active:hover {
-    -fx-background-color: -gold-highlight;
+    -fx-background-color: -pagination-button-color;
 }
 
 /* This is the darkening background that appears when clicking on a grid box */
