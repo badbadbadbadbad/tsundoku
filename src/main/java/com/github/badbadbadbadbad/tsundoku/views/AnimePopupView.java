@@ -3,6 +3,7 @@ package com.github.badbadbadbadbad.tsundoku.views;
 import com.github.badbadbadbadbad.tsundoku.controllers.PopupListener;
 import com.github.badbadbadbadbad.tsundoku.external.SmoothScroll;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
@@ -388,11 +389,31 @@ public class AnimePopupView {
 
 
         BiFunction<String, String, VBox> createPropertyBox = (labelText, contentText) -> {
+
             Label label = new Label(labelText);
             label.getStyleClass().add("popup-meta-grid-header");
+
             Label content = new Label(contentText);
-            content.getStyleClass().add("popup-meta-grid-text");
-            return new VBox(3, label, content);
+            if (label.getText().equals("Studios")) {
+                // The text under the "Studios" label is set outside CSS so font size can be adjusted at runtime
+                content.getStyleClass().add("popup-meta-grid-text-but-without-font-size");
+                content.setFont(Font.font(14.0));
+            } else {
+                content.getStyleClass().add("popup-meta-grid-text");
+            }
+
+            VBox wrapper = new VBox(3, label, content);
+
+            // Resize the text under "Studios" label to fit its container due to some anime having many studios.
+            if (labelText.equals("Studios")) {
+                wrapper.widthProperty().addListener((obs, oldWidth, newWidth) -> {
+                    if (newWidth.doubleValue() > 0) {
+                        adjustFontSizeToContainer(content, newWidth.doubleValue(), 5);
+                    }
+                });
+            }
+
+            return wrapper;
         };
 
 

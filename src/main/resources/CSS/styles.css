@@ -607,6 +607,10 @@
     -fx-text-fill: white;
 }
 
+.popup-meta-grid-text-but-without-font-size {
+    -fx-text-fill: white;
+}
+
 
 
 
