@@ -608,7 +608,7 @@ public class AnimeGridView {
 
         // Only need "first page" button if it's not already the selected one
         if (selectedPage > 2) {
-            paginationButtons.getChildren().add(createPageButton(1));
+            paginationButtons.getChildren().add(createPageButton(1, selectedPage));
         }
 
         // Low numbers ellipsis button
@@ -618,7 +618,7 @@ public class AnimeGridView {
 
         // Selected page as well as its prev and next
         for (int i = Math.max(1, selectedPage - 1); i <= Math.min(pages, selectedPage + 1); i++) {
-            Button butt = createPageButton(i);
+            Button butt = createPageButton(i, selectedPage);
             if (i == selectedPage) {
                 butt.getStyleClass().add("pagination-button-active");
             }
@@ -633,7 +633,7 @@ public class AnimeGridView {
 
         // Only need "last page" button if it's not already the selected one
         if (selectedPage < pages - 1) {
-            paginationButtons.getChildren().add(createPageButton(pages));
+            paginationButtons.getChildren().add(createPageButton(pages, selectedPage));
         }
     }
 
@@ -729,16 +729,27 @@ public class AnimeGridView {
     }
 
 
-    private Button createPageButton(int page) {
-        Button pageButton =  new Button(String.valueOf(page));
+    private Button createPageButton(int ownPage, int selectedPage) {
+        Button pageButton =  new Button(String.valueOf(ownPage));
         pageButton.getStyleClass().add("pagination-button");
 
+        if (!(ownPage == selectedPage)) {
+            pageButton.setOnAction(event -> {
+                if(!apiLock) {
+                    apiLock = true;
+                    invokeAnimatedAPICall(ownPage);
+                }
+            });
+        }
+        /*
         pageButton.setOnAction(event -> {
             if(!apiLock) {
                 apiLock = true;
-                invokeAnimatedAPICall(page);
+                invokeAnimatedAPICall(ownPage);
             }
         });
+
+         */
 
         return pageButton;
     }
