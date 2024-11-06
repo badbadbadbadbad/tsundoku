@@ -484,10 +484,11 @@ public class AnimeGridView {
         // Change grid column amount based on window width
         Screen screen = Screen.getPrimary();
         double screenWidth = screen.getBounds().getWidth();
-        int animesAmount = animeGrid.getChildren().size();
+        // int animesAmount = animeGrid.getChildren().size();
 
         ChangeListener<Number> widthListener = (obs, oldWidth, newWidth) -> {
             double windowWidth = newWidth.doubleValue();
+            int animesAmount = animeGrid.getChildren().size();
 
             int cols, rows;
 
@@ -579,6 +580,8 @@ public class AnimeGridView {
                 }
             }
         }
+
+        System.out.println(animeGrid.getRowsCount());
 
     }
 
@@ -701,6 +704,9 @@ public class AnimeGridView {
                         animeGrid.getChildren().clear();
                         animeGrid.getChildren().addAll(animeBoxes);
                         adjustGridItemHeights(); // Adjust the heights after adding to the scene graph
+
+                        // Update the internal rows count of grid after children were updated
+                        animeGrid.setRowsCount((int) Math.ceil((double) animeGrid.getChildren().size() / animeGrid.getColsCount()));
                     });
                 });
     }
@@ -741,15 +747,6 @@ public class AnimeGridView {
                 }
             });
         }
-        /*
-        pageButton.setOnAction(event -> {
-            if(!apiLock) {
-                apiLock = true;
-                invokeAnimatedAPICall(ownPage);
-            }
-        });
-
-         */
 
         return pageButton;
     }
