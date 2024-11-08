@@ -484,7 +484,6 @@ public class AnimeGridView {
         // Change grid column amount based on window width
         Screen screen = Screen.getPrimary();
         double screenWidth = screen.getBounds().getWidth();
-        // int animesAmount = animeGrid.getChildren().size();
 
         ChangeListener<Number> widthListener = (obs, oldWidth, newWidth) -> {
             double windowWidth = newWidth.doubleValue();
@@ -508,6 +507,7 @@ public class AnimeGridView {
 
             animeGrid.setColsCount(cols);
             animeGrid.setRowsCount(rows);
+
 
         };
         stage.widthProperty().addListener(widthListener);
@@ -535,10 +535,9 @@ public class AnimeGridView {
         });
 
 
-        // Grid item image load / unload trigger when the grid size changes
-        animeGrid.widthProperty().addListener(e -> updateVisibleGridItems(scrollPane));
-        animeGrid.heightProperty().addListener(e -> updateVisibleGridItems(scrollPane));
 
+        scrollPane.widthProperty().addListener(e -> updateVisibleGridItems(scrollPane));
+        scrollPane.heightProperty().addListener(e -> updateVisibleGridItems(scrollPane));
 
 
         // Smooth scroll listener because JavaFX does not hav smooth scrolling..
@@ -555,34 +554,35 @@ public class AnimeGridView {
     // Images are only loaded on the animeGrid boxes if they are currently in the viewport.
     private void updateVisibleGridItems(ScrollPane scrollPane) {
 
-        Bounds paneBounds = scrollPane.localToScene(scrollPane.getBoundsInLocal());
+        // Wrap in runLater for scrollPane resize update, make sure scrollPane size is set correctly.
+        Platform.runLater(() -> {
 
-        if (scrollPane.getContent() instanceof Parent) {
-            for (Node n : animeGrid.getChildren()) {
-                Bounds nodeBounds = n.localToScene(n.getBoundsInLocal());
+            Bounds paneBounds = scrollPane.localToScene(scrollPane.getBoundsInLocal());
 
-                boolean inViewport = paneBounds.intersects(nodeBounds);
-                AnimeInfo anime = (AnimeInfo) n.getUserData();
+            if (scrollPane.getContent() instanceof Parent) {
+                for (Node n : animeGrid.getChildren()) {
+                    Bounds nodeBounds = n.localToScene(n.getBoundsInLocal());
 
-                if (inViewport && !n.isVisible()) {
-                    n.setStyle("-fx-background-image: url('" + anime.getImageUrl() + "');");
-                    n.setVisible(true);
+                    boolean inViewport = paneBounds.intersects(nodeBounds);
+                    AnimeInfo anime = (AnimeInfo) n.getUserData();
 
-                    // TODO This fade-animation can be removed later, it's for testing right now. Probably expensive. Unsure.
-                    FadeTransition fadeIn = new FadeTransition(Duration.seconds(0.5), n);
-                    fadeIn.setFromValue(0.0);
-                    fadeIn.setToValue(1.0);
-                    fadeIn.play();
+                    if (inViewport && !n.isVisible()) {
+                        n.setStyle("-fx-background-image: url('" + anime.getImageUrl() + "');");
+                        n.setVisible(true);
 
-                } else if (!inViewport && n.isVisible()) {
-                    n.setVisible(false);
-                    n.setStyle("-fx-background-image: none;");
+                        // TODO This fade-animation can be removed later, it's for testing right now. Probably expensive. Unsure.
+                        FadeTransition fadeIn = new FadeTransition(Duration.seconds(0.5), n);
+                        fadeIn.setFromValue(0.0);
+                        fadeIn.setToValue(1.0);
+                        fadeIn.play();
+
+                    } else if (!inViewport && n.isVisible()) {
+                        n.setVisible(false);
+                        n.setStyle("-fx-background-image: none;");
+                    }
                 }
             }
-        }
-
-        System.out.println(animeGrid.getRowsCount());
-
+        });
     }
 
 

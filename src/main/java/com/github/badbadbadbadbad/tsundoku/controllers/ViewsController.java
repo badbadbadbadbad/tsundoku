@@ -48,11 +48,24 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
         scene.getStylesheets().add(getClass().getResource("/CSS/styles.css").toExternalForm());
         scene.setFill(Color.rgb(35, 36, 42)); // To prevent white flicker on expanding resize
 
-        // Remember height and position from last session?
-        stage.setWidth(screenWidth / 1.5);
-        stage.setHeight(screenHeight / 1.5);
-        stage.setMinWidth(screenWidth / 2);
-        stage.setMinHeight(screenHeight / 1.7);
+
+
+        if (screenWidth > screenHeight) { // "Normal" monitor
+            stage.setWidth(screenWidth / 2);
+            stage.setMinWidth(screenWidth / 2);
+            stage.setMaxWidth(screenWidth / 2);
+
+            stage.setHeight(screenHeight / 1.5);
+            stage.setMinHeight(screenHeight / 1.7);
+        } else { // Vertical monitor
+            stage.setWidth(screenWidth);
+            stage.setMinWidth(screenWidth);
+            stage.setMaxWidth(screenWidth);
+
+            stage.setHeight(screenHeight / 1.5);
+            stage.setMinHeight(screenHeight / 2);
+        }
+
 
         stage.setScene(scene);
     }
