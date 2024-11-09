@@ -1,4 +1,4 @@
-// By /u/Matjaz on stackoverflow
+// Inspired by /u/Matjaz on stackoverflow
 // https://stackoverflow.com/a/70161549
 
 package com.github.badbadbadbadbad.tsundoku.external;
@@ -9,27 +9,36 @@ import javafx.util.Duration;
 
 public abstract class SmoothishTransition extends Transition {
     private final double mod;
-    private final double delta;
+    private double delta = 0;
 
-    // private final static int TRANSITION_DURATION = 200;
     private final static int TRANSITION_DURATION = 100;
 
     public SmoothishTransition(SmoothishTransition old, double delta) {
+
         setCycleDuration(Duration.millis(TRANSITION_DURATION));
-        setCycleCount(0);
-        // if the last transition was moving inthe same direction, and is still playing
-        // then increment the modifer. This will boost the distance, thus looking faster
-        // and seemingly consecutive.
+        setCycleCount(1);
+
+
         if (old != null && sameSign(delta, old.delta) && playing(old)) {
-            mod = old.getMod() + 1;
+            mod = old.getMod() + Math.abs(delta / 40);
+            this.delta += delta;
         } else {
             mod = 1;
+            this.delta = delta;
         }
-        this.delta = delta;
     }
 
     public double getMod() {
         return mod;
+    }
+
+    public void setDelta(double delta) {
+        this.delta += delta;
+    }
+
+    public double getRemainingDistance() {
+        double elapsedFrac = getCurrentTime().toMillis() / getCycleDuration().toMillis();
+        return delta * (1 - elapsedFrac);
     }
 
     @Override

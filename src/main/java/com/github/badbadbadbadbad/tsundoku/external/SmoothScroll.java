@@ -1,4 +1,4 @@
-// By /u/Matjaz on stackoverflow
+// Inspired by /u/Matjaz on stackoverflow
 // https://stackoverflow.com/a/70161549
 
 package com.github.badbadbadbadbad.tsundoku.external;
@@ -12,6 +12,7 @@ import javafx.scene.input.ScrollEvent;
 public class SmoothScroll {
 
     private final static double BASE_MODIFIER = 1;
+    private double accumulatedTargetVValue = 0;
 
     public SmoothScroll(final ScrollPane scrollPane, final Node node) {
         this(scrollPane, node, 160);
@@ -29,15 +30,19 @@ public class SmoothScroll {
                 if (deltaYOrg==0) {
                     return;
                 }
-                double percents = calculatePercents(deltaYOrg>=0);
 
-                final double startingVValue = scrollPane.getVvalue();
+                // JavaFX uses vValue for the scrollpane, hence binding scroll size to scrollPane content size by default.
+                // Override this behaviour by normalizing for scrollPane height.
+                double pixelScrollChange = baseChange * BASE_MODIFIER;
+                double totalContentHeight = scrollPane.getContent().getBoundsInLocal().getHeight();
+                double vvalueChange = -pixelScrollChange / totalContentHeight;
 
-                smoothTransition(
-                        startingVValue,
-                        getFinalVValue(startingVValue, percents),
-                        BASE_MODIFIER * deltaYOrg
-                );
+                // Fuse interrupted scroll into new scroll
+                accumulatedTargetVValue += vvalueChange * Math.signum(deltaYOrg);
+                accumulatedTargetVValue = Math.max(0, Math.min(accumulatedTargetVValue, 1));
+
+                smoothTransition(scrollPane.getVvalue(), accumulatedTargetVValue, deltaYOrg);
+
             }
 
             private void smoothTransition(double startingVValue, double finalVValue, double deltaY) {
@@ -50,29 +55,7 @@ public class SmoothScroll {
                         );
                     }
                 };
-                transition.play();
-            }
-
-            private double getFinalVValue(double startingVValue, double percents) {
-                double finalVValueToSet = startingVValue + percents;
-                if (finalVValueToSet>1) {
-                    return 1d;
-                }
-                if (finalVValueToSet<0) {
-                    return 0d;
-                }
-                return finalVValueToSet;
-            }
-
-            private double calculatePercents(boolean positive) {
-                double fullHeight = scrollPane.getContent().getBoundsInLocal().getHeight();
-                double viewableHeight = scrollPane.getBoundsInLocal().getHeight();
-                double fullChangeInHeight = fullHeight-viewableHeight;
-                double percents = baseChange /fullChangeInHeight;
-                if (positive) {
-                    percents = percents*-1;
-                }
-                return percents;
+                transition.playFromStart();
             }
         });
     }
