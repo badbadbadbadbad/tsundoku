@@ -2,6 +2,7 @@ package com.github.badbadbadbadbad.tsundoku.controllers;
 
 import com.github.badbadbadbadbad.tsundoku.models.ConfigModel;
 import com.github.badbadbadbadbad.tsundoku.views.AnimeGridView;
+import com.github.badbadbadbadbad.tsundoku.views.AnimeLogView;
 import com.github.badbadbadbadbad.tsundoku.views.SidebarView;
 import javafx.animation.*;
 import javafx.geometry.Insets;
@@ -99,8 +100,13 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
 
         switch (mediaMode) {
             case "Anime" -> {
-                AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController); // TODO Give anime grid initial filters
-                gridView = animeGridView.createGridView();
+                if (browseMode.equals("Browse")) {
+                    AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController); // TODO Give anime grid initial filters
+                    gridView = animeGridView.createGridView();
+                } else {
+                    AnimeLogView animeLogView = new AnimeLogView(stage, databaseController);
+                    gridView = animeLogView.createGridView();
+                }
             }
             case "Manga" -> {
                 AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController);

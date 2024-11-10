@@ -1,9 +1,8 @@
 package com.github.badbadbadbadbad.tsundoku.views;
 
-import com.github.badbadbadbadbad.tsundoku.controllers.PopupListener;
+import com.github.badbadbadbadbad.tsundoku.controllers.DatabaseRequestListener;
 import com.github.badbadbadbadbad.tsundoku.external.SmoothScroll;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
-import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
@@ -26,7 +25,7 @@ import java.util.function.BiFunction;
 public class AnimePopupView {
     double RATIO = 318.0 / 225.0; // The aspect ratio to use for anime images. Close to most cover images.
 
-    private final PopupListener popupListener;
+    private final DatabaseRequestListener databaseRequestListener;
     private final AnimeInfo anime;                  // The anime data of the grid item that was clicked to create this popup
     private final AnimeInfo databaseAnime;          // The anime data of the matching anime, received from the local database, if it exists.
     private final VBox darkBackground;              // The background surrounding the popup. Needed to call the destruction event.
@@ -34,13 +33,13 @@ public class AnimePopupView {
     private final VBox popupBox;
     private final List<Button> ratingButtons = new ArrayList<>();
 
-    public AnimePopupView(AnimeInfo anime, PopupListener popupListener, VBox darkBackground) {
+    public AnimePopupView(AnimeInfo anime, DatabaseRequestListener databaseRequestListener, VBox darkBackground) {
         this.popupBox = new VBox();
-        this.popupListener = popupListener;
+        this.databaseRequestListener = databaseRequestListener;
         this.anime = anime;
         this.darkBackground = darkBackground;
 
-        this.databaseAnime = popupListener.requestAnimeFromDatabase(anime.getId());
+        this.databaseAnime = databaseRequestListener.requestAnimeFromDatabase(anime.getId());
     }
 
     public VBox createPopup() {
@@ -450,7 +449,7 @@ public class AnimePopupView {
         saveButton.setOnAction(e -> {
 
             // Pass the anime data to the database model, where it will be processed accordingly
-            popupListener.onAnimeSaveButtonPressed(this.anime);
+            databaseRequestListener.onAnimeSaveButtonPressed(this.anime);
 
             // Destroy darkener background and popup after invoking changes saved
             darkBackground.fireEvent(new MouseEvent(MouseEvent.MOUSE_CLICKED, 0, 0, 0, 0, MouseButton.PRIMARY, 1,

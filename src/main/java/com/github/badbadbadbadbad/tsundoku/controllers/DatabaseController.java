@@ -3,7 +3,7 @@ package com.github.badbadbadbadbad.tsundoku.controllers;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import com.github.badbadbadbadbad.tsundoku.models.DatabaseModel;
 
-public class DatabaseController implements PopupListener {
+public class DatabaseController implements DatabaseRequestListener {
 
     private final DatabaseModel databaseModel;
 

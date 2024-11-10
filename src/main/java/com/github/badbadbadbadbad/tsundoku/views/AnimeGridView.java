@@ -4,7 +4,7 @@ package com.github.badbadbadbadbad.tsundoku.views;
 import com.github.badbadbadbadbad.tsundoku.controllers.APIRequestListener;
 import com.github.badbadbadbadbad.tsundoku.controllers.GridFilterListener;
 import com.github.badbadbadbadbad.tsundoku.controllers.LoadingBarListener;
-import com.github.badbadbadbadbad.tsundoku.controllers.PopupListener;
+import com.github.badbadbadbadbad.tsundoku.controllers.DatabaseRequestListener;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeListInfo;
 import com.github.badbadbadbadbad.tsundoku.external.FlowGridPane;
@@ -13,7 +13,6 @@ import javafx.animation.*;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
@@ -23,7 +22,6 @@ import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.layout.Region;
-import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
@@ -43,7 +41,7 @@ public class AnimeGridView {
     private final GridFilterListener gridFilterListener;
     private final APIRequestListener apiRequestListener;
     private final LoadingBarListener loadingBarListener;
-    private final PopupListener popupListener;
+    private final DatabaseRequestListener databaseRequestListener;
 
     private ScrollPane scrollPane;
     private FlowGridPane animeGrid;
@@ -58,12 +56,12 @@ public class AnimeGridView {
     private boolean apiLock = false;
 
 
-    public AnimeGridView(Stage stage, LoadingBarListener loadingBarListener, APIRequestListener apiRequestListener, GridFilterListener gridFilterListener, PopupListener popupListener) {
+    public AnimeGridView(Stage stage, LoadingBarListener loadingBarListener, APIRequestListener apiRequestListener, GridFilterListener gridFilterListener, DatabaseRequestListener databaseRequestListener) {
         this.stage = stage;
         this.loadingBarListener = loadingBarListener;
         this.apiRequestListener = apiRequestListener;
         this.gridFilterListener = gridFilterListener;
-        this.popupListener = popupListener;
+        this.databaseRequestListener = databaseRequestListener;
     }
 
 
@@ -704,6 +702,7 @@ public class AnimeGridView {
                         animeGrid.getChildren().clear();
                         animeGrid.getChildren().addAll(animeBoxes);
                         adjustGridItemHeights(); // Adjust the heights after adding to the scene graph
+                        updateVisibleGridItems(scrollPane);
 
                         // Update the internal rows count of grid after children were updated
                         animeGrid.setRowsCount((int) Math.ceil((double) animeGrid.getChildren().size() / animeGrid.getColsCount()));
@@ -915,7 +914,7 @@ public class AnimeGridView {
         HBox.setHgrow(darkBackground, Priority.ALWAYS);
 
         // The actual popup
-        AnimePopupView animePopupView = new AnimePopupView(anime, popupListener, darkBackground);
+        AnimePopupView animePopupView = new AnimePopupView(anime, databaseRequestListener, darkBackground);
         VBox popupBox = animePopupView.createPopup();
 
         // Initially transparent for fade-in effect
