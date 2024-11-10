@@ -6,8 +6,11 @@ package com.github.badbadbadbadbad.tsundoku.external;
 import javafx.animation.Interpolator;
 import javafx.event.EventHandler;
 import javafx.scene.Node;
+import javafx.scene.control.ScrollBar;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.input.ScrollEvent;
+
+import java.util.Set;
 
 public class SmoothScroll {
 
@@ -18,6 +21,27 @@ public class SmoothScroll {
         this(scrollPane, node, 160);
     }
     public SmoothScroll(final ScrollPane scrollPane, final Node node, final double baseChange) {
+
+        // When scrollBar is dragged, the accumulated target vvalue needs to be changed manually.
+        // Unfortunately, JavaFX does not let us access the scrollBar directly for events.
+
+        // The scrollBar cannot be accessed until the scrollPane's skin is loaded.
+        // Platform.runLater is unsafe here, but scrollPanes apparently have a skinProperty we can wait on.
+        scrollPane.skinProperty().addListener((skinObservable, oldSkin, newSkin) -> {
+
+            // This is how the scrollBar of the scrollPane is accessed.
+            Set<Node> nodes = scrollPane.lookupAll(".scroll-bar");
+            for (final Node n : nodes) {
+                if (n instanceof ScrollBar) {
+                    n.setOnMouseReleased(event -> {
+                        accumulatedTargetVValue = scrollPane.getVvalue();
+                    });
+                }
+            }
+        });
+
+
+        // The actual smooth scroller.
         node.setOnScroll(new EventHandler<ScrollEvent>() {
             private SmoothishTransition transition;
 
