@@ -1,6 +1,7 @@
 package com.github.badbadbadbadbad.tsundoku.controllers;
 
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
+import com.github.badbadbadbadbad.tsundoku.models.AnimeListInfo;
 import com.github.badbadbadbadbad.tsundoku.models.DatabaseModel;
 
 public class DatabaseController implements DatabaseRequestListener {
@@ -14,6 +15,11 @@ public class DatabaseController implements DatabaseRequestListener {
     @Override
     public AnimeInfo requestAnimeFromDatabase(int id) {
         return databaseModel.getAnimeEntryFromDatabase(id);
+    }
+
+    @Override
+    public AnimeListInfo requestFullAnimeDatabase() {
+        return databaseModel.getFullAnimeDatabase();
     }
 
     @Override

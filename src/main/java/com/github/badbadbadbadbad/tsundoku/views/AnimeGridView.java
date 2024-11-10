@@ -282,6 +282,13 @@ public class AnimeGridView {
             });
         }
 
+        // Even when filters are hidden, mouse cursor changes to text field cursor when hovering
+        // where the number filters would be.
+        filtersHidden.addListener((obs, oldValue, newValue) -> {
+            comboBox.setDisable(newValue);
+        });
+        comboBox.setDisable(filtersHidden.get()); // Since filters are hidden on startup
+
         return new VBox(5, label, comboBox);
     }
 

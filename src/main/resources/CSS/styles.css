@@ -624,6 +624,24 @@
 
 
 
+/* ************************************* */
+/* Log grid */
+/* ************************************* */
+.log-grid-header-separator {
+    -fx-min-height: 1px;
+    -fx-pref-height: 1px;
+    -fx-max-height: 1px;
+    -fx-background-color: -gold-highlight;
+}
+
+.log-grid-header-text {
+    -fx-alignment: center;
+    -fx-text-fill: -gold-highlight;
+    -fx-font-size: 25;
+    -fx-font-style: italic;
+    /* -fx-font-weight: 200; */
+}
+
 
 /* Spinner stuff */
 /* Not sure if we'll be using spinners? */

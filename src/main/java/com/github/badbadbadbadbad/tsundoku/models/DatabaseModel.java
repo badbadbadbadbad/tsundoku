@@ -2,6 +2,8 @@ package com.github.badbadbadbadbad.tsundoku.models;
 
 import java.nio.file.Paths;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DatabaseModel {
     private static final String appName = "tsundoku";
@@ -118,5 +120,34 @@ public class DatabaseModel {
 
         // If the requested ID isn't in the database, we return null. Is handled on the receiver end.
         return null;
+    }
+
+
+    public AnimeListInfo getFullAnimeDatabase() {
+        String url = "jdbc:sqlite:" + databaseFilePath;
+        String sqlSelectAll = "SELECT id, ownRating, ownStatus, episodesProgress, title, titleJapanese, titleEnglish, imageUrl, publicationStatus, "
+                + "episodesTotal, source, ageRating, synopsis, release, studios, type FROM anime";
+        List<AnimeInfo> animeList = new ArrayList<>();
+
+        try (Connection conn = DriverManager.getConnection(url);
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sqlSelectAll)) {
+
+            while (rs.next()) {
+                AnimeInfo animeInfo = new AnimeInfo(rs.getInt("id"), rs.getString("title"), rs.getString("titleJapanese"), rs.getString("titleEnglish"),
+                        rs.getString("imageUrl"), rs.getString("publicationStatus"), rs.getInt("episodesTotal"), rs.getString("source"),
+                        rs.getString("ageRating"), rs.getString("synopsis"), rs.getString("release"), rs.getString("studios"), rs.getString("type")
+                );
+                animeInfo.setOwnRating(rs.getString("ownRating"));
+                animeInfo.setOwnStatus(rs.getString("ownStatus"));
+                animeInfo.setEpisodesProgress(rs.getInt("episodesProgress"));
+
+                animeList.add(animeInfo);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return new AnimeListInfo(animeList, 0);
     }
 }
