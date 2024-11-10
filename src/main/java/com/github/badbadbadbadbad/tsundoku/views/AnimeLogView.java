@@ -40,7 +40,7 @@ public class AnimeLogView {
     private StackPane stackPane;
 
     private String displayMode = "Any";
-    private static final BooleanProperty filtersHidden = new SimpleBooleanProperty(true);
+    private final BooleanProperty filtersHidden = new SimpleBooleanProperty(true);
 
     public AnimeLogView(Stage stage, DatabaseRequestListener databaseRequestListener) {
         this.stage = stage;
@@ -48,6 +48,8 @@ public class AnimeLogView {
     }
 
     public Region createGridView() {
+
+        System.out.println(filtersHidden.get());
 
         VBox root = new VBox();
         VBox.setVgrow(root, Priority.ALWAYS);
@@ -66,7 +68,7 @@ public class AnimeLogView {
         HBox searchAndFilterToggleBox = createSearchAndFilterToggle(filters);
 
         VBox controls = new VBox();
-        controls.getStyleClass().add("content-pane-controls");
+        controls.getStyleClass().add("log-grid-content-pane-controls");
         controls.setMinHeight(Control.USE_PREF_SIZE);
 
         controls.getChildren().addAll(searchAndFilterToggleBox, filters);
@@ -188,6 +190,7 @@ public class AnimeLogView {
     private HBox createSearchAndFilterToggle(FlowGridPane filters) {
         // Wrapper
         HBox searchAndModeBox = new HBox();
+        // searchAndModeBox.setStyle("-fx-spacing: 10;");
         searchAndModeBox.getStyleClass().add("search-bar-and-filter-toggle");
 
         // Search bar
@@ -258,6 +261,7 @@ public class AnimeLogView {
 
 
         if (!filtersHidden.get()) {
+            System.out.println("Test");
             filtersGrid.setMaxHeight(filtersGrid.prefHeight(filtersGrid.getWidth()));
         }
 
@@ -470,7 +474,6 @@ public class AnimeLogView {
         animeGrid.setVgap(20);
         animeGrid.setMaxWidth(Double.MAX_VALUE);
         animeGrid.setStyle("-fx-padding: 0 0 10 0;");
-
         reloadAnimeGridAsync(animeGrid, animeList).join();
 
         int animesAmount = animeGrid.getChildren().size();

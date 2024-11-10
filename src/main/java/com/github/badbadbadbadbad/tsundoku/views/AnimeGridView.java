@@ -52,7 +52,7 @@ public class AnimeGridView {
     private String searchString = "";
 
     private ChangeListener<Number> filtersWidthListener;
-    private static final BooleanProperty filtersHidden = new SimpleBooleanProperty(true);
+    private final BooleanProperty filtersHidden = new SimpleBooleanProperty(true);
     private boolean apiLock = false;
 
 
@@ -370,6 +370,7 @@ public class AnimeGridView {
         ParallelTransition test = new ParallelTransition(move, movePadding);
         SequentialTransition st = new SequentialTransition(fade, test);
         ParallelTransition pt = new ParallelTransition(cooldown, st);
+
 
 
         // TODO Is this right here?

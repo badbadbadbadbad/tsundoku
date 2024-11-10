@@ -627,6 +627,18 @@
 /* ************************************* */
 /* Log grid */
 /* ************************************* */
+.log-grid-content-pane-controls {
+    -fx-background-color: -content-background-color;
+    -fx-padding: 15 15 0 15;
+    -fx-alignment: center;
+}
+
+.log-grid-content-pane-controls-bottom-border {
+    -fx-border-color: -gold-highlight;
+    -fx-border-width: 0 0 1 0;
+}
+
+
 .log-grid-header-separator {
     -fx-min-height: 1px;
     -fx-pref-height: 1px;
