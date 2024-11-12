@@ -1,3 +1,8 @@
+@font-face {
+    src: url("../fonts/NotoSerifJP-SemiBold.ttf");
+}
+
+
 /* The root class is used to define colors for the scope of all CSS */
 .root {
     /* The actual colours we use. */
@@ -121,7 +126,8 @@
 #main-label {
     -fx-text-fill: white;
     -fx-font-size: 32px;
-    -fx-font-weight: bold;
+    -fx-font-family: "Noto Serif JP SemiBold";
+    -fx-font-weight: 600;
 }
 
 .separator {

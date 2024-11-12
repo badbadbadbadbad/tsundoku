@@ -39,7 +39,10 @@ public class SidebarView {
         sidebar.setMinWidth(adjustedSidebarWidth);
         sidebar.setMaxWidth(adjustedSidebarWidth);
 
-        Label programLabel = new Label("tsundoku.");
+        // Label programLabel = new Label("tsundoku.");
+        // Label programLabel = new Label("つんどく.");
+        // Label programLabel = new Label("つんどく｡");       // Full-width dot
+        Label programLabel = new Label("つんどく｡");      // Half-width dot
         programLabel.setId("main-label");
 
         Region separator = new Region();

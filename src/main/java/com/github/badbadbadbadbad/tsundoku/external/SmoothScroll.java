@@ -27,7 +27,7 @@ public class SmoothScroll {
         // Unfortunately, JavaFX does not let us access the scrollBar directly for events.
 
         // The scrollBar cannot be accessed until the scrollPane's skin is loaded.
-        // Platform.runLater is unsafe here, but scrollPanes apparently have a skinProperty we can wait on.
+        // Platform.runLater is "unsafe" here, but scrollPanes apparently have a skinProperty we can wait on.
         scrollPane.skinProperty().addListener((skinObservable, oldSkin, newSkin) -> {
 
             // This is how the scrollBar of the scrollPane is accessed.
@@ -70,10 +70,12 @@ public class SmoothScroll {
 
             }
 
+            // Calling the interpolated animation
             private void smoothTransition(double startingVValue, double finalVValue, double deltaY) {
                 Interpolator interp = Interpolator.LINEAR;
 
                 // Stop the previous transition if it's still running to prevent conflicts
+                // If not done, the scrollbar may teleport occasionally
                 if (transition != null && transition.getStatus() == Animation.Status.RUNNING) {
                     transition.stop();
                 }
@@ -89,22 +91,6 @@ public class SmoothScroll {
 
                 transition.playFromStart();
             }
-
-            /*
-            private void smoothTransition(double startingVValue, double finalVValue, double deltaY) {
-                Interpolator interp = Interpolator.LINEAR;
-                transition = new SmoothishTransition(transition, deltaY) {
-                    @Override
-                    protected void interpolate(double frac) {
-                        scrollPane.setVvalue(
-                                interp.interpolate(startingVValue, finalVValue, frac)
-                        );
-                    }
-                };
-                transition.playFromStart();
-            }
-
-             */
         });
     }
 }

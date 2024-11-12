@@ -9,6 +9,7 @@ import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -46,8 +47,20 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
 
 
         Scene scene = new Scene(root);
+
+        // Fonts
+        // Font.loadFont(getClass().getResource("/fonts/NotoSerifJP-ExtraLight.ttf").toExternalForm(), -1);
+        Font font1 = Font.loadFont(getClass().getResource("/fonts/NotoSerifJP-SemiBold.ttf").toExternalForm(), -1);
+
+        System.out.println(String.format("Fonts loaded, names to be used in CSS: %s", font1.getName()));
+
+
+        // CSS
         scene.getStylesheets().add(getClass().getResource("/CSS/styles.css").toExternalForm());
-        scene.setFill(Color.rgb(35, 36, 42)); // To prevent white flicker on expanding resize
+
+
+        // To prevent white flicker on expanding resize
+        scene.setFill(Color.rgb(35, 36, 42));
 
 
 
