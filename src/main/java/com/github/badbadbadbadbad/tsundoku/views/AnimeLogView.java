@@ -49,8 +49,6 @@ public class AnimeLogView {
 
     public Region createGridView() {
 
-        System.out.println(filtersHidden.get());
-
         VBox root = new VBox();
         VBox.setVgrow(root, Priority.ALWAYS);
         HBox.setHgrow(root, Priority.ALWAYS);
@@ -261,7 +259,6 @@ public class AnimeLogView {
 
 
         if (!filtersHidden.get()) {
-            System.out.println("Test");
             filtersGrid.setMaxHeight(filtersGrid.prefHeight(filtersGrid.getWidth()));
         }
 
@@ -427,7 +424,7 @@ public class AnimeLogView {
     private HBox createGridHeader(String labelText, ObservableList<AnimeInfo> animeList) {
         HBox headerBox = new HBox(5);
         headerBox.setPrefHeight(40);
-        headerBox.setStyle("-fx-border-width: 1 0 1 0; -fx-border-color: white;");
+        // headerBox.setStyle("-fx-border-width: 1 0 1 0; -fx-border-color: white;");
         HBox.setHgrow(headerBox, Priority.ALWAYS);
         headerBox.setAlignment(Pos.CENTER);
 
@@ -473,7 +470,7 @@ public class AnimeLogView {
         animeGrid.setHgap(20);
         animeGrid.setVgap(20);
         animeGrid.setMaxWidth(Double.MAX_VALUE);
-        animeGrid.setStyle("-fx-padding: 0 0 10 0;");
+        animeGrid.setStyle("-fx-padding: 0 0 20 0;");
         reloadAnimeGridAsync(animeGrid, animeList).join();
 
         int animesAmount = animeGrid.getChildren().size();

@@ -3,6 +3,7 @@
 
 package com.github.badbadbadbadbad.tsundoku.external;
 
+import javafx.animation.Animation;
 import javafx.animation.Interpolator;
 import javafx.event.EventHandler;
 import javafx.scene.Node;
@@ -71,6 +72,27 @@ public class SmoothScroll {
 
             private void smoothTransition(double startingVValue, double finalVValue, double deltaY) {
                 Interpolator interp = Interpolator.LINEAR;
+
+                // Stop the previous transition if it's still running to prevent conflicts
+                if (transition != null && transition.getStatus() == Animation.Status.RUNNING) {
+                    transition.stop();
+                }
+
+                transition = new SmoothishTransition(transition, deltaY) {
+                    @Override
+                    protected void interpolate(double frac) {
+                        scrollPane.setVvalue(
+                                interp.interpolate(startingVValue, finalVValue, frac)
+                        );
+                    }
+                };
+
+                transition.playFromStart();
+            }
+
+            /*
+            private void smoothTransition(double startingVValue, double finalVValue, double deltaY) {
+                Interpolator interp = Interpolator.LINEAR;
                 transition = new SmoothishTransition(transition, deltaY) {
                     @Override
                     protected void interpolate(double frac) {
@@ -81,6 +103,8 @@ public class SmoothScroll {
                 };
                 transition.playFromStart();
             }
+
+             */
         });
     }
 }
