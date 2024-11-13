@@ -93,4 +93,8 @@ public class SmoothScroll {
             }
         });
     }
+
+    public void resetAccumulatedVValue() {
+        accumulatedTargetVValue = 0;
+    }
 }

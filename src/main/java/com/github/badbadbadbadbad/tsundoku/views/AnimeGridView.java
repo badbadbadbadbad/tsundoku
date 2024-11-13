@@ -47,6 +47,7 @@ public class AnimeGridView {
     private FlowGridPane animeGrid;
     private HBox paginationButtons;
     private StackPane stackPane;
+    private SmoothScroll smoothScroll;
 
     private String searchMode = "SEASON";  // Changes between SEASON, TOP, and SEARCH depending on last mode selected (so pagination calls "current mode")
     private String searchString = "";
@@ -548,7 +549,7 @@ public class AnimeGridView {
 
         // Smooth scroll listener because JavaFX does not hav smooth scrolling..
         // in /util/, SmoothScroll
-        new SmoothScroll(scrollPane, wrapper);
+        this.smoothScroll = new SmoothScroll(scrollPane, wrapper);
 
         return scrollPane;
     }
@@ -711,6 +712,10 @@ public class AnimeGridView {
                         animeGrid.getChildren().addAll(animeBoxes);
                         adjustGridItemHeights(); // Adjust the heights after adding to the scene graph
                         updateVisibleGridItems(scrollPane);
+
+                        // Reset smooth scroll accumulated vvalue
+                        if (!(smoothScroll == null))
+                            smoothScroll.resetAccumulatedVValue();
 
                         // Update the internal rows count of grid after children were updated
                         animeGrid.setRowsCount((int) Math.ceil((double) animeGrid.getChildren().size() / animeGrid.getColsCount()));
