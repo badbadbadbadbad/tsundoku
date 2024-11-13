@@ -357,7 +357,7 @@ public class AnimePopupView {
 
         // Smooth scroll listener
         // in /external/
-        new SmoothScroll(scrollPane, content, 80);
+        new SmoothScroll(scrollPane, content, 150);
 
         return scrollPane;
     }

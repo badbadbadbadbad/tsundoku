@@ -49,10 +49,18 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
         Scene scene = new Scene(root);
 
         // Fonts
-        // Font.loadFont(getClass().getResource("/fonts/NotoSerifJP-ExtraLight.ttf").toExternalForm(), -1);
-        Font font1 = Font.loadFont(getClass().getResource("/fonts/NotoSerifJP-SemiBold.ttf").toExternalForm(), -1);
+        Font.loadFont(getClass().getResource("/fonts/NotoSerifJP-Black.ttf").toExternalForm(), -1);
+        Font.loadFont(getClass().getResource("/fonts/NotoSerifJP-Bold.ttf").toExternalForm(), -1);
+        Font.loadFont(getClass().getResource("/fonts/NotoSerifJP-ExtraBold.ttf").toExternalForm(), -1);
+        Font.loadFont(getClass().getResource("/fonts/NotoSerifJP-ExtraLight.ttf").toExternalForm(), -1);
+        Font.loadFont(getClass().getResource("/fonts/NotoSerifJP-Light.ttf").toExternalForm(), -1);
+        Font.loadFont(getClass().getResource("/fonts/NotoSerifJP-Medium.ttf").toExternalForm(), -1);
+        Font.loadFont(getClass().getResource("/fonts/NotoSerifJP-Regular.ttf").toExternalForm(), -1);
+        Font.loadFont(getClass().getResource("/fonts/NotoSerifJP-SemiBold.ttf").toExternalForm(), -1);
 
-        System.out.println(String.format("Fonts loaded, names to be used in CSS: %s", font1.getName()));
+        // Font.loadFont(getClass().getResource("/fonts/NotoSerifJP-ExtraLight.ttf").toExternalForm(), -1);
+        // Font font1 = Font.loadFont(getClass().getResource("/fonts/NotoSerifJP-SemiBold.ttf").toExternalForm(), -1);
+        // System.out.println(String.format("Fonts loaded, names to be used in CSS: %s", font1.getName()));
 
 
         // CSS

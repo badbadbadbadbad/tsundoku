@@ -1,3 +1,6 @@
+## Fonts (TEMPORARY WHILE UNDER CONSTRUCTION)
+## src/main/resources/fonts/
+
 target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/

@@ -1,6 +1,35 @@
 @font-face {
+    src: url("../fonts/NotoSerifJP-Black.ttf");
+}
+
+@font-face {
+    src: url("../fonts/NotoSerifJP-Bold.ttf");
+}
+
+@font-face {
+    src: url("../fonts/NotoSerifJP-ExtraBold.ttf");
+}
+
+@font-face {
+    src: url("../fonts/NotoSerifJP-ExtraLight.ttf");
+}
+
+@font-face {
+    src: url("../fonts/NotoSerifJP-Light.ttf");
+}
+
+@font-face {
+    src: url("../fonts/NotoSerifJP-Medium.ttf");
+}
+
+@font-face {
+    src: url("../fonts/NotoSerifJP-Regular.ttf");
+}
+
+@font-face {
     src: url("../fonts/NotoSerifJP-SemiBold.ttf");
 }
+
 
 
 /* The root class is used to define colors for the scope of all CSS */
@@ -125,9 +154,9 @@
 
 #main-label {
     -fx-text-fill: white;
-    -fx-font-size: 32px;
-    -fx-font-family: "Noto Serif JP SemiBold";
-    -fx-font-weight: 600;
+    -fx-font-size: 42px;
+    -fx-font-family: "Noto Serif JP Bold";
+    -fx-padding: 0 0 0 10; /* The padding is used because the つんどく looks slightly off-center due to the use of 。*/
 }
 
 .separator {
