@@ -24,4 +24,8 @@ public class PaneFinder {
         }
         return null;
     }
+
+    public int getTotalItemCount() {
+        return flowPanes.stream().mapToInt(pane -> pane.getChildren().size()).sum();
+    }
 }

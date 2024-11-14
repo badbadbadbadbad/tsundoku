@@ -38,6 +38,7 @@ public class AnimeLogView {
     // private FlowGridPane animeGrid;
     private StackPane stackPane;
     private LazyLoader lazyLoader;
+    private SmoothScroll smoothScroll;
 
     private String displayMode = "Any";
     private final BooleanProperty filtersHidden = new SimpleBooleanProperty(true);
@@ -140,18 +141,24 @@ public class AnimeLogView {
         // this.scrollPane = createLogGrid(animeListInfo);
 
 
-        // Lazy Loader
-        // lazyLoader = new LazyLoader(scrollPane, grids);
+        // Collect grid loading futures
+        List<CompletableFuture<Void>> gridFutures = new ArrayList<>();
+        gridFutures.add(reloadAnimeGridAsync(inProgressGrid, inProgressAnimeList));
+        gridFutures.add(reloadAnimeGridAsync(backlogGrid, backlogAnimeList));
+        gridFutures.add(reloadAnimeGridAsync(completedGrid, completedAnimeList));
+        gridFutures.add(reloadAnimeGridAsync(pausedGrid, pausedAnimeList));
+        gridFutures.add(reloadAnimeGridAsync(droppedGrid, droppedAnimeList));
+        CompletableFuture<Void> allGridsLoaded = CompletableFuture.allOf(
+                gridFutures.toArray(new CompletableFuture[0])
+        );
 
-        /*
-        boolean gridItemExists = grids.stream().anyMatch(grid -> !grid.getChildren().isEmpty());
-        if (gridItemExists) {
-            lazyLoader.setFirstVisibleIndex(0);
-            lazyLoader.setLastVisibleIndex(0);
-            lazyLoader.updateVisibilityFull();
-        }
+        allGridsLoaded.thenRun(() -> {
+            Platform.runLater(() -> {
+                // Create the LazyLoader once all grids have finished loading
+                lazyLoader = new LazyLoader(scrollPane, grids);
+            });
+        });
 
-         */
 
         // ScrollPane listener to give controls a bottom border when scrolling
         Region separator = new Region();
@@ -383,7 +390,10 @@ public class AnimeLogView {
 
         // TODO Is this right here?
         pt.setOnFinished(e -> {
-            // updateVisibleGridItems(scrollPane);
+            if (lazyLoader != null) {
+                lazyLoader.updateVisibilityFull();
+            }
+
         });
 
         pt.play();
@@ -420,7 +430,9 @@ public class AnimeLogView {
 
         // TODO Is this right here?
         pt.setOnFinished(e -> {
-            // updateVisibleGridItems(scrollPane);
+            if (lazyLoader != null) {
+                lazyLoader.updateVisibilityFull();
+            }
         });
 
         // Filters are a bit squished after clicking "show filters" button until a resize if this is not done
@@ -482,12 +494,16 @@ public class AnimeLogView {
         animeGrid.setVgap(20);
         animeGrid.setMaxWidth(Double.MAX_VALUE);
         animeGrid.setStyle("-fx-padding: 0 0 20 0;");
+
+        /*
         reloadAnimeGridAsync(animeGrid, animeList).join();
 
         int animesAmount = animeGrid.getChildren().size();
         int cols = 3;
         int rows = (int) Math.ceil((double) animesAmount / cols);
         animeGrid.setRowsCount(rows);
+
+         */
 
         return animeGrid;
     }
@@ -499,8 +515,17 @@ public class AnimeLogView {
                     Platform.runLater(() -> {
                         animeGrid.getChildren().clear();
                         animeGrid.getChildren().addAll(animeBoxes);
+
+                        int animesAmount = animeGrid.getChildren().size();
+                        int cols = 3;
+                        // int rows = (int) Math.ceil((double) animesAmount / cols);
+                        // animeGrid.setRowsCount(rows);
+
                         // adjustGridItemHeights(); // Adjust the heights after adding to the scene graph
                         // updateVisibleGridItems(scrollPane);
+                        // if (animeBoxes.size() > 0)
+                        //     lazyLoader.initiateFirst();
+                        // lazyLoader.updateVisibilityFull();
 
                         // Update the internal rows count of grid after children were updated
                         animeGrid.setRowsCount((int) Math.ceil((double) animeGrid.getChildren().size() / animeGrid.getColsCount()));
@@ -600,7 +625,7 @@ public class AnimeLogView {
 
 
         // Initialize as non-visible so the scrollpane image loading listener updates it correctly
-        // animeBox.setVisible(false);
+        animeBox.setVisible(false);
 
         return animeBox;
     }
@@ -619,7 +644,25 @@ public class AnimeLogView {
         scrollPane.getStyleClass().add("grid-scroll-pane");
         VBox.setVgrow(scrollPane, Priority.ALWAYS);
 
-        new SmoothScroll(scrollPane, wrapper);
+        scrollPane.vvalueProperty().addListener((obs, oldValue, newValue) -> {
+            if (lazyLoader != null) {
+                lazyLoader.updateVisibilityFull();
+            }
+        });
+
+
+
+        // scrollPane.widthProperty().addListener(e -> lazyLoader.updateVisibilityFull());
+        scrollPane.heightProperty().addListener((obs, oldValue, newValue) -> {
+            if (lazyLoader != null) {
+                Platform.runLater(() -> {
+                    lazyLoader.updateVisibilityFull();
+                });
+
+            }
+    });
+
+        this.smoothScroll = new SmoothScroll(scrollPane, wrapper);
 
         return scrollPane;
     }

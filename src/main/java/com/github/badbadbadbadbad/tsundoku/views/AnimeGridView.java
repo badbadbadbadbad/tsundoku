@@ -707,18 +707,54 @@ public class AnimeGridView {
     private CompletableFuture<Void> reloadAnimeGridAsync(List<AnimeInfo> animeList) {
         return CompletableFuture.supplyAsync(() -> createAnimeGridItems(animeList))
                 .thenAccept(animeBoxes -> {
+                    animeGrid.getChildren().clear();
+                    animeGrid.getChildren().addAll(animeBoxes);
+                    animeGrid.setRowsCount((int) Math.ceil((double) animeGrid.getChildren().size() / animeGrid.getColsCount()));
                     Platform.runLater(() -> {
-                        animeGrid.getChildren().clear();
-                        animeGrid.getChildren().addAll(animeBoxes);
+                        // animeGrid.getChildren().clear();
+                        // animeGrid.getChildren().addAll(animeBoxes);
+
+                        new AnimationTimer() {
+                            @Override
+                            public void handle(long now) {
+                                Bounds paneBounds = scrollPane.localToScene(scrollPane.getBoundsInLocal());
+                                if (paneBounds.getWidth() > 0 && paneBounds.getHeight() > 0) {
+
+                                    adjustGridItemHeights();
+
+                                    // And a nested Platform.runLater because adjustGridItemHeights sets min/max/pref height
+                                    // This is needed so JavaFX can actually set the _true_ height, which this function needs
+                                    // Thanks, JavaFX
+                                    Platform.runLater(() -> {
+                                        updateVisibleGridItems(scrollPane);
+                                        if (!(smoothScroll == null))
+                                            smoothScroll.resetAccumulatedVValue();
+                                    });
+
+                                    stop();
+                                }
+                            }
+                        }.start();
+
+
+                        /*
                         adjustGridItemHeights(); // Adjust the heights after adding to the scene graph
-                        updateVisibleGridItems(scrollPane);
+
+                        Platform.runLater(() -> {
+                            updateVisibleGridItems(scrollPane);
+                            if (!(smoothScroll == null))
+                                smoothScroll.resetAccumulatedVValue();
+                        });
+
+                         */
+                        // updateVisibleGridItems(scrollPane);
 
                         // Reset smooth scroll accumulated vvalue
-                        if (!(smoothScroll == null))
-                            smoothScroll.resetAccumulatedVValue();
+                        // if (!(smoothScroll == null))
+                        //     smoothScroll.resetAccumulatedVValue();
 
                         // Update the internal rows count of grid after children were updated
-                        animeGrid.setRowsCount((int) Math.ceil((double) animeGrid.getChildren().size() / animeGrid.getColsCount()));
+                        // animeGrid.setRowsCount((int) Math.ceil((double) animeGrid.getChildren().size() / animeGrid.getColsCount()));
                     });
                 });
     }

@@ -33,7 +33,6 @@ public class SmoothScroll {
 
             // This is how the scrollBar of the scrollPane is accessed.
             Set<Node> nodes = scrollPane.lookupAll(".scroll-bar");
-            System.out.println(nodes);
             for (final Node n : nodes) {
                 if (n instanceof ScrollBar) {
 
