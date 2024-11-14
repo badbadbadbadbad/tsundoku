@@ -10,6 +10,7 @@ import javafx.scene.Node;
 import javafx.scene.control.ScrollBar;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.input.ScrollEvent;
+import javafx.scene.layout.StackPane;
 
 import java.util.Set;
 
@@ -32,8 +33,16 @@ public class SmoothScroll {
 
             // This is how the scrollBar of the scrollPane is accessed.
             Set<Node> nodes = scrollPane.lookupAll(".scroll-bar");
+            System.out.println(nodes);
             for (final Node n : nodes) {
                 if (n instanceof ScrollBar) {
+
+                    // Also need to handle the "scroll track click" event..
+                    n.setOnMouseClicked(event -> {
+                        accumulatedTargetVValue = scrollPane.getVvalue();
+                    });
+
+                    // Scroll bar drag event
                     n.setOnMouseReleased(event -> {
                         accumulatedTargetVValue = scrollPane.getVvalue();
                     });

@@ -5,6 +5,7 @@ import com.github.badbadbadbadbad.tsundoku.external.FlowGridPane;
 import com.github.badbadbadbadbad.tsundoku.external.SmoothScroll;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeListInfo;
+import com.github.badbadbadbadbad.tsundoku.util.LazyLoader;
 import javafx.animation.*;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
@@ -36,6 +37,7 @@ public class AnimeLogView {
     private ScrollPane scrollPane;
     // private FlowGridPane animeGrid;
     private StackPane stackPane;
+    private LazyLoader lazyLoader;
 
     private String displayMode = "Any";
     private final BooleanProperty filtersHidden = new SimpleBooleanProperty(true);
@@ -138,7 +140,18 @@ public class AnimeLogView {
         // this.scrollPane = createLogGrid(animeListInfo);
 
 
+        // Lazy Loader
+        // lazyLoader = new LazyLoader(scrollPane, grids);
 
+        /*
+        boolean gridItemExists = grids.stream().anyMatch(grid -> !grid.getChildren().isEmpty());
+        if (gridItemExists) {
+            lazyLoader.setFirstVisibleIndex(0);
+            lazyLoader.setLastVisibleIndex(0);
+            lazyLoader.updateVisibilityFull();
+        }
+
+         */
 
         // ScrollPane listener to give controls a bottom border when scrolling
         Region separator = new Region();
@@ -153,7 +166,7 @@ public class AnimeLogView {
         fadeOut.setFromValue(1.0);
         fadeOut.setToValue(0.0);
 
-        /*
+
         scrollPane.vvalueProperty().addListener((obs, oldValue, newValue) -> {
 
             // Platform.runLater else the border starts as shown on scrollPane default position on full grid reload
@@ -174,7 +187,7 @@ public class AnimeLogView {
             });
         });
 
-         */
+
 
 
         // root.getChildren().addAll(controls, separator, scrollPane);
