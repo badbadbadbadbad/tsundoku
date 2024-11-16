@@ -143,8 +143,14 @@ public class AnimeAPIModel {
 
                 // Image URL, String or null
                 String imageUrl = animeNode.get("images").get("jpg").get("large_image_url").asText();
+                // String imageUrl = animeNode.get("images").get("jpg").get("image_url").asText();
                 if (imageUrl.equals("null"))
                     imageUrl = "Not yet provided";
+
+                // Small image URL, String or null
+                String smallImageUrl = animeNode.get("images").get("jpg").get("image_url").asText();
+                if (smallImageUrl.equals("null"))
+                    smallImageUrl = "Not yet provided";
 
                 // Publication status, enum of "Finished Airing", "Currently Airing", "Not yet aired" or null
                 String publicationStatusFull = animeNode.get("status").asText();
@@ -215,8 +221,8 @@ public class AnimeAPIModel {
                     }
                 }
 
-                AnimeInfo anime = new AnimeInfo(id, title, titleJapanese, titleEnglish, imageUrl, publicationStatus,
-                        episodesTotal, source, ageRating, synopsis, release, studios, animeType);
+                AnimeInfo anime = new AnimeInfo(id, title, titleJapanese, titleEnglish, imageUrl, smallImageUrl,
+                        publicationStatus, episodesTotal, source, ageRating, synopsis, release, studios, animeType);
                 animeList.add(anime);
             }
         }

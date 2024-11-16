@@ -140,6 +140,7 @@ public class Initializer {
                 + "titleJapanese TEXT, "
                 + "titleEnglish TEXT, "
                 + "imageUrl TEXT, "
+                + "smallImageUrl TEXT, "
                 + "publicationStatus TEXT, "
                 + "episodesTotal INTEGER, "
                 + "source TEXT, "

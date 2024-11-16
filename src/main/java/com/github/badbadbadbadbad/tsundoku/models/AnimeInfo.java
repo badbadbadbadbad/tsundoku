@@ -10,6 +10,7 @@ public class AnimeInfo {
     private final String titleJapanese;                     // "Japanese" title used by MyAnimeList, or "Not yet provided"
     private final String titleEnglish;                      // "English" title used by MyAnimeList, or "Not yet provided"
     private final String imageUrl;                          // URL pointing to cover art used on MyAnimeList, or "Not yet provided"
+    private final String smallImageUrl;                     // URL pointing to smaller cover art used on MyAnimeList, or "Not yet provided"
     private final String publicationStatus;                 // Current status of an anime of "Airing", "Complete", "Upcoming", or "Not yet provided"
     private final int episodesTotal;                        // Total episodes of this anime. May be 0, which we set to 1.
     private final String source;                            // Original source of this anime, like "Manga", "Light Novel", "Original".
@@ -20,13 +21,14 @@ public class AnimeInfo {
     private final String type;                              // Enum of "TV", "Movie", "OVA", "Special", "ONA", "Music", "CM", "PV", "TV Special", or "Not yet provided"
 
     public AnimeInfo(int id, String title, String titleJapanese, String titleEnglish, String imageUrl,
-                     String publicationStatus, int episodesTotal, String source, String ageRating,
-                     String synopsis, String release, String studios, String type) {
+                     String smallImageUrl, String publicationStatus, int episodesTotal, String source,
+                     String ageRating, String synopsis, String release, String studios, String type) {
         this.id = id;
         this.title = title;
         this.titleJapanese = titleJapanese;
         this.titleEnglish = titleEnglish;
         this.imageUrl = imageUrl;
+        this.smallImageUrl = smallImageUrl;
         this.publicationStatus = publicationStatus;
         this.episodesTotal = episodesTotal;
         this.source = source;
@@ -79,6 +81,10 @@ public class AnimeInfo {
 
     public String getImageUrl() {
         return imageUrl;
+    }
+
+    public String getSmallImageUrl() {
+        return smallImageUrl;
     }
 
     public String getPublicationStatus() {

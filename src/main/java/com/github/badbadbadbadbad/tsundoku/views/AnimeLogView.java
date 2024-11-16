@@ -35,7 +35,6 @@ public class AnimeLogView {
     private final DatabaseRequestListener databaseRequestListener;
 
     private ScrollPane scrollPane;
-    // private FlowGridPane animeGrid;
     private StackPane stackPane;
     private LazyLoader lazyLoader;
     private SmoothScroll smoothScroll;
@@ -135,10 +134,6 @@ public class AnimeLogView {
 
         // Wrapping scrollPane
         ScrollPane scrollPane = createScrollPane(headers, grids);
-        // Turn database information into grids
-
-        // AnimeListInfo animeListInfo = databaseRequestListener.getCurrentAnimeSeason(1).join();
-        // this.scrollPane = createLogGrid(animeListInfo);
 
 
         // Collect grid loading futures
@@ -154,7 +149,6 @@ public class AnimeLogView {
 
         allGridsLoaded.thenRun(() -> {
             Platform.runLater(() -> {
-                // Create the LazyLoader once all grids have finished loading
                 lazyLoader = new LazyLoader(scrollPane, grids);
             });
         });
@@ -516,16 +510,6 @@ public class AnimeLogView {
                         animeGrid.getChildren().clear();
                         animeGrid.getChildren().addAll(animeBoxes);
 
-                        int animesAmount = animeGrid.getChildren().size();
-                        int cols = 3;
-                        // int rows = (int) Math.ceil((double) animesAmount / cols);
-                        // animeGrid.setRowsCount(rows);
-
-                        // adjustGridItemHeights(); // Adjust the heights after adding to the scene graph
-                        // updateVisibleGridItems(scrollPane);
-                        // if (animeBoxes.size() > 0)
-                        //     lazyLoader.initiateFirst();
-                        // lazyLoader.updateVisibilityFull();
 
                         // Update the internal rows count of grid after children were updated
                         animeGrid.setRowsCount((int) Math.ceil((double) animeGrid.getChildren().size() / animeGrid.getColsCount()));
@@ -652,7 +636,6 @@ public class AnimeLogView {
 
 
 
-        // scrollPane.widthProperty().addListener(e -> lazyLoader.updateVisibilityFull());
         scrollPane.heightProperty().addListener((obs, oldValue, newValue) -> {
             if (lazyLoader != null) {
                 Platform.runLater(() -> {

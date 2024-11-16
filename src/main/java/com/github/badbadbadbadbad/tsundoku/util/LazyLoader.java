@@ -7,12 +7,14 @@ import javafx.application.Platform;
 import javafx.geometry.Bounds;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.Node;
+import javafx.scene.image.Image;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 import javafx.util.Pair;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+
 import javafx.animation.AnimationTimer;
-import java.util.concurrent.Flow;
 
 public class LazyLoader {
     private final double RATIO = 318.0 / 225.0;
@@ -30,16 +32,7 @@ public class LazyLoader {
 
         Pair<FlowGridPane, Integer> first = paneFinder.findPaneAndChildIndex(0);
         if (first != null) {
-            /*
-            Platform.runLater(() -> {
-                // setFirstVisibleIndex(0);
-                // setLastVisibleIndex(0);
-                // makeItemVisible(first.getKey().getChildren().get(first.getValue()));
 
-                // updateVisibilityFull();
-            });
-
-             */
 
             setFirstVisibleIndex(0);
             setLastVisibleIndex(0);
@@ -95,23 +88,10 @@ public class LazyLoader {
 
 
     public void updateVisibilityFull() {
+
         Bounds paneBounds = scrollPane.localToScene(scrollPane.getBoundsInLocal());
 
-        // Verify integrity of visible indices
-        /*
-        for (int i = firstVisibleIndex; i <= lastVisibleIndex; i++) {
-            Node node = paneFinder.findPaneAndChildIndex(i).getKey().getChildren().get(i);
-            boolean inViewport = isItemInViewport(node, paneBounds);
-
-            if (inViewport && !node.isVisible()) {
-                makeItemVisible(node);
-            } else if (!inViewport && node.isVisible()) {
-                makeItemInvisible(node);
-            }
-        }
-
-         */
-
+        // Currently visible items: Downwards from start
         while (firstVisibleIndex <= lastVisibleIndex) {
             Pair<FlowGridPane, Integer> firstNodePair = paneFinder.findPaneAndChildIndex(firstVisibleIndex);
             Node firstNode = firstNodePair.getKey().getChildren().get(firstNodePair.getValue());
@@ -122,31 +102,28 @@ public class LazyLoader {
 
             if (inViewport) {
                 makeItemVisible(firstNode);
-                break; // Stop if the current firstVisibleIndex is indeed visible
+                break;
             } else {
                 makeItemInvisible(firstNode);
-                firstVisibleIndex++; // Move upwards to next potentially visible item
+                firstVisibleIndex++;
             }
-            // firstVisibleIndex++;
         }
 
-
+        // Currently visible items: Upwards from end
         while (lastVisibleIndex >= firstVisibleIndex) {
             Pair<FlowGridPane, Integer> lastNodePair = paneFinder.findPaneAndChildIndex(lastVisibleIndex);
             Node lastNode = lastNodePair.getKey().getChildren().get(lastNodePair.getValue());
 
-            // Node lastNode = paneFinder.findPaneAndChildIndex(lastVisibleIndex).getKey().getChildren().get(lastVisibleIndex);
 
             boolean inViewport = isItemInViewport(lastNode, paneBounds);
 
             if (inViewport) {
                 makeItemVisible(lastNode);
-                break; // Stop if the current lastVisibleIndex is indeed visible
+                break;
             } else {
                 makeItemInvisible(lastNode);
-                lastVisibleIndex--; // Move downwards to next potentially visible item
+                lastVisibleIndex--;
             }
-            // lastVisibleIndex--;
         }
 
 
@@ -156,19 +133,15 @@ public class LazyLoader {
             Pair<FlowGridPane, Integer> nodePair = paneFinder.findPaneAndChildIndex(index);
             Node node = nodePair.getKey().getChildren().get(nodePair.getValue());
 
-            // Node node = paneFinder.findPaneAndChildIndex(index).getKey().getChildren().get(index);
-
-
-
             boolean inViewport = isItemInViewport(node, paneBounds);
 
             if (inViewport) {
                 makeItemVisible(node);
                 firstVisibleIndex = index;
-                index--; // Continue checking upwards
+                index--;
             } else {
 
-                break; // Stop when an item is out of viewport
+                break;
             }
         }
 
@@ -179,31 +152,23 @@ public class LazyLoader {
             Pair<FlowGridPane, Integer> nodePair = paneFinder.findPaneAndChildIndex(index);
             Node node = nodePair.getKey().getChildren().get(nodePair.getValue());
 
-
-            // Node node = paneFinder.findPaneAndChildIndex(index).getKey().getChildren().get(index);
-
-
-
             boolean inViewport = isItemInViewport(node, paneBounds);
-
-            AnimeInfo anime = (AnimeInfo) node.getUserData();
 
 
             if (inViewport) {
                 makeItemVisible(node);
                 lastVisibleIndex = index;
-                index++; // Continue checking downwards
+                index++;
             } else {
-                break; // Stop when an item is out of viewport
+                break;
             }
         }
+
 
     }
 
     private boolean isItemInViewport(Node n, Bounds paneBounds) {
         Bounds nodeBounds = n.localToScene(n.getBoundsInLocal());
-
-
         return paneBounds.intersects(nodeBounds);
     }
 
@@ -211,28 +176,45 @@ public class LazyLoader {
         if (!n.isVisible()){
             AnimeInfo anime = (AnimeInfo) n.getUserData();
 
-            n.setStyle("-fx-background-image: url('" + anime.getImageUrl() + "');");
-            n.setVisible(true);
+            // n.setStyle("-fx-background-image: url('" + anime.getImageUrl() + "');");
+            // n.setVisible(true);
 
+            CompletableFuture.runAsync(() -> {
+                String imageUrl = anime.getImageUrl();
+                // String imageUrl = anime.getSmallImageUrl();
+
+                // Force the image to load by making a temporary Image instance
+                Image image = new Image(imageUrl, true); // 'true' enables background loading
+
+                // Wait for image to load fully
+                image.progressProperty().addListener((obs, oldProgress, newProgress) -> {
+                    if (newProgress.doubleValue() >= 1.0) {
+
+                        Platform.runLater(() -> {
+                            n.setVisible(true);
+                            n.setStyle("-fx-background-image: url('" + imageUrl + "');");
+                            FadeTransition fadeIn = new FadeTransition(Duration.seconds(0.2), n);
+                            fadeIn.setFromValue(0.0);
+                            fadeIn.setToValue(1.0);
+                            fadeIn.play();
+                        });
+
+
+                        // Platform.runLater(() -> n.setStyle("-fx-background-image: url('" + imageUrl + "');"));
+                    }
+                });
+            });
+
+
+            /*
             // TODO This fade-animation can be removed later, it's for testing right now. Probably expensive. Unsure.
             FadeTransition fadeIn = new FadeTransition(Duration.seconds(0.02), n);
             fadeIn.setFromValue(0.0);
             fadeIn.setToValue(1.0);
             fadeIn.play();
+
+             */
         }
-        /*
-        AnimeInfo anime = (AnimeInfo) n.getUserData();
-
-        n.setStyle("-fx-background-image: url('" + anime.getImageUrl() + "');");
-        n.setVisible(true);
-
-        // TODO This fade-animation can be removed later, it's for testing right now. Probably expensive. Unsure.
-        FadeTransition fadeIn = new FadeTransition(Duration.seconds(0.5), n);
-        fadeIn.setFromValue(0.0);
-        fadeIn.setToValue(1.0);
-        fadeIn.play();
-
-         */
     }
 
     private void makeItemInvisible(Node n) {
@@ -240,11 +222,6 @@ public class LazyLoader {
             n.setVisible(false);
             n.setStyle("-fx-background-image: none;");
         }
-        /*
-        n.setVisible(false);
-        n.setStyle("-fx-background-image: none;");
-
-         */
     }
 
     public void setFirstVisibleIndex(int index) {

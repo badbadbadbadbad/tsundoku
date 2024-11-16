@@ -135,6 +135,7 @@ public class AnimePopupView {
     private VBox createCoverImage(VBox wrapper) {
         VBox imageBox = new VBox();
         imageBox.setStyle("-fx-background-image: url('" + anime.getImageUrl() + "');");
+        // imageBox.setStyle("-fx-background-image: url('" + anime.getSmallImageUrl() + "');");
         imageBox.getStyleClass().add("popup-media-box");
 
         wrapper.widthProperty().addListener((obs, oldWidth, newWidth) -> {

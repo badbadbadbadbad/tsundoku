@@ -36,9 +36,9 @@ public class DatabaseModel {
 
         String sqlDelete = "DELETE FROM anime WHERE id = ?";
         String sqlUpsert = """
-        INSERT INTO anime (id, ownRating, ownStatus, episodesProgress, title, titleJapanese, titleEnglish, imageUrl,
+        INSERT INTO anime (id, ownRating, ownStatus, episodesProgress, title, titleJapanese, titleEnglish, imageUrl, smallImageUrl,
                            publicationStatus, episodesTotal, source, ageRating, synopsis, release, studios, type, lastUpdate)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_DATE)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_DATE)
         ON CONFLICT(id) DO UPDATE SET
             ownRating = excluded.ownRating,
             ownStatus = excluded.ownStatus,
@@ -47,6 +47,7 @@ public class DatabaseModel {
             titleJapanese = excluded.titleJapanese,
             titleEnglish = excluded.titleEnglish,
             imageUrl = excluded.imageUrl,
+            smallImageUrl = excluded.smallImageUrl,
             publicationStatus = excluded.publicationStatus,
             episodesTotal = excluded.episodesTotal,
             source = excluded.source,
@@ -73,14 +74,15 @@ public class DatabaseModel {
                     pstmt.setString(6, anime.getTitleJapanese());
                     pstmt.setString(7, anime.getTitleEnglish());
                     pstmt.setString(8, anime.getImageUrl());
-                    pstmt.setString(9, anime.getPublicationStatus());
-                    pstmt.setInt(10, anime.getEpisodesTotal());
-                    pstmt.setString(11, anime.getSource());
-                    pstmt.setString(12, anime.getAgeRating());
-                    pstmt.setString(13, anime.getSynopsis());
-                    pstmt.setString(14, anime.getRelease());
-                    pstmt.setString(15, anime.getStudios());
-                    pstmt.setString(16, anime.getType());
+                    pstmt.setString(9, anime.getSmallImageUrl());
+                    pstmt.setString(10, anime.getPublicationStatus());
+                    pstmt.setInt(11, anime.getEpisodesTotal());
+                    pstmt.setString(12, anime.getSource());
+                    pstmt.setString(13, anime.getAgeRating());
+                    pstmt.setString(14, anime.getSynopsis());
+                    pstmt.setString(15, anime.getRelease());
+                    pstmt.setString(16, anime.getStudios());
+                    pstmt.setString(17, anime.getType());
                     pstmt.executeUpdate();
                 }
             }
@@ -93,7 +95,7 @@ public class DatabaseModel {
 
     public AnimeInfo getAnimeEntryFromDatabase(int id) {
         String url = "jdbc:sqlite:" + databaseFilePath;
-        String sqlSelect = "SELECT id, ownRating, ownStatus, episodesProgress, title, titleJapanese, titleEnglish, imageUrl, publicationStatus, "
+        String sqlSelect = "SELECT id, ownRating, ownStatus, episodesProgress, title, titleJapanese, titleEnglish, imageUrl, smallImageUrl, publicationStatus, "
                 + "episodesTotal, source, ageRating, synopsis, release, studios, type FROM anime WHERE id = ?";
 
         try (Connection conn = DriverManager.getConnection(url);
@@ -105,7 +107,7 @@ public class DatabaseModel {
             if (rs.next()) {
 
                 AnimeInfo animeInfo = new AnimeInfo(rs.getInt("id"), rs.getString("title"), rs.getString("titleJapanese"), rs.getString("titleEnglish"),
-                        rs.getString("imageUrl"), rs.getString("publicationStatus"), rs.getInt("episodesTotal"), rs.getString("source"),
+                        rs.getString("imageUrl"), rs.getString("smallImageUrl"), rs.getString("publicationStatus"), rs.getInt("episodesTotal"), rs.getString("source"),
                         rs.getString("ageRating"), rs.getString("synopsis"), rs.getString("release"), rs.getString("studios"), rs.getString("type")
                 );
                 animeInfo.setOwnRating(rs.getString("ownRating"));
@@ -125,7 +127,7 @@ public class DatabaseModel {
 
     public AnimeListInfo getFullAnimeDatabase() {
         String url = "jdbc:sqlite:" + databaseFilePath;
-        String sqlSelectAll = "SELECT id, ownRating, ownStatus, episodesProgress, title, titleJapanese, titleEnglish, imageUrl, publicationStatus, "
+        String sqlSelectAll = "SELECT id, ownRating, ownStatus, episodesProgress, title, titleJapanese, titleEnglish, imageUrl, smallImageUrl, publicationStatus, "
                 + "episodesTotal, source, ageRating, synopsis, release, studios, type FROM anime";
         List<AnimeInfo> animeList = new ArrayList<>();
 
@@ -135,7 +137,7 @@ public class DatabaseModel {
 
             while (rs.next()) {
                 AnimeInfo animeInfo = new AnimeInfo(rs.getInt("id"), rs.getString("title"), rs.getString("titleJapanese"), rs.getString("titleEnglish"),
-                        rs.getString("imageUrl"), rs.getString("publicationStatus"), rs.getInt("episodesTotal"), rs.getString("source"),
+                        rs.getString("imageUrl"), rs.getString("smallImageUrl"), rs.getString("publicationStatus"), rs.getInt("episodesTotal"), rs.getString("source"),
                         rs.getString("ageRating"), rs.getString("synopsis"), rs.getString("release"), rs.getString("studios"), rs.getString("type")
                 );
                 animeInfo.setOwnRating(rs.getString("ownRating"));

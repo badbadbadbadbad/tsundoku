@@ -575,6 +575,7 @@ public class AnimeGridView {
 
                     if (inViewport && !n.isVisible()) {
                         n.setStyle("-fx-background-image: url('" + anime.getImageUrl() + "');");
+                        // n.setStyle("-fx-background-image: url('" + anime.getSmallImageUrl() + "');");
                         n.setVisible(true);
 
                         // TODO This fade-animation can be removed later, it's for testing right now. Probably expensive. Unsure.
@@ -707,12 +708,13 @@ public class AnimeGridView {
     private CompletableFuture<Void> reloadAnimeGridAsync(List<AnimeInfo> animeList) {
         return CompletableFuture.supplyAsync(() -> createAnimeGridItems(animeList))
                 .thenAccept(animeBoxes -> {
-                    animeGrid.getChildren().clear();
-                    animeGrid.getChildren().addAll(animeBoxes);
-                    animeGrid.setRowsCount((int) Math.ceil((double) animeGrid.getChildren().size() / animeGrid.getColsCount()));
+                    // animeGrid.getChildren().clear();
+                    // animeGrid.getChildren().addAll(animeBoxes);
+                    // animeGrid.setRowsCount((int) Math.ceil((double) animeGrid.getChildren().size() / animeGrid.getColsCount()));
                     Platform.runLater(() -> {
-                        // animeGrid.getChildren().clear();
-                        // animeGrid.getChildren().addAll(animeBoxes);
+                        animeGrid.getChildren().clear();
+                        animeGrid.getChildren().addAll(animeBoxes);
+                        animeGrid.setRowsCount((int) Math.ceil((double) animeGrid.getChildren().size() / animeGrid.getColsCount()));
 
                         new AnimationTimer() {
                             @Override
@@ -735,26 +737,6 @@ public class AnimeGridView {
                                 }
                             }
                         }.start();
-
-
-                        /*
-                        adjustGridItemHeights(); // Adjust the heights after adding to the scene graph
-
-                        Platform.runLater(() -> {
-                            updateVisibleGridItems(scrollPane);
-                            if (!(smoothScroll == null))
-                                smoothScroll.resetAccumulatedVValue();
-                        });
-
-                         */
-                        // updateVisibleGridItems(scrollPane);
-
-                        // Reset smooth scroll accumulated vvalue
-                        // if (!(smoothScroll == null))
-                        //     smoothScroll.resetAccumulatedVValue();
-
-                        // Update the internal rows count of grid after children were updated
-                        // animeGrid.setRowsCount((int) Math.ceil((double) animeGrid.getChildren().size() / animeGrid.getColsCount()));
                     });
                 });
     }
