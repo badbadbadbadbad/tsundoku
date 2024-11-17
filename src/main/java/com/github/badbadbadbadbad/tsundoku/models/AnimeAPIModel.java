@@ -143,7 +143,6 @@ public class AnimeAPIModel {
 
                 // Image URL, String or null
                 String imageUrl = animeNode.get("images").get("jpg").get("large_image_url").asText();
-                // String imageUrl = animeNode.get("images").get("jpg").get("image_url").asText();
                 if (imageUrl.equals("null"))
                     imageUrl = "Not yet provided";
 

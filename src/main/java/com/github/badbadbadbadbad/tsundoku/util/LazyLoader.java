@@ -3,6 +3,7 @@ package com.github.badbadbadbadbad.tsundoku.util;
 import com.github.badbadbadbadbad.tsundoku.external.FlowGridPane;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import javafx.animation.FadeTransition;
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.geometry.Bounds;
 import javafx.scene.control.ScrollPane;
@@ -25,10 +26,17 @@ public class LazyLoader {
     private int firstVisibleIndex;
     private int lastVisibleIndex;
 
+    private final PauseTransition loaderPause = new PauseTransition(Duration.seconds(0.1));
+    private final PauseTransition imagePause = new PauseTransition(Duration.seconds(0.1));
+
     public LazyLoader(ScrollPane scrollPane, List<FlowGridPane> flowPanes) {
         this.scrollPane = scrollPane;
         this.flowPanes = flowPanes;
         this.paneFinder = new PaneFinder(flowPanes);
+
+        loaderPause.setOnFinished(e -> executeUpdateVisibilityFull());
+        imagePause.setOnFinished(e -> loadVisibleImages());
+
 
         Pair<FlowGridPane, Integer> first = paneFinder.findPaneAndChildIndex(0);
         if (first != null) {
@@ -86,9 +94,13 @@ public class LazyLoader {
         }
     }
 
-
     public void updateVisibilityFull() {
+        loaderPause.stop();
+        imagePause.stop();
+        loaderPause.playFromStart();
+    }
 
+    public void executeUpdateVisibilityFull() {
         Bounds paneBounds = scrollPane.localToScene(scrollPane.getBoundsInLocal());
 
         // Currently visible items: Downwards from start
@@ -96,12 +108,9 @@ public class LazyLoader {
             Pair<FlowGridPane, Integer> firstNodePair = paneFinder.findPaneAndChildIndex(firstVisibleIndex);
             Node firstNode = firstNodePair.getKey().getChildren().get(firstNodePair.getValue());
 
-
             boolean inViewport = isItemInViewport(firstNode, paneBounds);
 
-
             if (inViewport) {
-                makeItemVisible(firstNode);
                 break;
             } else {
                 makeItemInvisible(firstNode);
@@ -118,12 +127,17 @@ public class LazyLoader {
             boolean inViewport = isItemInViewport(lastNode, paneBounds);
 
             if (inViewport) {
-                makeItemVisible(lastNode);
                 break;
             } else {
                 makeItemInvisible(lastNode);
                 lastVisibleIndex--;
             }
+        }
+
+
+        // Get new index via binary search if we scrolled too far
+        if (firstVisibleIndex >= lastVisibleIndex) {
+            identifyNewVisibleNode(paneBounds);
         }
 
 
@@ -136,11 +150,9 @@ public class LazyLoader {
             boolean inViewport = isItemInViewport(node, paneBounds);
 
             if (inViewport) {
-                makeItemVisible(node);
                 firstVisibleIndex = index;
                 index--;
             } else {
-
                 break;
             }
         }
@@ -156,7 +168,6 @@ public class LazyLoader {
 
 
             if (inViewport) {
-                makeItemVisible(node);
                 lastVisibleIndex = index;
                 index++;
             } else {
@@ -164,7 +175,36 @@ public class LazyLoader {
             }
         }
 
+        imagePause.playFromStart();
+    }
 
+    // Basic binary search to identify new visible content on long scrolls
+    void identifyNewVisibleNode(Bounds paneBounds) {
+        int low = 0;
+        int high = paneFinder.getTotalItemCount() - 1;
+
+        while (low <= high) {
+            int mid = (low + high) / 2;
+
+            Pair<FlowGridPane, Integer> nodePair = paneFinder.findPaneAndChildIndex(mid);
+            Node node = nodePair.getKey().getChildren().get(nodePair.getValue());
+
+            boolean inViewport = isItemInViewport(node, paneBounds);
+
+            if (inViewport) {
+                setFirstVisibleIndex(mid);
+                setLastVisibleIndex(mid);
+                return;
+            } else {
+                Bounds nodeBounds = node.localToScene(node.getBoundsInLocal());
+                double nodeY = nodeBounds.getMinY();
+
+                if (nodeY < 0)
+                    low = mid + 1;
+                else
+                    high = mid - 1;
+            }
+        }
     }
 
     private boolean isItemInViewport(Node n, Bounds paneBounds) {
@@ -172,26 +212,32 @@ public class LazyLoader {
         return paneBounds.intersects(nodeBounds);
     }
 
+    private void loadVisibleImages() {
+        for (int i = firstVisibleIndex; i <= lastVisibleIndex; i++) {
+            Pair<FlowGridPane, Integer> nodePair = paneFinder.findPaneAndChildIndex(i);
+            Node node = nodePair.getKey().getChildren().get(nodePair.getValue());
+            makeItemVisible(node);
+        }
+    }
+
     private void makeItemVisible(Node n) {
         if (!n.isVisible()){
             AnimeInfo anime = (AnimeInfo) n.getUserData();
 
-            // n.setStyle("-fx-background-image: url('" + anime.getImageUrl() + "');");
-            // n.setVisible(true);
+            n.setVisible(true);
+            n.setOpacity(0.0);
 
             CompletableFuture.runAsync(() -> {
                 String imageUrl = anime.getImageUrl();
                 // String imageUrl = anime.getSmallImageUrl();
 
-                // Force the image to load by making a temporary Image instance
-                Image image = new Image(imageUrl, true); // 'true' enables background loading
+                // "true" enables background loading
+                Image image = new Image(imageUrl, true);
 
-                // Wait for image to load fully
                 image.progressProperty().addListener((obs, oldProgress, newProgress) -> {
                     if (newProgress.doubleValue() >= 1.0) {
 
                         Platform.runLater(() -> {
-                            n.setVisible(true);
                             n.setStyle("-fx-background-image: url('" + imageUrl + "');");
                             FadeTransition fadeIn = new FadeTransition(Duration.seconds(0.2), n);
                             fadeIn.setFromValue(0.0);
@@ -200,20 +246,9 @@ public class LazyLoader {
                         });
 
 
-                        // Platform.runLater(() -> n.setStyle("-fx-background-image: url('" + imageUrl + "');"));
                     }
                 });
             });
-
-
-            /*
-            // TODO This fade-animation can be removed later, it's for testing right now. Probably expensive. Unsure.
-            FadeTransition fadeIn = new FadeTransition(Duration.seconds(0.02), n);
-            fadeIn.setFromValue(0.0);
-            fadeIn.setToValue(1.0);
-            fadeIn.play();
-
-             */
         }
     }
 

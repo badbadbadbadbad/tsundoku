@@ -176,7 +176,7 @@ public class AnimeLogView {
                 // This is so the controls-bottom-border can't start showing if the pane scroll bar is fully vertical (no scrolling possible)
                 boolean canScroll = scrollPane.getContent().getBoundsInLocal().getHeight() > scrollPane.getViewportBounds().getHeight();
 
-                if (newValue.doubleValue() > 0.01 && canScroll) {
+                if (newValue.doubleValue() > 0.00001 && canScroll) {
                     if (separator.getOpacity() == 0.0) {
                         fadeIn.playFromStart();
                     }
