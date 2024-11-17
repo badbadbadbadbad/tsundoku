@@ -258,8 +258,8 @@ public class AnimePopupView {
         // Set all rating buttons to unclicked state
         for (Button button : ratingButtons) {
             button.getStyleClass().remove("ikonli-heart-active");
-            button.getStyleClass().remove("ikonli-thumb-active");
-
+            button.getStyleClass().remove("ikonli-thumb-up-active");
+            button.getStyleClass().remove("ikonli-thumb-down-active");
         }
 
         // Add active state to clicked button
@@ -268,10 +268,10 @@ public class AnimePopupView {
             clickedButton.getStyleClass().add("ikonli-heart-active");
             anime.setOwnRating("Heart");
         } else if (clickedButton.getStyleClass().contains("like")) {
-            clickedButton.getStyleClass().add("ikonli-thumb-active");
+            clickedButton.getStyleClass().add("ikonli-thumb-up-active");
             anime.setOwnRating("Liked");
         } else if (clickedButton.getStyleClass().contains("dislike")) {
-            clickedButton.getStyleClass().add("ikonli-thumb-active");
+            clickedButton.getStyleClass().add("ikonli-thumb-down-active");
             anime.setOwnRating("Disliked");
         }
 

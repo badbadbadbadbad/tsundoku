@@ -43,6 +43,7 @@
     -lightest-blue: #1E325C;
 
     -gold-highlight: #DAA520;  /* Goldenrod my beloved */
+    -green-highlight: #0EAA2D;
     -red-highlight: #BF0000;
     -grey-highlight: #858585;
     -silver-highlight: #ADADAD;
@@ -79,8 +80,9 @@
     -popup-rating-background-color: -normal-blue;
     -popup-rating-inactive-color: -grey-highlight;
     -popup-rating-hover-color: -silver-highlight;
-    -popup-rating-active-heart-color: -red-highlight;
-    -popup-rating-active-thumbs-color: -gold-highlight;
+    -popup-rating-active-heart-color: -gold-highlight;
+    -popup-rating-active-thumbs-up-color: -green-highlight;
+    -popup-rating-active-thumbs-down-color: -red-highlight;
     -popup-progress-color: -normal-blue;
     -popup-scrollpane-color: -lightest-blue;
 }
@@ -387,8 +389,28 @@
     -fx-background-insets: 0;
     -fx-border-insets: 0;
 
+    /* -fx-border-color: -grid-box-border-color; /* Default case */
+    /* -fx-border-width: 2px; */
+}
+
+.grid-media-box-grey {
     -fx-border-color: -grid-box-border-color;
-    -fx-border-width: 2px;
+    -fx-border-width: 3px;
+}
+
+.grid-media-box-gold {
+    -fx-border-color: -gold-highlight;
+    -fx-border-width: 3px;
+}
+
+.grid-media-box-green {
+    -fx-border-color: -green-highlight;
+    -fx-border-width: 3px;
+}
+
+.grid-media-box-red {
+    -fx-border-color: -red-highlight;
+    -fx-border-width: 3px;
 }
 
 
@@ -407,7 +429,8 @@
     -fx-border-radius: 18;
     -fx-background-radius: 18;
     -fx-border-color: -gold-highlight;
-    -fx-border-width: 4px;
+    -fx-border-width: 5px;
+    -fx-border-insets: -1;
     -fx-padding: 0 10 0 10;
 }
 
@@ -581,12 +604,20 @@
     -fx-icon-color: -popup-rating-active-heart-color;
 }
 
-.ikonli-thumb-active .ikonli-font-icon {
-    -fx-icon-color: -popup-rating-active-thumbs-color;
+.ikonli-thumb-up-active .ikonli-font-icon {
+    -fx-icon-color: -popup-rating-active-thumbs-up-color;
 }
 
-.ikonli-thumb-active:hover .ikonli-font-icon {
-    -fx-icon-color: -popup-rating-active-thumbs-color;
+.ikonli-thumb-up-active:hover .ikonli-font-icon {
+    -fx-icon-color: -popup-rating-active-thumbs-up-color;
+}
+
+.ikonli-thumb-down-active .ikonli-font-icon {
+    -fx-icon-color: -popup-rating-active-thumbs-down-color;
+}
+
+.ikonli-thumb-down-active:hover .ikonli-font-icon {
+    -fx-icon-color: -popup-rating-active-thumbs-down-color;
 }
 
 

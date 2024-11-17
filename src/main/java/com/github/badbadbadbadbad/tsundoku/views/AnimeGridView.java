@@ -859,6 +859,9 @@ public class AnimeGridView {
         animeBox.setUserData(anime);
 
 
+        setRatingBorder(animeBox);
+
+
         // Clipping rectangle because JavaFX doesn't have any kind of background image clipping. WHY??
         Rectangle clip = new Rectangle();
         clip.widthProperty().bind(animeBox.widthProperty());
@@ -933,6 +936,28 @@ public class AnimeGridView {
         animeBox.setVisible(false);
 
         return animeBox;
+    }
+
+
+    private void setRatingBorder(VBox animeBox) {
+        AnimeInfo anime = (AnimeInfo) animeBox.getUserData();
+        AnimeInfo databaseAnime = databaseRequestListener.requestAnimeFromDatabase(anime.getId());
+        if (databaseAnime == null) {
+            animeBox.getStyleClass().add("grid-media-box-grey");
+            return;
+        }
+
+        String rating =  databaseAnime.getOwnRating();
+
+        if (rating.equals("Heart")) {
+            animeBox.getStyleClass().add("grid-media-box-gold");
+        } else if (rating.equals("Liked")) {
+            animeBox.getStyleClass().add("grid-media-box-green");
+        } else if (rating.equals("Disliked")) {
+            animeBox.getStyleClass().add("grid-media-box-red");
+        } else {
+            animeBox.getStyleClass().add("grid-media-box-grey");
+        }
     }
 
 

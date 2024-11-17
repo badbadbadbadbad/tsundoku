@@ -547,6 +547,8 @@ public class AnimeLogView implements LazyLoaderView {
         animeBox.getStyleClass().add("grid-media-box");
         animeBox.setUserData(anime);
 
+        setRatingBorder(animeBox);
+
 
         // Clipping rectangle because JavaFX doesn't have any kind of background image clipping. WHY??
         Rectangle clip = new Rectangle();
@@ -622,6 +624,21 @@ public class AnimeLogView implements LazyLoaderView {
         animeBox.setVisible(false);
 
         return animeBox;
+    }
+
+
+    private void setRatingBorder(VBox animeBox) {
+        AnimeInfo anime = (AnimeInfo) animeBox.getUserData();
+
+        if (anime.getOwnRating().equals("Heart")) {
+            animeBox.getStyleClass().add("grid-media-box-gold");
+        } else if (anime.getOwnRating().equals("Liked")) {
+            animeBox.getStyleClass().add("grid-media-box-green");
+        } else if (anime.getOwnRating().equals("Disliked")) {
+            animeBox.getStyleClass().add("grid-media-box-red");
+        } else {
+            animeBox.getStyleClass().add("grid-media-box-grey");
+        }
     }
 
 
