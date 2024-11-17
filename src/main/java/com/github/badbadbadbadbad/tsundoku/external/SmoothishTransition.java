@@ -13,16 +13,21 @@ public abstract class SmoothishTransition extends Transition {
 
     private final static int TRANSITION_DURATION = 100;
 
+
+    // TODO: Experiment more if we even need the mod / delta functionality. Could probably leave it out.
+
     public SmoothishTransition(SmoothishTransition old, double delta) {
 
         setCycleDuration(Duration.millis(TRANSITION_DURATION));
         setCycleCount(1);
 
+        // System.out.println("Test");
 
-        if (old != null && sameSign(delta, old.delta) && playing(old)) {
+        // if (old != null && sameSign(delta, old.delta)) {
+        if (old != null) {
             mod = old.getMod() + Math.abs(delta / 40);
             this.delta += delta;
-        } else {
+        } else { // This shouldn't be necessary any longer. Just resets on new SmoothScroll load.
             mod = 1;
             this.delta = delta;
         }

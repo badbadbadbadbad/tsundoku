@@ -3,6 +3,7 @@ package com.github.badbadbadbadbad.tsundoku.controllers;
 import com.github.badbadbadbadbad.tsundoku.models.ConfigModel;
 import com.github.badbadbadbadbad.tsundoku.views.AnimeGridView;
 import com.github.badbadbadbadbad.tsundoku.views.AnimeLogView;
+import com.github.badbadbadbadbad.tsundoku.views.LazyLoaderView;
 import com.github.badbadbadbadbad.tsundoku.views.SidebarView;
 import javafx.animation.*;
 import javafx.geometry.Insets;
@@ -25,6 +26,8 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
     private final ConfigController configController;
     private final DatabaseController databaseController;
     public Region loadingBar;
+
+    private LazyLoaderView currentLazyLoaderView = null;
 
 
     public ViewsController(Stage stage, APIController apiController, ConfigController configController, ConfigModel configModel, DatabaseController databaseController) {
@@ -121,6 +124,10 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
 
 
     private void updateMainContent(String mediaMode, String browseMode) {
+        if (currentLazyLoaderView != null) {
+            currentLazyLoaderView.shutdownLazyLoader();
+        }
+
         Region gridView = null;
 
         switch (mediaMode) {
@@ -128,26 +135,32 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
                 if (browseMode.equals("Browse")) {
                     AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController); // TODO Give anime grid initial filters
                     gridView = animeGridView.createGridView();
+                    currentLazyLoaderView = null;
                 } else {
                     AnimeLogView animeLogView = new AnimeLogView(stage, databaseController);
                     gridView = animeLogView.createGridView();
+                    currentLazyLoaderView = animeLogView;
                 }
             }
             case "Manga" -> {
                 AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController);
                 gridView = animeGridView.createGridView();
+                currentLazyLoaderView = null;
             }
             case "Games" -> {
                 AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController);
                 gridView = animeGridView.createGridView();
+                currentLazyLoaderView = null;
             }
             case "Profile" -> {
                 AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController);
                 gridView = animeGridView.createGridView();
+                currentLazyLoaderView = null;
             }
             case "Settings" -> {
                 AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController);
                 gridView = animeGridView.createGridView();
+                currentLazyLoaderView = null;
             }
         }
 
@@ -209,5 +222,12 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
             firstTimeStartup = false;
         }
         updateMainContent(mediaMode, browseMode);
+    }
+
+
+    public void shutdownLazyLoader() {
+        if (currentLazyLoaderView != null) {
+            currentLazyLoaderView.shutdownLazyLoader();
+        }
     }
 }

@@ -15,6 +15,8 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.CacheHint;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.shape.Rectangle;
@@ -27,7 +29,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-public class AnimeLogView {
+public class AnimeLogView implements LazyLoaderView {
 
     private final double RATIO = 318.0 / 225.0; // The aspect ratio to use for anime images. This doesn't match all exactly, but is close enough.
 
@@ -510,6 +512,14 @@ public class AnimeLogView {
                         animeGrid.getChildren().clear();
                         animeGrid.getChildren().addAll(animeBoxes);
 
+                        // Testing for speedy image caching?
+                        /*
+                        for (Node child: animeGrid.getChildren()) {
+                            child.setCache(true);
+                            child.setCacheHint(CacheHint.SPEED);
+                        }
+
+                         */
 
                         // Update the internal rows count of grid after children were updated
                         animeGrid.setRowsCount((int) Math.ceil((double) animeGrid.getChildren().size() / animeGrid.getColsCount()));
@@ -648,5 +658,10 @@ public class AnimeLogView {
         this.smoothScroll = new SmoothScroll(scrollPane, wrapper);
 
         return scrollPane;
+    }
+
+
+    public void shutdownLazyLoader() {
+        lazyLoader.shutdownImageLoaderExecutor();
     }
 }

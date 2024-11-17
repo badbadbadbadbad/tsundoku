@@ -14,6 +14,7 @@ import java.io.IOException;
 
 public class TsundokuApplication extends Application {
 
+    private ViewsController viewsController;
 
     @Override
     public void start(Stage stage) throws IOException {
@@ -28,10 +29,15 @@ public class TsundokuApplication extends Application {
         ConfigController configController = new ConfigController(configModel);
         DatabaseModel databaseModel = new DatabaseModel();
         DatabaseController databaseController = new DatabaseController(databaseModel);
-        ViewsController viewsController = new ViewsController(stage, apiController, configController, configModel, databaseController);
+        this.viewsController = new ViewsController(stage, apiController, configController, configModel, databaseController);
 
         stage.setTitle("tsundoku.");
         stage.show();
+    }
+
+    @Override
+    public void stop() {
+        viewsController.shutdownLazyLoader();
     }
 
     public static void main(String[] args) {

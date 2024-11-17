@@ -5,6 +5,7 @@ import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import javafx.animation.FadeTransition;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
+import javafx.concurrent.Task;
 import javafx.geometry.Bounds;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.Node;
@@ -13,12 +14,19 @@ import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 import javafx.util.Pair;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.*;
 
 import javafx.animation.AnimationTimer;
 
 public class LazyLoader {
     private final double RATIO = 318.0 / 225.0;
+
+    private final ExecutorService imageLoaderExecutor = Executors.newFixedThreadPool(3);
+    // private final ScheduledExecutorService updateScheduler = Executors.newSingleThreadScheduledExecutor();
+    private AnimationTimer batchImageUpdaterTimer;
+
+    private final List<Future<?>> activeImageTasks = new ArrayList<>();
+    private final ConcurrentLinkedQueue<Pair<Node, String>> pendingImageUpdates = new ConcurrentLinkedQueue<>();
 
     private final PaneFinder paneFinder;
     private final ScrollPane scrollPane;
@@ -41,6 +49,7 @@ public class LazyLoader {
         Pair<FlowGridPane, Integer> first = paneFinder.findPaneAndChildIndex(0);
         if (first != null) {
 
+            startBatchImageUpdater();
 
             setFirstVisibleIndex(0);
             setLastVisibleIndex(0);
@@ -75,8 +84,8 @@ public class LazyLoader {
 
             });
 
-
         }
+        // startBatchImageUpdater();
     }
 
 
@@ -97,6 +106,22 @@ public class LazyLoader {
     public void updateVisibilityFull() {
         loaderPause.stop();
         imagePause.stop();
+        if (batchImageUpdaterTimer != null) {
+            batchImageUpdaterTimer.stop();
+        }
+
+        /*
+        synchronized (activeImageTasks) {
+            for (Future<?> future : activeImageTasks) {
+                future.cancel(true);
+            }
+            activeImageTasks.clear();
+        }
+         */
+
+        // pendingImageUpdates.clear();
+
+
         loaderPause.playFromStart();
     }
 
@@ -176,6 +201,9 @@ public class LazyLoader {
         }
 
         imagePause.playFromStart();
+        if (batchImageUpdaterTimer != null) {
+            batchImageUpdaterTimer.start();
+        }
     }
 
     // Basic binary search to identify new visible content on long scrolls
@@ -207,10 +235,12 @@ public class LazyLoader {
         }
     }
 
+
     private boolean isItemInViewport(Node n, Bounds paneBounds) {
         Bounds nodeBounds = n.localToScene(n.getBoundsInLocal());
         return paneBounds.intersects(nodeBounds);
     }
+
 
     private void loadVisibleImages() {
         for (int i = firstVisibleIndex; i <= lastVisibleIndex; i++) {
@@ -220,14 +250,17 @@ public class LazyLoader {
         }
     }
 
+
     private void makeItemVisible(Node n) {
         if (!n.isVisible()){
             AnimeInfo anime = (AnimeInfo) n.getUserData();
 
-            n.setVisible(true);
-            n.setOpacity(0.0);
+            // n.setVisible(true);
+            // n.setOpacity(0.0);
+            // n.setOpacity(1.0);
 
-            CompletableFuture.runAsync(() -> {
+
+            Future<?> future = CompletableFuture.runAsync(() -> {
                 String imageUrl = anime.getImageUrl();
                 // String imageUrl = anime.getSmallImageUrl();
 
@@ -237,18 +270,21 @@ public class LazyLoader {
                 image.progressProperty().addListener((obs, oldProgress, newProgress) -> {
                     if (newProgress.doubleValue() >= 1.0) {
 
-                        Platform.runLater(() -> {
-                            n.setStyle("-fx-background-image: url('" + imageUrl + "');");
-                            FadeTransition fadeIn = new FadeTransition(Duration.seconds(0.2), n);
-                            fadeIn.setFromValue(0.0);
-                            fadeIn.setToValue(1.0);
-                            fadeIn.play();
-                        });
+                        // n.setStyle("-fx-background-image: url('" + imageUrl + "');");
+
+                        // n.setVisible(true);
+                        // n.setOpacity(0.0);
+
+                        pendingImageUpdates.add(new Pair<>(n, imageUrl));
 
 
                     }
                 });
-            });
+            }, imageLoaderExecutor);
+
+            synchronized (activeImageTasks) {
+                activeImageTasks.add(future);
+            }
         }
     }
 
@@ -273,5 +309,85 @@ public class LazyLoader {
 
     public int getLastVisibleIndex() {
         return this.lastVisibleIndex;
+    }
+
+
+    public void startBatchImageUpdater() {
+
+        this.batchImageUpdaterTimer = new AnimationTimer() {
+            @Override
+            public void handle(long l) {
+                Pair<Node, String> pair = pendingImageUpdates.poll();
+                if (pair != null) {
+                    Node node = pair.getKey();
+                    Bounds paneBounds = scrollPane.localToScene(scrollPane.getBoundsInLocal());
+                    if (isItemInViewport(node, paneBounds)) {
+                        node.setVisible(true);
+                        node.setOpacity(0.0);
+
+                        node.setStyle("-fx-background-image: url('" + pair.getValue() + "');");
+
+
+                        FadeTransition fadeIn = new FadeTransition(Duration.seconds(0.2), node);
+                        fadeIn.setFromValue(0.0);
+                        fadeIn.setToValue(1.0);
+                        fadeIn.play();
+                    }
+
+                }
+            }
+        };
+        batchImageUpdaterTimer.start();
+
+        /*
+        updateScheduler.scheduleAtFixedRate(() -> {
+            List<Pair<Node, String>> updates = new ArrayList<>();
+            Pair<Node, String> update;
+            while ((update = pendingImageUpdates.poll()) != null) {
+                updates.add(update);
+            }
+
+
+            if (!updates.isEmpty()) {
+                Platform.runLater(() -> {
+                    for (Pair<Node, String> item : updates) {
+                        Node node = item.getKey();
+                        String imageUrl = item.getValue();
+
+
+                        node.setStyle("-fx-background-image: url('" + imageUrl + "');");
+                        FadeTransition fadeIn = new FadeTransition(Duration.seconds(0.2), node);
+                        fadeIn.setFromValue(0.0);
+                        fadeIn.setToValue(1.0);
+                        fadeIn.play();
+                    }
+                });
+            }
+        }, 0, 100, TimeUnit.MILLISECONDS);
+
+         */
+    }
+
+    public void shutdownImageLoaderExecutor() {
+        imageLoaderExecutor.shutdown();
+        // updateScheduler.shutdown();
+
+        try {
+            if (!imageLoaderExecutor.awaitTermination(1, TimeUnit.SECONDS)) {
+                imageLoaderExecutor.shutdownNow();
+            }
+            /*
+            if (!updateScheduler.awaitTermination(1, TimeUnit.SECONDS)) {
+                updateScheduler.shutdownNow();
+            }
+
+             */
+        } catch (InterruptedException e) {
+            imageLoaderExecutor.shutdownNow();
+            // updateScheduler.shutdownNow();
+
+
+            // Thread.currentThread().interrupt();
+        }
     }
 }
