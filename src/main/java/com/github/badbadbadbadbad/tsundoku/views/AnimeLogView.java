@@ -76,40 +76,54 @@ public class AnimeLogView implements LazyLoaderView {
 
         // Database information for grids
         AnimeListInfo fullDatabase = databaseRequestListener.requestFullAnimeDatabase();
+
+        // ownRating sort
+        Comparator<AnimeInfo> byRating = Comparator.comparingInt(anime -> switch (anime.getOwnRating()) {
+            case "Heart" -> 1;
+            case "Liked" -> 2;
+            case "Disliked" -> 3;
+            case "Unscored" -> 4;
+            default -> Integer.MAX_VALUE; // fallback, in case of unexpected value
+        });
+
+        // Alphanumerical title sort
         Comparator<AnimeInfo> byTitle = Comparator.comparing(AnimeInfo::getTitle);
+
+        // Combine rating and alphanumerical title sort
+        Comparator<AnimeInfo> combinedComparator = byRating.thenComparing(byTitle);
 
         ObservableList<AnimeInfo> inProgressAnimeList = FXCollections.observableArrayList(
                 fullDatabase.getAnimeList().stream()
                         .filter(anime -> "In progress".equals(anime.getOwnStatus()))
-                        .sorted(byTitle)
+                        .sorted(combinedComparator)
                         .toList()
         );
 
         ObservableList<AnimeInfo> backlogAnimeList = FXCollections.observableArrayList(
                 fullDatabase.getAnimeList().stream()
                         .filter(anime -> "Backlog".equals(anime.getOwnStatus()))
-                        .sorted(byTitle)
+                        .sorted(combinedComparator)
                         .toList()
         );
 
         ObservableList<AnimeInfo> completedAnimeList = FXCollections.observableArrayList(
                 fullDatabase.getAnimeList().stream()
                         .filter(anime -> "Completed".equals(anime.getOwnStatus()))
-                        .sorted(byTitle)
+                        .sorted(combinedComparator)
                         .toList()
         );
 
         ObservableList<AnimeInfo> pausedAnimeList = FXCollections.observableArrayList(
                 fullDatabase.getAnimeList().stream()
                         .filter(anime -> "Paused".equals(anime.getOwnStatus()))
-                        .sorted(byTitle)
+                        .sorted(combinedComparator)
                         .toList()
         );
 
         ObservableList<AnimeInfo> droppedAnimeList = FXCollections.observableArrayList(
                 fullDatabase.getAnimeList().stream()
                         .filter(anime -> "Dropped".equals(anime.getOwnStatus()))
-                        .sorted(byTitle)
+                        .sorted(combinedComparator)
                         .toList()
         );
 
@@ -512,14 +526,6 @@ public class AnimeLogView implements LazyLoaderView {
                         animeGrid.getChildren().clear();
                         animeGrid.getChildren().addAll(animeBoxes);
 
-                        // Testing for speedy image caching?
-                        /*
-                        for (Node child: animeGrid.getChildren()) {
-                            child.setCache(true);
-                            child.setCacheHint(CacheHint.SPEED);
-                        }
-
-                         */
 
                         // Update the internal rows count of grid after children were updated
                         animeGrid.setRowsCount((int) Math.ceil((double) animeGrid.getChildren().size() / animeGrid.getColsCount()));
