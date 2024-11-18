@@ -713,6 +713,7 @@ public class AnimeGridView {
                     // animeGrid.setRowsCount((int) Math.ceil((double) animeGrid.getChildren().size() / animeGrid.getColsCount()));
                     Platform.runLater(() -> {
                         animeGrid.getChildren().clear();
+                        paginationButtons.setVisible(false);
                         animeGrid.getChildren().addAll(animeBoxes);
                         animeGrid.setRowsCount((int) Math.ceil((double) animeGrid.getChildren().size() / animeGrid.getColsCount()));
 
@@ -729,6 +730,7 @@ public class AnimeGridView {
                                     // Thanks, JavaFX
                                     Platform.runLater(() -> {
                                         updateVisibleGridItems(scrollPane);
+                                        paginationButtons.setVisible(true);
                                         if (!(smoothScroll == null))
                                             smoothScroll.resetAccumulatedVValue();
                                     });
