@@ -19,6 +19,9 @@ public class TsundokuApplication extends Application {
     @Override
     public void start(Stage stage) throws IOException {
 
+        // Disable bad text anti aliasing, program-wide. Unsure if we want to go this route.
+        // System.setProperty("prism.lcdtext", "false");
+
         // Make sure data folder for settings and database exist
         Initializer.init();
 

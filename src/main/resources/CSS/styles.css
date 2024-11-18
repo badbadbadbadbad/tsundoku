@@ -161,6 +161,10 @@
     -fx-padding: 0 0 0 10; /* The padding is used because the つんどく looks slightly off-center due to the use of 。*/
 }
 
+#main-label .text {
+    -fx-font-smoothing-type: gray; /* anti aliasing */
+}
+
 .separator {
     -fx-min-height: 2px;
     -fx-pref-height: 2px;
