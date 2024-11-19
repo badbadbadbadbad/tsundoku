@@ -6,6 +6,7 @@ import com.github.badbadbadbadbad.tsundoku.external.SmoothScroll;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeListInfo;
 import com.github.badbadbadbadbad.tsundoku.util.LazyLoader;
+import com.github.badbadbadbadbad.tsundoku.util.PaneFinder;
 import javafx.animation.*;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
@@ -15,13 +16,13 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.CacheHint;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import javafx.util.Pair;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,16 +30,18 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-public class AnimeLogView implements LazyLoaderView {
+public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
     private final double RATIO = 318.0 / 225.0; // The aspect ratio to use for anime images. This doesn't match all exactly, but is close enough.
 
     private final Stage stage;
     private final DatabaseRequestListener databaseRequestListener;
 
+    private List<FlowGridPane> grids;
     private ScrollPane scrollPane;
     private StackPane stackPane;
     private LazyLoader lazyLoader;
+    private PaneFinder paneFinder;
     private SmoothScroll smoothScroll;
 
     private String displayMode = "Any";
@@ -145,7 +148,7 @@ public class AnimeLogView implements LazyLoaderView {
         FlowGridPane pausedGrid = createGrid("Paused", pausedAnimeList);
         FlowGridPane droppedGrid = createGrid("Dropped", droppedAnimeList);
 
-        List<FlowGridPane> grids = new ArrayList<>();
+        this.grids = new ArrayList<>();
         Collections.addAll(grids, inProgressGrid, backlogGrid, completedGrid, pausedGrid, droppedGrid);
 
         // Wrapping scrollPane
@@ -166,8 +169,10 @@ public class AnimeLogView implements LazyLoaderView {
         allGridsLoaded.thenRun(() -> {
             Platform.runLater(() -> {
                 lazyLoader = new LazyLoader(scrollPane, grids);
+                this.paneFinder = new PaneFinder(grids);
             });
         });
+
 
 
         // ScrollPane listener to give controls a bottom border when scrolling
@@ -622,7 +627,7 @@ public class AnimeLogView implements LazyLoaderView {
 
         // Popup when the box is clicked
         animeBox.setOnMouseClicked(event -> {
-            // createPopupScreen(anime, stackPane);
+            createPopupScreen(animeBox, anime, stackPane);
         });
 
 
@@ -633,8 +638,177 @@ public class AnimeLogView implements LazyLoaderView {
     }
 
 
+    private void createPopupScreen(VBox parentBox, AnimeInfo anime, StackPane stackPane) {
+        // Fake darkener effect
+        VBox darkBackground = new VBox();
+        darkBackground.getStyleClass().add("grid-media-popup-background");
+        VBox.setVgrow(darkBackground, Priority.ALWAYS);
+        HBox.setHgrow(darkBackground, Priority.ALWAYS);
+
+        // The actual popup
+        AnimePopupView animePopupView = new AnimePopupView(parentBox, this, anime, databaseRequestListener, darkBackground);
+        VBox popupBox = animePopupView.createPopup();
+
+        // Initially transparent for fade-in effect
+        darkBackground.setOpacity(0);
+        popupBox.setOpacity(0);
+
+        stackPane.getChildren().addAll(darkBackground, popupBox);
+
+        // Fade-in animations
+        FadeTransition fadeInBackground = new FadeTransition(Duration.seconds(0.2), darkBackground);
+        fadeInBackground.setFromValue(0);
+        fadeInBackground.setToValue(0.8);
+
+        FadeTransition fadeInInfoBox = new FadeTransition(Duration.seconds(0.2), popupBox);
+        fadeInInfoBox.setFromValue(0);
+        fadeInInfoBox.setToValue(1);
+
+        fadeInBackground.play();
+        fadeInInfoBox.play();
+
+        darkBackground.setOnMouseClicked(backGroundEvent -> {
+
+            // Fade-out animations
+            FadeTransition fadeOutBackground = new FadeTransition(Duration.seconds(0.2), darkBackground);
+            fadeOutBackground.setFromValue(0.8);
+            fadeOutBackground.setToValue(0);
+
+            FadeTransition fadeOutInfoBox = new FadeTransition(Duration.seconds(0.2), popupBox);
+            fadeOutInfoBox.setFromValue(1);
+            fadeOutInfoBox.setToValue(0);
+
+            // Destroy after fade-out
+            fadeOutInfoBox.setOnFinished(e -> stackPane.getChildren().removeAll(darkBackground, popupBox));
+            fadeOutBackground.play();
+            fadeOutInfoBox.play();
+        });
+    }
+
+
+    @Override
+    public void onPopupClosed(VBox popupParent) {
+        // Old info of popup spawner
+        AnimeInfo animeOld = (AnimeInfo) popupParent.getUserData();
+
+        // New info of popup spawner from database
+        AnimeInfo animeNew = databaseRequestListener.requestAnimeFromDatabase(animeOld.getId());
+
+        // Get node index of the popup spawner
+        int index = paneFinder.findNodeIndexByGridChild(popupParent);
+
+        // Get popup spawner and corresponding pane
+        Pair<FlowGridPane, Integer> pair = paneFinder.findPaneAndChildIndex(index);
+
+
+        // If anime not in database any longer, delete from grid
+        if (animeNew == null) {
+            Platform.runLater(() -> {
+                int idx = pair.getValue();
+                pair.getKey().getChildren().remove(idx);
+            });
+        }
+
+        // Else: Update position in grids (remove old item, make new animeBox at new position)
+        // This includes the case of the anime not changing status / rating, but we'll just be lazy here
+        else {
+
+            VBox newAnimeBox = createAnimeBox(animeNew, stackPane);
+            AnimeInfo newAnimeInfo = (AnimeInfo) newAnimeBox.getUserData();
+
+            // Get correct grid to insert in
+            FlowGridPane targetGrid = switch (newAnimeInfo.getOwnStatus()) {
+                case "In progress" -> grids.get(0);
+                case "Backlog" -> grids.get(1);
+                case "Completed" -> grids.get(2);
+                case "Paused" -> grids.get(3);
+                case "Dropped" -> grids.get(4);
+                default -> throw new IllegalArgumentException("Invalid status trying to insert new animeBox into log: " + newAnimeInfo.getOwnStatus());
+            };
+
+            // ownRating sort
+            Comparator<AnimeInfo> byRating = Comparator.comparingInt(anime -> switch (anime.getOwnRating()) {
+                case "Heart" -> 1;
+                case "Liked" -> 2;
+                case "Disliked" -> 3;
+                case "Unscored" -> 4;
+                default -> Integer.MAX_VALUE; // fallback, in case of unexpected value
+            });
+
+            // Alphanumerical title sort
+            Comparator<AnimeInfo> byTitle = Comparator.comparing(AnimeInfo::getTitle);
+
+
+            int insertIndex = 0;
+            int oldIndex = pair.getValue(); // Index of this anime's current position in grid
+            boolean hasPassedOldIndex = false;
+            boolean sortedByRating = false;
+
+            // Loop through grid to find correct position
+            while (insertIndex < targetGrid.getChildren().size()) {
+
+                // Special case: New item passes itself still in the list
+                if (insertIndex == oldIndex) {
+                    insertIndex++;
+                    hasPassedOldIndex = true;
+                    continue;
+                }
+
+                VBox box = (VBox) targetGrid.getChildren().get(insertIndex);
+                AnimeInfo existingAnimeInfo = (AnimeInfo) box.getUserData();
+
+                // Find correct position by rating first
+                if (!sortedByRating) {
+                    int comparison = byRating.compare(newAnimeInfo, existingAnimeInfo);
+                    if (comparison <= 0) {
+                        sortedByRating = true;
+                        continue;
+                    }
+                    insertIndex++;
+                }
+
+                // Find correct position by title once sorted by rating already
+                else {
+                    int comparison = byTitle.compare(newAnimeInfo, existingAnimeInfo);
+                    if (comparison <= 0) {
+                        break;
+                    }
+                    insertIndex++;
+                }
+
+            }
+
+
+            // If anime passed itself during sorting process, we need to decrement once because its old entry is about to be deleted
+            if (hasPassedOldIndex) {
+                insertIndex--;
+            }
+
+            final int finalInsertIndex = insertIndex;
+            Platform.runLater(() -> {
+                // Remove old
+                int idx = pair.getValue();
+                pair.getKey().getChildren().remove(idx);
+
+                // Insert new
+                targetGrid.getChildren().add(finalInsertIndex, newAnimeBox);
+            });
+
+        }
+
+        lazyLoader.updateVisibilityFull();
+    }
+
+
     private void setRatingBorder(VBox animeBox) {
         AnimeInfo anime = (AnimeInfo) animeBox.getUserData();
+
+        animeBox.getStyleClass().removeAll(
+                "grid-media-box-gold",
+                "grid-media-box-green",
+                "grid-media-box-red",
+                "grid-media-box-grey"
+        );
 
         if (anime.getOwnRating().equals("Heart")) {
             animeBox.getStyleClass().add("grid-media-box-gold");
@@ -682,6 +856,7 @@ public class AnimeLogView implements LazyLoaderView {
 
         return scrollPane;
     }
+
 
 
     public void shutdownLazyLoader() {

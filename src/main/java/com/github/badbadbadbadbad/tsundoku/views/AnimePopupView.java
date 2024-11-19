@@ -1,6 +1,7 @@
 package com.github.badbadbadbadbad.tsundoku.views;
 
 import com.github.badbadbadbadbad.tsundoku.controllers.DatabaseRequestListener;
+import com.github.badbadbadbadbad.tsundoku.external.FlowGridPane;
 import com.github.badbadbadbadbad.tsundoku.external.SmoothScroll;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import javafx.geometry.Insets;
@@ -26,6 +27,9 @@ public class AnimePopupView {
     double RATIO = 318.0 / 225.0; // The aspect ratio to use for anime images. Close to most cover images.
 
     private final DatabaseRequestListener databaseRequestListener;
+
+    private final VBox parentBox;
+    private final PopupMakerView parentView;
     private final AnimeInfo anime;                  // The anime data of the grid item that was clicked to create this popup
     private final AnimeInfo databaseAnime;          // The anime data of the matching anime, received from the local database, if it exists.
     private final VBox darkBackground;              // The background surrounding the popup. Needed to call the destruction event.
@@ -33,9 +37,12 @@ public class AnimePopupView {
     private final VBox popupBox;
     private final List<Button> ratingButtons = new ArrayList<>();
 
-    public AnimePopupView(AnimeInfo anime, DatabaseRequestListener databaseRequestListener, VBox darkBackground) {
+    public AnimePopupView(VBox parentBox, PopupMakerView parentView, AnimeInfo anime, DatabaseRequestListener databaseRequestListener, VBox darkBackground) {
         this.popupBox = new VBox();
         this.databaseRequestListener = databaseRequestListener;
+
+        this.parentBox = parentBox;
+        this.parentView = parentView;
         this.anime = anime;
         this.darkBackground = darkBackground;
 
@@ -451,6 +458,9 @@ public class AnimePopupView {
 
             // Pass the anime data to the database model, where it will be processed accordingly
             databaseRequestListener.onAnimeSaveButtonPressed(this.anime);
+
+            // Update parent grid
+            parentView.onPopupClosed(this.parentBox);
 
             // Destroy darkener background and popup after invoking changes saved
             darkBackground.fireEvent(new MouseEvent(MouseEvent.MOUSE_CLICKED, 0, 0, 0, 0, MouseButton.PRIMARY, 1,

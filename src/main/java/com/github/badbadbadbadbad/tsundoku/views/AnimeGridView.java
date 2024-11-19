@@ -9,6 +9,7 @@ import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeListInfo;
 import com.github.badbadbadbadbad.tsundoku.external.FlowGridPane;
 import com.github.badbadbadbadbad.tsundoku.external.SmoothScroll;
+import com.github.badbadbadbadbad.tsundoku.util.PaneFinder;
 import javafx.animation.*;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
@@ -33,7 +34,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 
-public class AnimeGridView {
+public class AnimeGridView implements PopupMakerView {
 
     private final double RATIO = 318.0 / 225.0; // The aspect ratio to use for anime images. This doesn't match all exactly, but is close enough.
 
@@ -48,6 +49,8 @@ public class AnimeGridView {
     private HBox paginationButtons;
     private StackPane stackPane;
     private SmoothScroll smoothScroll;
+
+    private PaneFinder paneFinder;
 
     private String searchMode = "SEASON";  // Changes between SEASON, TOP, and SEARCH depending on last mode selected (so pagination calls "current mode")
     private String searchString = "";
@@ -487,6 +490,9 @@ public class AnimeGridView {
 
         // Load anime grid with grid items
         reloadAnimeGridAsync(animeListInfo.getAnimeList()).join();
+
+        // Invoke paneFinder on the pane
+        this.paneFinder = new PaneFinder(new ArrayList<>(List.of(animeGrid)));
 
         // Change grid column amount based on window width
         Screen screen = Screen.getPrimary();
@@ -930,7 +936,7 @@ public class AnimeGridView {
 
         // Popup when the box is clicked
         animeBox.setOnMouseClicked(event -> {
-            createPopupScreen(anime, stackPane);
+            createPopupScreen(animeBox, anime, stackPane);
         });
 
 
@@ -944,6 +950,14 @@ public class AnimeGridView {
     private void setRatingBorder(VBox animeBox) {
         AnimeInfo anime = (AnimeInfo) animeBox.getUserData();
         AnimeInfo databaseAnime = databaseRequestListener.requestAnimeFromDatabase(anime.getId());
+
+        animeBox.getStyleClass().removeAll(
+                "grid-media-box-gold",
+                "grid-media-box-green",
+                "grid-media-box-red",
+                "grid-media-box-grey"
+        );
+
         if (databaseAnime == null) {
             animeBox.getStyleClass().add("grid-media-box-grey");
             return;
@@ -964,7 +978,7 @@ public class AnimeGridView {
 
 
     // TODO: Clean up code, reuse animations
-    private void createPopupScreen(AnimeInfo anime, StackPane stackPane) {
+    private void createPopupScreen(VBox parentBox, AnimeInfo anime, StackPane stackPane) {
         // Fake darkener effect
         VBox darkBackground = new VBox();
         darkBackground.getStyleClass().add("grid-media-popup-background");
@@ -972,7 +986,7 @@ public class AnimeGridView {
         HBox.setHgrow(darkBackground, Priority.ALWAYS);
 
         // The actual popup
-        AnimePopupView animePopupView = new AnimePopupView(anime, databaseRequestListener, darkBackground);
+        AnimePopupView animePopupView = new AnimePopupView(parentBox, this, anime, databaseRequestListener, darkBackground);
         VBox popupBox = animePopupView.createPopup();
 
         // Initially transparent for fade-in effect
@@ -1009,6 +1023,13 @@ public class AnimeGridView {
             fadeOutBackground.play();
             fadeOutInfoBox.play();
         });
+    }
+
+
+    @Override
+    public void onPopupClosed(VBox popupParent) {
+        // Just need to update the border for the BrowseView. No deleting.
+        setRatingBorder(popupParent);
     }
 
 
