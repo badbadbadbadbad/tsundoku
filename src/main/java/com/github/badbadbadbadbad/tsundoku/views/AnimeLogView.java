@@ -16,7 +16,6 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.shape.Rectangle;
@@ -37,6 +36,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
     private final Stage stage;
     private final DatabaseRequestListener databaseRequestListener;
 
+    private List<ObservableList<AnimeInfo>> animeLists;
     private List<FlowGridPane> grids;
     private ScrollPane scrollPane;
     private StackPane stackPane;
@@ -44,7 +44,12 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
     private PaneFinder paneFinder;
     private SmoothScroll smoothScroll;
 
-    private String displayMode = "Any";
+    private String searchString = "";
+    private String personalStatusFilter = "Any";
+    private String releaseStatusFilter = "Any";
+    private String startYearFilter = "";
+    private String endYearFilter = "";
+
     private final BooleanProperty filtersHidden = new SimpleBooleanProperty(true);
 
     public AnimeLogView(Stage stage, DatabaseRequestListener databaseRequestListener) {
@@ -129,6 +134,9 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
                         .sorted(combinedComparator)
                         .toList()
         );
+
+        this.animeLists = new ArrayList<>();
+        Collections.addAll(animeLists, inProgressAnimeList, backlogAnimeList, completedAnimeList, pausedAnimeList, droppedAnimeList);
 
 
         // Grid section headers
@@ -233,7 +241,8 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         // Regex to allow only english alphanumeric, JP / CN / KR characters, and spaces
         searchBar.textProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue.matches("[\\p{IsHan}\\p{IsHiragana}\\p{IsKatakana}\\p{Alnum} ]*")) {
-                // searchString = newValue;
+                this.searchString = newValue;
+                onFiltersChanged();
             } else {
                 searchBar.setText(oldValue);
             }
@@ -314,11 +323,13 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         // Filter change listeners
         if (labelText.equals("Personal status")) {
             comboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
-                displayMode = newVal;
+                personalStatusFilter = newVal;
+                onFiltersChanged();
             });
         } else if (labelText.equals("Status")) {
             comboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
-
+                releaseStatusFilter = newVal;
+                onFiltersChanged();
             });
         }
 
@@ -342,23 +353,36 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         textField.setMaxWidth(Double.MAX_VALUE);
         VBox.setVgrow(textField, Priority.ALWAYS);
 
+
         // Numeric input and at most four digits regex filter
         textField.textProperty().addListener((observable, oldValue, newValue) -> {
-            if (!newValue.matches("\\d{0,4}")) {
+            if (newValue.matches("\\d{0,4}")) {
+                // textField.setText(oldValue);
+                if (labelText.equals("Start year ≥")) {
+                    this.startYearFilter = newValue;
+                } else if (labelText.equals("End year ≤")) {
+                    this.endYearFilter = newValue;
+                }
+                onFiltersChanged();
+
+            } else {
                 textField.setText(oldValue);
             }
         });
 
+        /*
         // Filter change listeners
         if (labelText.equals("Start year ≥")) {
             textField.textProperty().addListener((obs, oldVal, newVal) -> {
-
+                startYearFilter
             });
         } else if (labelText.equals("End year ≤")) {
             textField.textProperty().addListener((obs, oldVal, newVal) -> {
 
             });
         }
+
+         */
 
         // Even when filters are hidden, mouse cursor changes to text field cursor when hovering
         // where the number filters would be.
@@ -462,6 +486,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
     private HBox createGridHeader(String labelText, ObservableList<AnimeInfo> animeList) {
         HBox headerBox = new HBox(5);
         headerBox.setPrefHeight(40);
+        // headerBox.setMinHeight(0);
         // headerBox.setStyle("-fx-border-width: 1 0 1 0; -fx-border-color: white;");
         HBox.setHgrow(headerBox, Priority.ALWAYS);
         headerBox.setAlignment(Pos.CENTER);
@@ -492,8 +517,16 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
 
         animeList.addListener((ListChangeListener<AnimeInfo>) change -> {
+            System.out.println(animeList.size());
+
             boolean hasItems = animeList.size() > 0;
-            boolean shouldDisplay = displayMode.equals("Any") || displayMode.equals(labelText);
+            boolean shouldDisplay = personalStatusFilter.equals("Any") || personalStatusFilter.equals(labelText);
+
+            if (hasItems) {
+                headerBox.setMaxHeight(40);
+            } else {
+                headerBox.setMaxHeight(0);
+            }
 
             headerBox.setManaged(hasItems && shouldDisplay);
             headerBox.setVisible(hasItems && shouldDisplay);
@@ -537,6 +570,8 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
                     });
                 });
     }
+
+
 
 
     private List<VBox> createAnimeGridItems(List<AnimeInfo> animeList) {
@@ -704,8 +739,13 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         // If anime not in database any longer, delete from grid
         if (animeNew == null) {
             Platform.runLater(() -> {
+                // Remove from grid
                 int idx = pair.getValue();
                 pair.getKey().getChildren().remove(idx);
+
+                // Remove from list
+                int animeListIdx = grids.indexOf(pair.getKey());
+                animeLists.get(animeListIdx).remove(idx);
             });
         }
 
@@ -786,12 +826,20 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
             final int finalInsertIndex = insertIndex;
             Platform.runLater(() -> {
-                // Remove old
+                // Remove old from grid
                 int idx = pair.getValue();
                 pair.getKey().getChildren().remove(idx);
 
-                // Insert new
+                // Remove old from list
+                int animeListIdx = grids.indexOf(pair.getKey());
+                animeLists.get(animeListIdx).remove(idx);
+
+                // Insert new into grid
                 targetGrid.getChildren().add(finalInsertIndex, newAnimeBox);
+
+                // Insert new into list
+                int newAnimeListIdx = grids.indexOf(targetGrid);
+                animeLists.get(newAnimeListIdx).add(finalInsertIndex, newAnimeInfo);
             });
 
         }
@@ -799,6 +847,10 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         lazyLoader.updateVisibilityFull();
     }
 
+
+    private void onFiltersChanged() {
+        System.out.println("Test!");
+    }
 
     private void setRatingBorder(VBox animeBox) {
         AnimeInfo anime = (AnimeInfo) animeBox.getUserData();
@@ -856,7 +908,6 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
         return scrollPane;
     }
-
 
 
     public void shutdownLazyLoader() {
