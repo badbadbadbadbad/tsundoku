@@ -5,7 +5,6 @@ import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import javafx.animation.FadeTransition;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
-import javafx.concurrent.Task;
 import javafx.geometry.Bounds;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.Node;
@@ -22,7 +21,6 @@ public class LazyLoader {
     private final double RATIO = 318.0 / 225.0;
 
     private final ExecutorService imageLoaderExecutor = Executors.newFixedThreadPool(3);
-    // private final ScheduledExecutorService updateScheduler = Executors.newSingleThreadScheduledExecutor();
     private AnimationTimer batchImageUpdaterTimer;
 
     private final List<Future<?>> activeImageTasks = new ArrayList<>();
@@ -47,6 +45,7 @@ public class LazyLoader {
 
 
         Pair<FlowGridPane, Integer> first = paneFinder.findPaneAndChildIndex(0);
+
         if (first != null) {
 
             startBatchImageUpdater();
@@ -127,6 +126,9 @@ public class LazyLoader {
 
     public void executeUpdateVisibilityFull() {
         Bounds paneBounds = scrollPane.localToScene(scrollPane.getBoundsInLocal());
+
+        // System.out.println(firstVisibleIndex);
+        // System.out.println(lastVisibleIndex);
 
         // Currently visible items: Downwards from start
         while (firstVisibleIndex <= lastVisibleIndex) {

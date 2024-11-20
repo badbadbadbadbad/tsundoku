@@ -6,6 +6,7 @@ import com.github.badbadbadbadbad.tsundoku.external.SmoothScroll;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeListInfo;
 import com.github.badbadbadbadbad.tsundoku.util.LazyLoader;
+import com.github.badbadbadbadbad.tsundoku.util.ListFinder;
 import com.github.badbadbadbadbad.tsundoku.util.PaneFinder;
 import javafx.animation.*;
 import javafx.application.Platform;
@@ -16,6 +17,7 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.shape.Rectangle;
@@ -37,11 +39,17 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
     private final DatabaseRequestListener databaseRequestListener;
 
     private List<ObservableList<AnimeInfo>> animeLists;
-    private List<FlowGridPane> grids;
+    // private List<FlowGridPane> grids;
+    private List<List<VBox>> grids;
+
+    private List<ObservableList<VBox>> filteredAnimeLists;
+    private List<FlowGridPane> filteredGrids;
+
+
     private ScrollPane scrollPane;
     private StackPane stackPane;
     private LazyLoader lazyLoader;
-    private PaneFinder paneFinder;
+    private ListFinder listFinder;
     private SmoothScroll smoothScroll;
 
     private String searchString = "";
@@ -139,17 +147,21 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         Collections.addAll(animeLists, inProgressAnimeList, backlogAnimeList, completedAnimeList, pausedAnimeList, droppedAnimeList);
 
 
-        // Grid section headers
-        HBox inProgressHeader = createGridHeader("In progress", inProgressAnimeList);
-        HBox backlogHeader = createGridHeader("Backlog", backlogAnimeList);
-        HBox completedHeader = createGridHeader("Completed", completedAnimeList);
-        HBox pausedHeader = createGridHeader("Paused", pausedAnimeList);
-        HBox droppedHeader = createGridHeader("Dropped", droppedAnimeList);
 
-        List<HBox> headers = new ArrayList<>();
-        Collections.addAll(headers, inProgressHeader, backlogHeader, completedHeader, pausedHeader, droppedHeader);
+        // Full Grids
+        List<VBox> inProgressList = new ArrayList<>();
+        List<VBox> backlogList = new ArrayList<>();
+        List<VBox> completedList = new ArrayList<>();
+        List<VBox> pausedList = new ArrayList<>();
+        List<VBox> droppedList = new ArrayList<>();
 
-        // Grids
+        this.grids = new ArrayList<>();
+        Collections.addAll(grids, inProgressList, backlogList, completedList, pausedList, droppedList);
+
+        /*
+        // Full Grids
+
+
         FlowGridPane inProgressGrid = createGrid("In progress", inProgressAnimeList);
         FlowGridPane backlogGrid = createGrid("Backlog", backlogAnimeList);
         FlowGridPane completedGrid = createGrid("Completed", completedAnimeList);
@@ -159,25 +171,71 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         this.grids = new ArrayList<>();
         Collections.addAll(grids, inProgressGrid, backlogGrid, completedGrid, pausedGrid, droppedGrid);
 
+         */
+
+
+
+        // Filtered ObservableLists of VBoxes. The headers listen to these so they can disappear when these are empty.
+        ObservableList<VBox> filteredInProgressAnimeList = FXCollections.observableArrayList();
+        ObservableList<VBox> filteredBacklogAnimeList = FXCollections.observableArrayList();
+        ObservableList<VBox> filteredCompletedAnimeList = FXCollections.observableArrayList();
+        ObservableList<VBox> filteredPausedAnimeList = FXCollections.observableArrayList();
+        ObservableList<VBox> filteredDroppedAnimeList = FXCollections.observableArrayList();
+
+        this.filteredAnimeLists = new ArrayList<>();
+        Collections.addAll(filteredAnimeLists, filteredInProgressAnimeList, filteredBacklogAnimeList, filteredCompletedAnimeList, filteredPausedAnimeList, filteredDroppedAnimeList);
+
+
+
+        // Grid section headers
+        HBox inProgressHeader = createGridHeader("In progress", filteredInProgressAnimeList);
+        HBox backlogHeader = createGridHeader("Backlog", filteredBacklogAnimeList);
+        HBox completedHeader = createGridHeader("Completed", filteredCompletedAnimeList);
+        HBox pausedHeader = createGridHeader("Paused", filteredPausedAnimeList);
+        HBox droppedHeader = createGridHeader("Dropped", filteredDroppedAnimeList);
+
+        List<HBox> headers = new ArrayList<>();
+        Collections.addAll(headers, inProgressHeader, backlogHeader, completedHeader, pausedHeader, droppedHeader);
+
+
+
+        // Filtered FlowGridPanes that will be displayed
+        FlowGridPane filteredInProgressGrid = createGrid("In progress", inProgressAnimeList);
+        FlowGridPane filteredBacklogGrid = createGrid("Backlog", backlogAnimeList);
+        FlowGridPane filteredCompletedGrid = createGrid("Completed", completedAnimeList);
+        FlowGridPane filteredPausedGrid = createGrid("Paused", pausedAnimeList);
+        FlowGridPane filteredDroppedGrid = createGrid("Dropped", droppedAnimeList);
+
+        this.filteredGrids = new ArrayList<>();
+        Collections.addAll(filteredGrids, filteredInProgressGrid, filteredBacklogGrid, filteredCompletedGrid, filteredPausedGrid, filteredDroppedGrid);
+
         // Wrapping scrollPane
-        ScrollPane scrollPane = createScrollPane(headers, grids);
+        // ScrollPane scrollPane = createScrollPane(headers, grids);
+        // ScrollPane scrollPane = createScrollPane(headers, filteredGrids);
+        this.scrollPane = createScrollPane(headers, filteredGrids);
 
 
         // Collect grid loading futures
         List<CompletableFuture<Void>> gridFutures = new ArrayList<>();
-        gridFutures.add(reloadAnimeGridAsync(inProgressGrid, inProgressAnimeList));
-        gridFutures.add(reloadAnimeGridAsync(backlogGrid, backlogAnimeList));
-        gridFutures.add(reloadAnimeGridAsync(completedGrid, completedAnimeList));
-        gridFutures.add(reloadAnimeGridAsync(pausedGrid, pausedAnimeList));
-        gridFutures.add(reloadAnimeGridAsync(droppedGrid, droppedAnimeList));
+        gridFutures.add(reloadAnimeGridAsync(grids.get(0), inProgressAnimeList));
+        gridFutures.add(reloadAnimeGridAsync(grids.get(1), backlogAnimeList));
+        gridFutures.add(reloadAnimeGridAsync(grids.get(2), completedAnimeList));
+        gridFutures.add(reloadAnimeGridAsync(grids.get(3), pausedAnimeList));
+        gridFutures.add(reloadAnimeGridAsync(grids.get(4), droppedAnimeList));
         CompletableFuture<Void> allGridsLoaded = CompletableFuture.allOf(
                 gridFutures.toArray(new CompletableFuture[0])
         );
 
         allGridsLoaded.thenRun(() -> {
             Platform.runLater(() -> {
-                lazyLoader = new LazyLoader(scrollPane, grids);
-                this.paneFinder = new PaneFinder(grids);
+                onFiltersChanged();
+
+                // System.out.println(filteredGrids.get(1).getChildren().size());
+                // lazyLoader = new LazyLoader(scrollPane, grids);
+                // lazyLoader = new LazyLoader(scrollPane, filteredGrids);
+                this.listFinder = new ListFinder(grids);
+
+                // lazyLoader.updateVisibilityFull();
             });
         });
 
@@ -483,7 +541,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
     }
 
 
-    private HBox createGridHeader(String labelText, ObservableList<AnimeInfo> animeList) {
+    private HBox createGridHeader(String labelText, ObservableList<VBox> animeList) {
         HBox headerBox = new HBox(5);
         headerBox.setPrefHeight(40);
         // headerBox.setMinHeight(0);
@@ -516,8 +574,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         headerBox.getChildren().addAll(leftRegion, label, rightRegion);
 
 
-        animeList.addListener((ListChangeListener<AnimeInfo>) change -> {
-            System.out.println(animeList.size());
+        animeList.addListener((ListChangeListener<VBox>) change -> {
 
             boolean hasItems = animeList.size() > 0;
             boolean shouldDisplay = personalStatusFilter.equals("Any") || personalStatusFilter.equals(labelText);
@@ -536,6 +593,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
     }
 
 
+    // TODO: Remove parameters
     private FlowGridPane createGrid(String labelText, ObservableList<AnimeInfo> animeList) {
         FlowGridPane animeGrid = new FlowGridPane(3, 1);  // Default values here shouldn't matter but are needed, so..
         animeGrid.setHgap(20);
@@ -557,16 +615,16 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
     }
 
 
-    private CompletableFuture<Void> reloadAnimeGridAsync(FlowGridPane animeGrid, List<AnimeInfo> animeList) {
+    private CompletableFuture<Void> reloadAnimeGridAsync(List<VBox> animeGrid, List<AnimeInfo> animeList) {
         return CompletableFuture.supplyAsync(() -> createAnimeGridItems(animeList))
                 .thenAccept(animeBoxes -> {
                     Platform.runLater(() -> {
-                        animeGrid.getChildren().clear();
-                        animeGrid.getChildren().addAll(animeBoxes);
+                        animeGrid.clear();
+                        animeGrid.addAll(animeBoxes);
 
 
                         // Update the internal rows count of grid after children were updated
-                        animeGrid.setRowsCount((int) Math.ceil((double) animeGrid.getChildren().size() / animeGrid.getColsCount()));
+                        // animeGrid.setRowsCount((int) Math.ceil((double) animeGrid.getChildren().size() / animeGrid.getColsCount()));
                     });
                 });
     }
@@ -730,10 +788,10 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         AnimeInfo animeNew = databaseRequestListener.requestAnimeFromDatabase(animeOld.getId());
 
         // Get node index of the popup spawner
-        int index = paneFinder.findNodeIndexByGridChild(popupParent);
+        int index = listFinder.findNodeIndexByGridChild(popupParent);
 
         // Get popup spawner and corresponding pane
-        Pair<FlowGridPane, Integer> pair = paneFinder.findPaneAndChildIndex(index);
+        Pair<List<VBox>, Integer> pair = listFinder.findPaneAndChildIndex(index);
 
 
         // If anime not in database any longer, delete from grid
@@ -741,7 +799,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
             Platform.runLater(() -> {
                 // Remove from grid
                 int idx = pair.getValue();
-                pair.getKey().getChildren().remove(idx);
+                pair.getKey().remove(idx);
 
                 // Remove from list
                 int animeListIdx = grids.indexOf(pair.getKey());
@@ -757,7 +815,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
             AnimeInfo newAnimeInfo = (AnimeInfo) newAnimeBox.getUserData();
 
             // Get correct grid to insert in
-            FlowGridPane targetGrid = switch (newAnimeInfo.getOwnStatus()) {
+            List<VBox> targetGrid = switch (newAnimeInfo.getOwnStatus()) {
                 case "In progress" -> grids.get(0);
                 case "Backlog" -> grids.get(1);
                 case "Completed" -> grids.get(2);
@@ -785,7 +843,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
             boolean sortedByRating = false;
 
             // Loop through grid to find correct position
-            while (insertIndex < targetGrid.getChildren().size()) {
+            while (insertIndex < targetGrid.size()) {
 
                 // Special case: New item passes itself still in the list
                 if (insertIndex == oldIndex) {
@@ -794,7 +852,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
                     continue;
                 }
 
-                VBox box = (VBox) targetGrid.getChildren().get(insertIndex);
+                VBox box = (VBox) targetGrid.get(insertIndex);
                 AnimeInfo existingAnimeInfo = (AnimeInfo) box.getUserData();
 
                 // Find correct position by rating first
@@ -828,14 +886,14 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
             Platform.runLater(() -> {
                 // Remove old from grid
                 int idx = pair.getValue();
-                pair.getKey().getChildren().remove(idx);
+                pair.getKey().remove(idx);
 
                 // Remove old from list
                 int animeListIdx = grids.indexOf(pair.getKey());
                 animeLists.get(animeListIdx).remove(idx);
 
                 // Insert new into grid
-                targetGrid.getChildren().add(finalInsertIndex, newAnimeBox);
+                targetGrid.add(finalInsertIndex, newAnimeBox);
 
                 // Insert new into list
                 int newAnimeListIdx = grids.indexOf(targetGrid);
@@ -844,13 +902,184 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
         }
 
-        lazyLoader.updateVisibilityFull();
+
+        onFiltersChanged();
+        // lazyLoader.updateVisibilityFull();
     }
 
 
     private void onFiltersChanged() {
-        System.out.println("Test!");
+        // Clear and filter items for all categories
+        for (int i = 0; i < grids.size(); i++) {
+            List<VBox> currentGrid = grids.get(i);
+            ObservableList<VBox> filteredList = filteredAnimeLists.get(i);
+
+            // Clear the filtered list for the current category
+            filteredList.clear();
+
+            // System.out.println(currentGrid.getChildren().size());
+
+            // for (VBox animeBox : currentGrid.getChildren()) {
+            for (VBox node : currentGrid) {
+                if (node instanceof VBox animeBox) {
+                    AnimeInfo animeInfo = (AnimeInfo) animeBox.getUserData();
+                    if (animeInfo == null) continue;
+
+
+
+                    boolean matches = true;
+
+                    // 1. Apply searchString filter
+                    if (searchString != null && !searchString.isEmpty()) {
+                        String lowerSearchString = searchString.toLowerCase();
+                        String title = animeInfo.getTitle() != null ? animeInfo.getTitle().toLowerCase() : null;
+                        String titleJapanese = animeInfo.getTitleJapanese() != null ? animeInfo.getTitleJapanese().toLowerCase() : null;
+                        String titleEnglish = animeInfo.getTitleEnglish() != null ? animeInfo.getTitleEnglish().toLowerCase() : null;
+
+                        matches = (title != null && title.contains(lowerSearchString)) ||
+                                (titleJapanese != null && titleJapanese.contains(lowerSearchString)) ||
+                                (titleEnglish != null && titleEnglish.contains(lowerSearchString));
+                    }
+
+                    // 2. Apply personalStatusFilter
+                    if (matches && !"Any".equals(personalStatusFilter)) {
+                        String ownStatus = animeInfo.getOwnStatus();
+                        matches = personalStatusFilter.equals(ownStatus);
+                    }
+
+                    // 3. Apply releaseStatusFilter
+                    if (matches && !"Any".equals(releaseStatusFilter)) {
+                        String publicationStatus = animeInfo.getPublicationStatus();
+                        matches = releaseStatusFilter.equals(publicationStatus);
+                    }
+
+                    // 4. Apply startYearFilter
+                    if (matches && startYearFilter != null && !startYearFilter.isEmpty()) {
+                        String release = animeInfo.getRelease();
+                        if (!"Not yet provided".equals(release)) {
+                            try {
+                                int startYear = Integer.parseInt(startYearFilter);
+                                int releaseYear = Integer.parseInt(release.substring(release.length() - 4));
+                                matches = releaseYear >= startYear;
+                            } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
+                                matches = false; // Filter out if invalid release year
+                            }
+                        } else {
+                            matches = false; // Filter out if release year is not provided
+                        }
+                    }
+
+                    // 5. Apply endYearFilter
+                    if (matches && endYearFilter != null && !endYearFilter.isEmpty()) {
+                        String release = animeInfo.getRelease();
+                        if (!"Not yet provided".equals(release)) {
+                            try {
+                                int endYear = Integer.parseInt(endYearFilter);
+                                int releaseYear = Integer.parseInt(release.substring(release.length() - 4));
+                                matches = releaseYear <= endYear;
+                            } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
+                                matches = false; // Filter out if invalid release year
+                            }
+                        } else {
+                            matches = false; // Filter out if release year is not provided
+                        }
+                    }
+
+                    // If the item matches all active filters, add it to the filtered list
+                    if (matches) {
+                        filteredList.add(animeBox);
+                    }
+                }
+            }
+
+            // System.out.println(filteredList.size());
+        }
+
+
+        // Update the filtered grids in a single Platform.runLater call
+        Platform.runLater(() -> {
+            for (int i = 0; i < filteredGrids.size(); i++) {
+                // System.out.println(grids.get(i).getChildren().size());
+
+                FlowGridPane filteredGrid = filteredGrids.get(i);
+                ObservableList<VBox> filteredList = filteredAnimeLists.get(i);
+
+                // System.out.println(grids.get(i).getChildren().size());
+
+                filteredGrid.getChildren().clear();
+
+                filteredGrid.getChildren().addAll(filteredList);
+
+
+                filteredGrid.setRowsCount((int) Math.ceil((double) filteredGrid.getChildren().size() / filteredGrid.getColsCount()));
+
+
+                // filteredGrid.getChildren().addAll(filteredList);
+
+
+                // System.out.println(grids.get(i).getChildren().size());
+
+                // System.out.println(filteredGrid.getChildren().size());
+            }
+
+            // System.out.println(filteredAnimeLists.get(1).size());
+            // System.out.println(filteredGrids.get(1).getChildren().size());
+
+            /*
+            if (scrollPane != null) {
+                scrollPane.setVvalue(0);
+                smoothScroll.resetAccumulatedVValue();
+            }
+
+             */
+
+            if (lazyLoader == null) {
+                lazyLoader = new LazyLoader(scrollPane, filteredGrids);
+            }
+
+            /*
+            else {
+                lazyLoader.updateVisibilityFull();
+            }
+
+             */
+
+            lazyLoader.setFirstVisibleIndex(0);
+            lazyLoader.setLastVisibleIndex(0);
+
+            // System.out.println("Test");
+            lazyLoader.updateVisibilityFull();
+
+
+        });
     }
+
+
+
+    /*
+    private void onFiltersChanged() {
+        // Filter the full grids for their children
+
+        // Platform.runLater wrapper
+
+            // Clear filtered grids
+
+            // Fill filtered grids with filter results
+
+
+
+
+
+        // Initiate layzLoader and paneFindere with filtered Grids instead of full Grids
+
+        // Make header statuses listen to filtered grids instead of full grids
+
+
+        // Add a onFiltersChanged call to end of onPopupClosed
+        // lazyLoader.updateVisibilityFull();
+    }
+
+     */
 
     private void setRatingBorder(VBox animeBox) {
         AnimeInfo anime = (AnimeInfo) animeBox.getUserData();
