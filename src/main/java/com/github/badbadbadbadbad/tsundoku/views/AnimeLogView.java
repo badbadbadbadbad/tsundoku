@@ -195,8 +195,6 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         Collections.addAll(filteredGrids, filteredInProgressGrid, filteredBacklogGrid, filteredCompletedGrid, filteredPausedGrid, filteredDroppedGrid);
 
         // Wrapping scrollPane
-        // ScrollPane scrollPane = createScrollPane(headers, grids);
-        // ScrollPane scrollPane = createScrollPane(headers, filteredGrids);
         this.scrollPane = createScrollPane(headers, filteredGrids);
 
 
@@ -213,14 +211,9 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
         allGridsLoaded.thenRun(() -> {
             Platform.runLater(() -> {
+                // First call here also initializes the lazyLoader
                 onFiltersChanged();
-
-                // System.out.println(filteredGrids.get(1).getChildren().size());
-                // lazyLoader = new LazyLoader(scrollPane, grids);
-                // lazyLoader = new LazyLoader(scrollPane, filteredGrids);
                 this.listFinder = new ListFinder(grids);
-
-                // lazyLoader.updateVisibilityFull();
             });
         });
 
@@ -261,9 +254,6 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         });
 
 
-
-
-        // root.getChildren().addAll(controls, separator, scrollPane);
         root.getChildren().addAll(controls, separator, scrollPane);
         return stackPane;
     }
@@ -544,7 +534,8 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         // Left region
         Region leftRegion = new Region();
         leftRegion.getStyleClass().add("log-grid-header-separator");
-        leftRegion.prefWidthProperty().bind(headerBox.widthProperty().multiply(0.15));
+        HBox.setHgrow(leftRegion, Priority.ALWAYS);
+        // leftRegion.prefWidthProperty().bind(headerBox.widthProperty().multiply(0.15));
 
         // TODO: Fix font weight. https://stackoverflow.com/a/77339072
         // Middle label
@@ -973,8 +964,10 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
                 if (filteredList.isEmpty()) {
                     filteredGrid.setMaxHeight(0);
+                    filteredGrid.setPadding(new Insets(0, 0, 0, 0));
                 } else {
                     filteredGrid.setMaxHeight(Double.MAX_VALUE);
+                    filteredGrid.setPadding(new Insets(0, 0, 30, 0));
                 }
 
                 filteredGrid.setRowsCount((int) Math.ceil((double) filteredGrid.getChildren().size() / filteredGrid.getColsCount()));
