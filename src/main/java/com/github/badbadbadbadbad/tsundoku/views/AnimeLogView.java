@@ -158,21 +158,6 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         this.grids = new ArrayList<>();
         Collections.addAll(grids, inProgressList, backlogList, completedList, pausedList, droppedList);
 
-        /*
-        // Full Grids
-
-
-        FlowGridPane inProgressGrid = createGrid("In progress", inProgressAnimeList);
-        FlowGridPane backlogGrid = createGrid("Backlog", backlogAnimeList);
-        FlowGridPane completedGrid = createGrid("Completed", completedAnimeList);
-        FlowGridPane pausedGrid = createGrid("Paused", pausedAnimeList);
-        FlowGridPane droppedGrid = createGrid("Dropped", droppedAnimeList);
-
-        this.grids = new ArrayList<>();
-        Collections.addAll(grids, inProgressGrid, backlogGrid, completedGrid, pausedGrid, droppedGrid);
-
-         */
-
 
 
         // Filtered ObservableLists of VBoxes. The headers listen to these so they can disappear when these are empty.
@@ -544,8 +529,9 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
     private HBox createGridHeader(String labelText, ObservableList<VBox> animeList) {
         HBox headerBox = new HBox(5);
         headerBox.setPrefHeight(40);
+        headerBox.setPadding(new Insets(0, 0, 10, 0));
         // headerBox.setMinHeight(0);
-        // headerBox.setStyle("-fx-border-width: 1 0 1 0; -fx-border-color: white;");
+        // headerBox.setStyle("-fx-border-width: 1 0 1 0; -fx-border-color: red;");
         HBox.setHgrow(headerBox, Priority.ALWAYS);
         headerBox.setAlignment(Pos.CENTER);
 
@@ -580,8 +566,10 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
             boolean shouldDisplay = personalStatusFilter.equals("Any") || personalStatusFilter.equals(labelText);
 
             if (hasItems) {
+                headerBox.setMinHeight(40);
                 headerBox.setMaxHeight(40);
             } else {
+                headerBox.setMinHeight(0);
                 headerBox.setMaxHeight(0);
             }
 
@@ -599,7 +587,9 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         animeGrid.setHgap(20);
         animeGrid.setVgap(20);
         animeGrid.setMaxWidth(Double.MAX_VALUE);
-        animeGrid.setStyle("-fx-padding: 0 0 20 0;");
+        animeGrid.setPadding(new Insets(0, 0, 20, 0));
+        // animeGrid.setStyle("-fx-border-color: white; -fx-border-width: 1 0 1 0;");
+
 
         /*
         reloadAnimeGridAsync(animeGrid, animeList).join();
@@ -621,10 +611,6 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
                     Platform.runLater(() -> {
                         animeGrid.clear();
                         animeGrid.addAll(animeBoxes);
-
-
-                        // Update the internal rows count of grid after children were updated
-                        // animeGrid.setRowsCount((int) Math.ceil((double) animeGrid.getChildren().size() / animeGrid.getColsCount()));
                     });
                 });
     }
@@ -904,7 +890,6 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
 
         onFiltersChanged();
-        // lazyLoader.updateVisibilityFull();
     }
 
 
@@ -916,8 +901,6 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
             // Clear the filtered list for the current category
             filteredList.clear();
-
-            // System.out.println(currentGrid.getChildren().size());
 
             // for (VBox animeBox : currentGrid.getChildren()) {
             for (VBox node : currentGrid) {
@@ -991,95 +974,51 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
                     }
                 }
             }
-
-            // System.out.println(filteredList.size());
         }
 
 
         // Update the filtered grids in a single Platform.runLater call
         Platform.runLater(() -> {
             for (int i = 0; i < filteredGrids.size(); i++) {
-                // System.out.println(grids.get(i).getChildren().size());
 
                 FlowGridPane filteredGrid = filteredGrids.get(i);
                 ObservableList<VBox> filteredList = filteredAnimeLists.get(i);
 
-                // System.out.println(grids.get(i).getChildren().size());
-
                 filteredGrid.getChildren().clear();
-
                 filteredGrid.getChildren().addAll(filteredList);
 
+                if (filteredList.isEmpty()) {
+                    filteredGrid.setMaxHeight(0);
+                } else {
+                    filteredGrid.setMaxHeight(Double.MAX_VALUE);
+                }
 
                 filteredGrid.setRowsCount((int) Math.ceil((double) filteredGrid.getChildren().size() / filteredGrid.getColsCount()));
-
-
-                // filteredGrid.getChildren().addAll(filteredList);
-
-
-                // System.out.println(grids.get(i).getChildren().size());
-
-                // System.out.println(filteredGrid.getChildren().size());
             }
 
-            // System.out.println(filteredAnimeLists.get(1).size());
-            // System.out.println(filteredGrids.get(1).getChildren().size());
 
-            /*
+
             if (scrollPane != null) {
                 scrollPane.setVvalue(0);
                 smoothScroll.resetAccumulatedVValue();
             }
 
-             */
 
+            // For the startup call
             if (lazyLoader == null) {
                 lazyLoader = new LazyLoader(scrollPane, filteredGrids);
             }
 
-            /*
-            else {
-                lazyLoader.updateVisibilityFull();
-            }
-
-             */
 
             lazyLoader.setFirstVisibleIndex(0);
             lazyLoader.setLastVisibleIndex(0);
 
-            // System.out.println("Test");
             lazyLoader.updateVisibilityFull();
 
 
         });
     }
 
-
-
-    /*
-    private void onFiltersChanged() {
-        // Filter the full grids for their children
-
-        // Platform.runLater wrapper
-
-            // Clear filtered grids
-
-            // Fill filtered grids with filter results
-
-
-
-
-
-        // Initiate layzLoader and paneFindere with filtered Grids instead of full Grids
-
-        // Make header statuses listen to filtered grids instead of full grids
-
-
-        // Add a onFiltersChanged call to end of onPopupClosed
-        // lazyLoader.updateVisibilityFull();
-    }
-
-     */
 
     private void setRatingBorder(VBox animeBox) {
         AnimeInfo anime = (AnimeInfo) animeBox.getUserData();
@@ -1104,7 +1043,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
 
     private ScrollPane createScrollPane(List<HBox> headers, List<FlowGridPane> grids) {
-        VBox wrapper = new VBox(10);
+        VBox wrapper = new VBox(0);
         wrapper.setMaxWidth(Double.MAX_VALUE);
 
         for (int i = 0; i < headers.size(); i++) {
