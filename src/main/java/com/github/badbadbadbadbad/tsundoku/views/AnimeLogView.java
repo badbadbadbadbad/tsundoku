@@ -587,7 +587,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         animeGrid.setHgap(20);
         animeGrid.setVgap(20);
         animeGrid.setMaxWidth(Double.MAX_VALUE);
-        animeGrid.setPadding(new Insets(0, 0, 20, 0));
+        animeGrid.setPadding(new Insets(0, 0, 30, 0));
         // animeGrid.setStyle("-fx-border-color: white; -fx-border-width: 1 0 1 0;");
 
 
@@ -780,17 +780,10 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         Pair<List<VBox>, Integer> pair = listFinder.findPaneAndChildIndex(index);
 
 
-        // If anime not in database any longer, delete from grid
+        // If anime not in database any longer, delete from unfiltered list
         if (animeNew == null) {
-            Platform.runLater(() -> {
-                // Remove from grid
-                int idx = pair.getValue();
-                pair.getKey().remove(idx);
-
-                // Remove from list
-                int animeListIdx = grids.indexOf(pair.getKey());
-                animeLists.get(animeListIdx).remove(idx);
-            });
+            int idx = pair.getValue();
+            pair.getKey().remove(idx);
         }
 
         // Else: Update position in grids (remove old item, make new animeBox at new position)
@@ -868,24 +861,15 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
                 insertIndex--;
             }
 
-            final int finalInsertIndex = insertIndex;
-            Platform.runLater(() -> {
-                // Remove old from grid
-                int idx = pair.getValue();
-                pair.getKey().remove(idx);
+            // final int finalInsertIndex = insertIndex;
 
-                // Remove old from list
-                int animeListIdx = grids.indexOf(pair.getKey());
-                animeLists.get(animeListIdx).remove(idx);
 
-                // Insert new into grid
-                targetGrid.add(finalInsertIndex, newAnimeBox);
+            // Remove old entry
+            int idx = pair.getValue();
+            pair.getKey().remove(idx);
 
-                // Insert new into list
-                int newAnimeListIdx = grids.indexOf(targetGrid);
-                animeLists.get(newAnimeListIdx).add(finalInsertIndex, newAnimeInfo);
-            });
-
+            // Insert at new position
+            targetGrid.add(insertIndex, newAnimeBox);
         }
 
 
