@@ -30,6 +30,15 @@ public class AnimeAPIModel {
     private String startYear;
     private String endYear;
 
+
+    private String programName = "tsundoku";
+    private String programVersion = "1.0";
+    private String os = System.getProperty("os.name");
+    private String osVersion = System.getProperty("os.version");
+    private String javaVersion = "21.0.4";                          // Statically bundled version of the program
+    private String userAgent = programName + "/" + programVersion + " (Java " + javaVersion + ", " + os + " " + osVersion + ")";
+
+
     public CompletableFuture<AnimeListInfo> getCurrentSeason(int page) {
         String urlString = BASE_URL + "/seasons/now?page=" + page;
         URI uri = URI.create(urlString);
@@ -37,9 +46,9 @@ public class AnimeAPIModel {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(uri)
                 .header("Accept", "application/json")
+                .header("User-Agent", userAgent)
                 .GET()
                 .build();
-
 
         return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenApply(response -> {
@@ -70,6 +79,7 @@ public class AnimeAPIModel {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(uri)
                 .header("Accept", "application/json")
+                .header("User-Agent", userAgent)
                 .GET()
                 .build();
 
@@ -105,6 +115,7 @@ public class AnimeAPIModel {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(uri)
                 .header("Accept", "application/json")
+                .header("User-Agent", userAgent)
                 .GET()
                 .build();
 
