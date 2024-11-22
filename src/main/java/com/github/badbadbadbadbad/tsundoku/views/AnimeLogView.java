@@ -275,6 +275,8 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         searchBar.textProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue.matches("[\\p{IsHan}\\p{IsHiragana}\\p{IsKatakana}\\p{Alnum} ]*")) {
                 this.searchString = newValue;
+                scrollPane.setVvalue(0);
+                smoothScroll.resetAccumulatedVValue();
                 onFiltersChanged();
             } else {
                 searchBar.setText(oldValue);
@@ -357,11 +359,15 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         if (labelText.equals("Personal status")) {
             comboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
                 personalStatusFilter = newVal;
+                scrollPane.setVvalue(0);
+                smoothScroll.resetAccumulatedVValue();
                 onFiltersChanged();
             });
         } else if (labelText.equals("Status")) {
             comboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
                 releaseStatusFilter = newVal;
+                scrollPane.setVvalue(0);
+                smoothScroll.resetAccumulatedVValue();
                 onFiltersChanged();
             });
         }
@@ -396,6 +402,8 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
                 } else if (labelText.equals("End year ≤")) {
                     this.endYearFilter = newValue;
                 }
+                scrollPane.setVvalue(0);
+                smoothScroll.resetAccumulatedVValue();
                 onFiltersChanged();
 
             } else {
@@ -943,6 +951,9 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
         // Update the filtered grids in a single Platform.runLater call
         Platform.runLater(() -> {
+
+            int totalNodes = 0;
+
             for (int i = 0; i < filteredGrids.size(); i++) {
 
                 FlowGridPane filteredGrid = filteredGrids.get(i);
@@ -950,6 +961,8 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
                 filteredGrid.getChildren().clear();
                 filteredGrid.getChildren().addAll(filteredList);
+
+                totalNodes += filteredList.size();
 
                 if (filteredList.isEmpty()) {
                     filteredGrid.setMaxHeight(0);
@@ -971,6 +984,9 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
             }
 
 
+            if (totalNodes == 0) {
+                return;
+            }
 
 
             // For the startup call

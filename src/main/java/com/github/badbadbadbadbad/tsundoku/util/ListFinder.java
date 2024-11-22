@@ -38,4 +38,10 @@ public class ListFinder {
         }
         return -1;
     }
+
+    public int getTotalItemCount() {
+        return lists.stream()
+                .mapToInt(List::size)
+                .sum();
+    }
 }

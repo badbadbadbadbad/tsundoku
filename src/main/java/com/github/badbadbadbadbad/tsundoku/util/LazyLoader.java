@@ -127,12 +127,18 @@ public class LazyLoader {
     public void executeUpdateVisibilityFull() {
         Bounds paneBounds = scrollPane.localToScene(scrollPane.getBoundsInLocal());
 
+
         // System.out.println(firstVisibleIndex);
         // System.out.println(lastVisibleIndex);
 
         // Currently visible items: Downwards from start
         while (firstVisibleIndex <= lastVisibleIndex) {
             Pair<FlowGridPane, Integer> firstNodePair = paneFinder.findPaneAndChildIndex(firstVisibleIndex);
+
+            if (firstNodePair == null) {
+                return;
+            }
+
             Node firstNode = firstNodePair.getKey().getChildren().get(firstNodePair.getValue());
 
             boolean inViewport = isItemInViewport(firstNode, paneBounds);
@@ -247,6 +253,11 @@ public class LazyLoader {
     private void loadVisibleImages() {
         for (int i = firstVisibleIndex; i <= lastVisibleIndex; i++) {
             Pair<FlowGridPane, Integer> nodePair = paneFinder.findPaneAndChildIndex(i);
+
+            if (nodePair == null) {
+                return;
+            }
+
             Node node = nodePair.getKey().getChildren().get(nodePair.getValue());
             makeItemVisible(node);
         }
@@ -341,33 +352,6 @@ public class LazyLoader {
         };
         batchImageUpdaterTimer.start();
 
-        /*
-        updateScheduler.scheduleAtFixedRate(() -> {
-            List<Pair<Node, String>> updates = new ArrayList<>();
-            Pair<Node, String> update;
-            while ((update = pendingImageUpdates.poll()) != null) {
-                updates.add(update);
-            }
-
-
-            if (!updates.isEmpty()) {
-                Platform.runLater(() -> {
-                    for (Pair<Node, String> item : updates) {
-                        Node node = item.getKey();
-                        String imageUrl = item.getValue();
-
-
-                        node.setStyle("-fx-background-image: url('" + imageUrl + "');");
-                        FadeTransition fadeIn = new FadeTransition(Duration.seconds(0.2), node);
-                        fadeIn.setFromValue(0.0);
-                        fadeIn.setToValue(1.0);
-                        fadeIn.play();
-                    }
-                });
-            }
-        }, 0, 100, TimeUnit.MILLISECONDS);
-
-         */
     }
 
     public void shutdownImageLoaderExecutor() {
