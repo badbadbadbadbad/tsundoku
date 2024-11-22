@@ -1,6 +1,7 @@
 package com.github.badbadbadbadbad.tsundoku.views;
 
 import com.github.badbadbadbadbad.tsundoku.controllers.SidebarListener;
+import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.*;
@@ -39,8 +40,8 @@ public class SidebarView {
         sidebar.setMinWidth(adjustedSidebarWidth);
         sidebar.setMaxWidth(adjustedSidebarWidth);
 
+
         // Label programLabel = new Label("tsundoku.");
-        // Label programLabel = new Label("つんどく.");
         // Label programLabel = new Label("つんどく｡");       // Full-width dot
         Label programLabel = new Label("つんどく｡");      // Half-width dot
         programLabel.setId("main-label");
@@ -58,6 +59,7 @@ public class SidebarView {
 
         Collections.addAll(browseModeButtons, browseButton, logButton);
         HBox browseModeButtonBox = new HBox(browseButton, logButton);
+        browseModeButtonBox.setPadding(new Insets(5, 0, 0, 0));
 
 
         // Media type buttons
