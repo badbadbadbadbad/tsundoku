@@ -16,13 +16,18 @@ import java.util.Set;
 
 public class SmoothScroll {
 
+    private ScrollPane scrollPane;
+
     private final static double BASE_MODIFIER = 1;
     private double accumulatedTargetVValue = 0;
 
     public SmoothScroll(final ScrollPane scrollPane, final Node node) {
         this(scrollPane, node, 160);
     }
+
     public SmoothScroll(final ScrollPane scrollPane, final Node node, final double baseChange) {
+
+        this.scrollPane = scrollPane;
 
         // When scrollBar is dragged, the accumulated target vvalue needs to be changed manually.
         // Unfortunately, JavaFX does not let us access the scrollBar directly for events.
@@ -104,5 +109,9 @@ public class SmoothScroll {
 
     public void resetAccumulatedVValue() {
         accumulatedTargetVValue = 0;
+    }
+
+    public void adjustAccumulatedVValue() {
+        accumulatedTargetVValue = scrollPane.getVvalue();
     }
 }

@@ -797,10 +797,13 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
             boolean sortedByRating = false;
 
             // Loop through grid to find correct position
-            while (insertIndex < targetGrid.size()) {
+            while (insertIndex <= targetGrid.size()) {
 
-                // Special case: New item passes itself still in the list
-                if (insertIndex == oldIndex) {
+                if (insertIndex == targetGrid.size())
+                    break;
+
+                // Special case: New item passes itself still in the list (only possible if status hasn't changed)
+                if (insertIndex == oldIndex && pair.getKey() == targetGrid) {
                     insertIndex++;
                     hasPassedOldIndex = true;
                     continue;
@@ -809,20 +812,27 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
                 VBox box = (VBox) targetGrid.get(insertIndex);
                 AnimeInfo existingAnimeInfo = (AnimeInfo) box.getUserData();
 
-                // Find correct position by rating first
+
+                // If next box has worse rating than new box, then we're sorted
+                int ratingComparison = byRating.compare(newAnimeInfo, existingAnimeInfo);
+                if (ratingComparison < 0) {
+                    break;
+                }
+
+                // If not sorted by rating yet, keep going until next box has same rating as new box
                 if (!sortedByRating) {
-                    int comparison = byRating.compare(newAnimeInfo, existingAnimeInfo);
-                    if (comparison <= 0) {
+                    if (ratingComparison == 0) {
                         sortedByRating = true;
                         continue;
                     }
                     insertIndex++;
                 }
 
-                // Find correct position by title once sorted by rating already
+                // Once rating-sorted, keep going until name-sorted
                 else {
-                    int comparison = byTitle.compare(newAnimeInfo, existingAnimeInfo);
-                    if (comparison <= 0) {
+
+                    int nameComparison = byTitle.compare(newAnimeInfo, existingAnimeInfo);
+                    if (nameComparison <= 0) {
                         break;
                     }
                     insertIndex++;
@@ -954,10 +964,13 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
 
 
+
             if (scrollPane != null) {
-                scrollPane.setVvalue(0);
-                smoothScroll.resetAccumulatedVValue();
+                // scrollPane.setVvalue(0);
+                smoothScroll.adjustAccumulatedVValue();
             }
+
+
 
 
             // For the startup call
