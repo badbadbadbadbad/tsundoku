@@ -955,6 +955,7 @@ public class AnimeGridView implements PopupMakerView {
                 "grid-media-box-gold",
                 "grid-media-box-green",
                 "grid-media-box-red",
+                "grid-media-box-blue",
                 "grid-media-box-grey"
         );
 
@@ -964,6 +965,7 @@ public class AnimeGridView implements PopupMakerView {
         }
 
         String rating =  databaseAnime.getOwnRating();
+        String ownStatus = databaseAnime.getOwnStatus();
 
         if (rating.equals("Heart")) {
             animeBox.getStyleClass().add("grid-media-box-gold");
@@ -971,8 +973,15 @@ public class AnimeGridView implements PopupMakerView {
             animeBox.getStyleClass().add("grid-media-box-green");
         } else if (rating.equals("Disliked")) {
             animeBox.getStyleClass().add("grid-media-box-red");
-        } else {
-            animeBox.getStyleClass().add("grid-media-box-grey");
+        }
+
+        else if (!ownStatus.equals("Untracked")) {
+            animeBox.getStyleClass().add("grid-media-box-blue");
+        }
+
+        else {
+            animeBox.getStyleClass().add("grid-media-box-blue");
+            // animeBox.getStyleClass().add("grid-media-box-grey");
         }
     }
 

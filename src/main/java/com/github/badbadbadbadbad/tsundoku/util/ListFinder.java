@@ -1,6 +1,5 @@
 package com.github.badbadbadbadbad.tsundoku.util;
 
-import com.github.badbadbadbadbad.tsundoku.external.FlowGridPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Pair;
 

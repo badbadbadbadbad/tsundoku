@@ -45,6 +45,7 @@
     -gold-highlight: #DAA520;  /* Goldenrod my beloved */
     -green-highlight: #0EAA2D;
     -red-highlight: #BF0000;
+    -blue-highlight: #0AA9FF; /* For grid items border in browse view that are in backlog, but unrated */
     -grey-highlight: #858585;
     -silver-highlight: #ADADAD;
 
@@ -414,6 +415,11 @@
 
 .grid-media-box-red {
     -fx-border-color: -red-highlight;
+    -fx-border-width: 3px;
+}
+
+.grid-media-box-blue {
+    -fx-border-color: -blue-highlight;
     -fx-border-width: 3px;
 }
 

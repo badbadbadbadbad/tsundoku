@@ -185,11 +185,11 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
 
         // Filtered FlowGridPanes that will be displayed
-        FlowGridPane filteredInProgressGrid = createGrid("In progress", inProgressAnimeList);
-        FlowGridPane filteredBacklogGrid = createGrid("Backlog", backlogAnimeList);
-        FlowGridPane filteredCompletedGrid = createGrid("Completed", completedAnimeList);
-        FlowGridPane filteredPausedGrid = createGrid("Paused", pausedAnimeList);
-        FlowGridPane filteredDroppedGrid = createGrid("Dropped", droppedAnimeList);
+        FlowGridPane filteredInProgressGrid = createGrid();
+        FlowGridPane filteredBacklogGrid = createGrid();
+        FlowGridPane filteredCompletedGrid = createGrid();
+        FlowGridPane filteredPausedGrid = createGrid();
+        FlowGridPane filteredDroppedGrid = createGrid();
 
         this.filteredGrids = new ArrayList<>();
         Collections.addAll(filteredGrids, filteredInProgressGrid, filteredBacklogGrid, filteredCompletedGrid, filteredPausedGrid, filteredDroppedGrid);
@@ -520,8 +520,6 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         HBox headerBox = new HBox(5);
         headerBox.setPrefHeight(40);
         headerBox.setPadding(new Insets(0, 0, 10, 0));
-        // headerBox.setMinHeight(0);
-        // headerBox.setStyle("-fx-border-width: 1 0 1 0; -fx-border-color: red;");
         HBox.setHgrow(headerBox, Priority.ALWAYS);
         headerBox.setAlignment(Pos.CENTER);
 
@@ -535,7 +533,6 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         Region leftRegion = new Region();
         leftRegion.getStyleClass().add("log-grid-header-separator");
         HBox.setHgrow(leftRegion, Priority.ALWAYS);
-        // leftRegion.prefWidthProperty().bind(headerBox.widthProperty().multiply(0.15));
 
         // TODO: Fix font weight. https://stackoverflow.com/a/77339072
         // Middle label
@@ -572,25 +569,12 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
     }
 
 
-    // TODO: Remove parameters
-    private FlowGridPane createGrid(String labelText, ObservableList<AnimeInfo> animeList) {
-        FlowGridPane animeGrid = new FlowGridPane(3, 1);  // Default values here shouldn't matter but are needed, so..
+    private FlowGridPane createGrid() {
+        FlowGridPane animeGrid = new FlowGridPane(3, 1);
         animeGrid.setHgap(20);
         animeGrid.setVgap(20);
         animeGrid.setMaxWidth(Double.MAX_VALUE);
         animeGrid.setPadding(new Insets(0, 0, 30, 0));
-        // animeGrid.setStyle("-fx-border-color: white; -fx-border-width: 1 0 1 0;");
-
-
-        /*
-        reloadAnimeGridAsync(animeGrid, animeList).join();
-
-        int animesAmount = animeGrid.getChildren().size();
-        int cols = 3;
-        int rows = (int) Math.ceil((double) animesAmount / cols);
-        animeGrid.setRowsCount(rows);
-
-         */
 
         return animeGrid;
     }
@@ -852,8 +836,6 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
                 insertIndex--;
             }
 
-            // final int finalInsertIndex = insertIndex;
-
 
             // Remove old entry
             int idx = pair.getValue();
@@ -869,15 +851,12 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
 
     private void onFiltersChanged() {
-        // Clear and filter items for all categories
         for (int i = 0; i < grids.size(); i++) {
             List<VBox> currentGrid = grids.get(i);
             ObservableList<VBox> filteredList = filteredAnimeLists.get(i);
 
-            // Clear the filtered list for the current category
             filteredList.clear();
 
-            // for (VBox animeBox : currentGrid.getChildren()) {
             for (VBox node : currentGrid) {
                 if (node instanceof VBox animeBox) {
                     AnimeInfo animeInfo = (AnimeInfo) animeBox.getUserData();
