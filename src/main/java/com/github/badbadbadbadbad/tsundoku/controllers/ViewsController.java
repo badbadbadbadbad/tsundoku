@@ -137,7 +137,7 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
                     gridView = animeGridView.createGridView();
                     currentLazyLoaderView = null;
                 } else {
-                    AnimeLogView animeLogView = new AnimeLogView(stage, databaseController);
+                    AnimeLogView animeLogView = new AnimeLogView(databaseController);
                     gridView = animeLogView.createGridView();
                     currentLazyLoaderView = animeLogView;
                 }

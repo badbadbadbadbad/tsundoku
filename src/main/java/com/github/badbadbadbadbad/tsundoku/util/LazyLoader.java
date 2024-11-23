@@ -43,12 +43,11 @@ public class LazyLoader {
         loaderPause.setOnFinished(e -> executeUpdateVisibilityFull());
         imagePause.setOnFinished(e -> loadVisibleImages());
 
+        startBatchImageUpdater();
 
         Pair<FlowGridPane, Integer> first = paneFinder.findPaneAndChildIndex(0);
 
         if (first != null) {
-
-            startBatchImageUpdater();
 
             setFirstVisibleIndex(0);
             setLastVisibleIndex(0);
@@ -84,7 +83,6 @@ public class LazyLoader {
             });
 
         }
-        // startBatchImageUpdater();
     }
 
 
@@ -109,27 +107,11 @@ public class LazyLoader {
             batchImageUpdaterTimer.stop();
         }
 
-        /*
-        synchronized (activeImageTasks) {
-            for (Future<?> future : activeImageTasks) {
-                future.cancel(true);
-            }
-            activeImageTasks.clear();
-        }
-         */
-
-        // pendingImageUpdates.clear();
-
-
         loaderPause.playFromStart();
     }
 
     public void executeUpdateVisibilityFull() {
         Bounds paneBounds = scrollPane.localToScene(scrollPane.getBoundsInLocal());
-
-
-        // System.out.println(firstVisibleIndex);
-        // System.out.println(lastVisibleIndex);
 
         // Currently visible items: Downwards from start
         while (firstVisibleIndex <= lastVisibleIndex) {
@@ -140,7 +122,6 @@ public class LazyLoader {
             }
 
             Node firstNode = firstNodePair.getKey().getChildren().get(firstNodePair.getValue());
-
             boolean inViewport = isItemInViewport(firstNode, paneBounds);
 
             if (inViewport) {
@@ -268,11 +249,6 @@ public class LazyLoader {
         if (!n.isVisible()){
             AnimeInfo anime = (AnimeInfo) n.getUserData();
 
-            // n.setVisible(true);
-            // n.setOpacity(0.0);
-            // n.setOpacity(1.0);
-
-
             Future<?> future = CompletableFuture.runAsync(() -> {
                 String imageUrl = anime.getImageUrl();
                 // String imageUrl = anime.getSmallImageUrl();
@@ -282,15 +258,7 @@ public class LazyLoader {
 
                 image.progressProperty().addListener((obs, oldProgress, newProgress) -> {
                     if (newProgress.doubleValue() >= 1.0) {
-
-                        // n.setStyle("-fx-background-image: url('" + imageUrl + "');");
-
-                        // n.setVisible(true);
-                        // n.setOpacity(0.0);
-
                         pendingImageUpdates.add(new Pair<>(n, imageUrl));
-
-
                     }
                 });
             }, imageLoaderExecutor);
@@ -356,24 +324,13 @@ public class LazyLoader {
 
     public void shutdownImageLoaderExecutor() {
         imageLoaderExecutor.shutdown();
-        // updateScheduler.shutdown();
 
         try {
             if (!imageLoaderExecutor.awaitTermination(1, TimeUnit.SECONDS)) {
                 imageLoaderExecutor.shutdownNow();
             }
-            /*
-            if (!updateScheduler.awaitTermination(1, TimeUnit.SECONDS)) {
-                updateScheduler.shutdownNow();
-            }
-
-             */
         } catch (InterruptedException e) {
             imageLoaderExecutor.shutdownNow();
-            // updateScheduler.shutdownNow();
-
-
-            // Thread.currentThread().interrupt();
         }
     }
 }

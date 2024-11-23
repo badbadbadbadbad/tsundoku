@@ -7,7 +7,6 @@ import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeListInfo;
 import com.github.badbadbadbadbad.tsundoku.util.LazyLoader;
 import com.github.badbadbadbadbad.tsundoku.util.ListFinder;
-import com.github.badbadbadbadbad.tsundoku.util.PaneFinder;
 import javafx.animation.*;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
@@ -17,16 +16,13 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.shape.Rectangle;
-import javafx.stage.Stage;
 import javafx.util.Duration;
 import javafx.util.Pair;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -35,15 +31,11 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
     private final double RATIO = 318.0 / 225.0; // The aspect ratio to use for anime images. This doesn't match all exactly, but is close enough.
 
-    private final Stage stage;
     private final DatabaseRequestListener databaseRequestListener;
 
-    private List<ObservableList<AnimeInfo>> animeLists;
-    // private List<FlowGridPane> grids;
-    private List<List<VBox>> grids;
-
-    private List<ObservableList<VBox>> filteredAnimeLists;
-    private List<FlowGridPane> filteredGrids;
+    private List<List<VBox>> unfilteredAnimeLists;
+    private List<ObservableList<VBox>> filteredAnimeLists;    // ObservableList so grid headers can watch for these being empty
+    private List<FlowGridPane> filteredGrids;                 // The actual grids used for UI
 
 
     private ScrollPane scrollPane;
@@ -60,9 +52,19 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
     private final BooleanProperty filtersHidden = new SimpleBooleanProperty(true);
 
-    public AnimeLogView(Stage stage, DatabaseRequestListener databaseRequestListener) {
-        this.stage = stage;
+    public AnimeLogView(DatabaseRequestListener databaseRequestListener) {
         this.databaseRequestListener = databaseRequestListener;
+
+        // Initialize empty lists
+        this.unfilteredAnimeLists = new ArrayList<>(List.of(
+                new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>()
+        ));
+
+        this.filteredAnimeLists = new ArrayList<>(List.of(
+                FXCollections.observableArrayList(), FXCollections.observableArrayList(),
+                FXCollections.observableArrayList(), FXCollections.observableArrayList(),
+                FXCollections.observableArrayList()
+        ));
     }
 
     public Region createGridView() {
@@ -90,132 +92,12 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         controls.getChildren().addAll(searchAndFilterToggleBox, filters);
 
 
-        // Database information for grids
-        AnimeListInfo fullDatabase = databaseRequestListener.requestFullAnimeDatabase();
-
-        // ownRating sort
-        Comparator<AnimeInfo> byRating = Comparator.comparingInt(anime -> switch (anime.getOwnRating()) {
-            case "Heart" -> 1;
-            case "Liked" -> 2;
-            case "Disliked" -> 3;
-            case "Unscored" -> 4;
-            default -> Integer.MAX_VALUE; // fallback, in case of unexpected value
-        });
-
-        // Alphanumerical title sort
-        Comparator<AnimeInfo> byTitle = Comparator.comparing(AnimeInfo::getTitle);
-
-        // Combine rating and alphanumerical title sort
-        Comparator<AnimeInfo> combinedComparator = byRating.thenComparing(byTitle);
-
-        ObservableList<AnimeInfo> inProgressAnimeList = FXCollections.observableArrayList(
-                fullDatabase.getAnimeList().stream()
-                        .filter(anime -> "In progress".equals(anime.getOwnStatus()))
-                        .sorted(combinedComparator)
-                        .toList()
-        );
-
-        ObservableList<AnimeInfo> backlogAnimeList = FXCollections.observableArrayList(
-                fullDatabase.getAnimeList().stream()
-                        .filter(anime -> "Backlog".equals(anime.getOwnStatus()))
-                        .sorted(combinedComparator)
-                        .toList()
-        );
-
-        ObservableList<AnimeInfo> completedAnimeList = FXCollections.observableArrayList(
-                fullDatabase.getAnimeList().stream()
-                        .filter(anime -> "Completed".equals(anime.getOwnStatus()))
-                        .sorted(combinedComparator)
-                        .toList()
-        );
-
-        ObservableList<AnimeInfo> pausedAnimeList = FXCollections.observableArrayList(
-                fullDatabase.getAnimeList().stream()
-                        .filter(anime -> "Paused".equals(anime.getOwnStatus()))
-                        .sorted(combinedComparator)
-                        .toList()
-        );
-
-        ObservableList<AnimeInfo> droppedAnimeList = FXCollections.observableArrayList(
-                fullDatabase.getAnimeList().stream()
-                        .filter(anime -> "Dropped".equals(anime.getOwnStatus()))
-                        .sorted(combinedComparator)
-                        .toList()
-        );
-
-        this.animeLists = new ArrayList<>();
-        Collections.addAll(animeLists, inProgressAnimeList, backlogAnimeList, completedAnimeList, pausedAnimeList, droppedAnimeList);
+        // ScrollPane and the headers / grids it contains
+        this.scrollPane = createScrollPane();
 
 
-
-        // Full Grids
-        List<VBox> inProgressList = new ArrayList<>();
-        List<VBox> backlogList = new ArrayList<>();
-        List<VBox> completedList = new ArrayList<>();
-        List<VBox> pausedList = new ArrayList<>();
-        List<VBox> droppedList = new ArrayList<>();
-
-        this.grids = new ArrayList<>();
-        Collections.addAll(grids, inProgressList, backlogList, completedList, pausedList, droppedList);
-
-
-
-        // Filtered ObservableLists of VBoxes. The headers listen to these so they can disappear when these are empty.
-        ObservableList<VBox> filteredInProgressAnimeList = FXCollections.observableArrayList();
-        ObservableList<VBox> filteredBacklogAnimeList = FXCollections.observableArrayList();
-        ObservableList<VBox> filteredCompletedAnimeList = FXCollections.observableArrayList();
-        ObservableList<VBox> filteredPausedAnimeList = FXCollections.observableArrayList();
-        ObservableList<VBox> filteredDroppedAnimeList = FXCollections.observableArrayList();
-
-        this.filteredAnimeLists = new ArrayList<>();
-        Collections.addAll(filteredAnimeLists, filteredInProgressAnimeList, filteredBacklogAnimeList, filteredCompletedAnimeList, filteredPausedAnimeList, filteredDroppedAnimeList);
-
-
-
-        // Grid section headers
-        HBox inProgressHeader = createGridHeader("In progress", filteredInProgressAnimeList);
-        HBox backlogHeader = createGridHeader("Backlog", filteredBacklogAnimeList);
-        HBox completedHeader = createGridHeader("Completed", filteredCompletedAnimeList);
-        HBox pausedHeader = createGridHeader("Paused", filteredPausedAnimeList);
-        HBox droppedHeader = createGridHeader("Dropped", filteredDroppedAnimeList);
-
-        List<HBox> headers = new ArrayList<>();
-        Collections.addAll(headers, inProgressHeader, backlogHeader, completedHeader, pausedHeader, droppedHeader);
-
-
-
-        // Filtered FlowGridPanes that will be displayed
-        FlowGridPane filteredInProgressGrid = createGrid();
-        FlowGridPane filteredBacklogGrid = createGrid();
-        FlowGridPane filteredCompletedGrid = createGrid();
-        FlowGridPane filteredPausedGrid = createGrid();
-        FlowGridPane filteredDroppedGrid = createGrid();
-
-        this.filteredGrids = new ArrayList<>();
-        Collections.addAll(filteredGrids, filteredInProgressGrid, filteredBacklogGrid, filteredCompletedGrid, filteredPausedGrid, filteredDroppedGrid);
-
-        // Wrapping scrollPane
-        this.scrollPane = createScrollPane(headers, filteredGrids);
-
-
-        // Collect grid loading futures
-        List<CompletableFuture<Void>> gridFutures = new ArrayList<>();
-        gridFutures.add(reloadAnimeGridAsync(grids.get(0), inProgressAnimeList));
-        gridFutures.add(reloadAnimeGridAsync(grids.get(1), backlogAnimeList));
-        gridFutures.add(reloadAnimeGridAsync(grids.get(2), completedAnimeList));
-        gridFutures.add(reloadAnimeGridAsync(grids.get(3), pausedAnimeList));
-        gridFutures.add(reloadAnimeGridAsync(grids.get(4), droppedAnimeList));
-        CompletableFuture<Void> allGridsLoaded = CompletableFuture.allOf(
-                gridFutures.toArray(new CompletableFuture[0])
-        );
-
-        allGridsLoaded.thenRun(() -> {
-            Platform.runLater(() -> {
-                // First call here also initializes the lazyLoader
-                onFiltersChanged();
-                this.listFinder = new ListFinder(grids);
-            });
-        });
+        // Loading the actual content - both the full collection, and then the filtered collection into UI grids
+        loadDatabaseIntoGridsAsync();
 
 
 
@@ -588,6 +470,83 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
     }
 
 
+    private void loadDatabaseIntoGridsAsync() {
+        // The full database
+        AnimeListInfo fullDatabase = databaseRequestListener.requestFullAnimeDatabase();
+
+        // ownRating sort
+        Comparator<AnimeInfo> byRating = Comparator.comparingInt(anime -> switch (anime.getOwnRating()) {
+            case "Heart" -> 1;
+            case "Liked" -> 2;
+            case "Disliked" -> 3;
+            case "Unscored" -> 4;
+            default -> Integer.MAX_VALUE; // fallback, in case of unexpected value
+        });
+
+        // Alphanumerical title sort
+        Comparator<AnimeInfo> byTitle = Comparator.comparing(AnimeInfo::getTitle);
+
+        // Combine the two sorts
+        Comparator<AnimeInfo> combinedComparator = byRating.thenComparing(byTitle);
+
+
+        // Split the full database into disjunct subsets based on the personal status
+        ObservableList<AnimeInfo> inProgressAnimeList = FXCollections.observableArrayList(
+                fullDatabase.getAnimeList().stream()
+                        .filter(anime -> "In progress".equals(anime.getOwnStatus()))
+                        .sorted(combinedComparator)
+                        .toList()
+        );
+
+        ObservableList<AnimeInfo> backlogAnimeList = FXCollections.observableArrayList(
+                fullDatabase.getAnimeList().stream()
+                        .filter(anime -> "Backlog".equals(anime.getOwnStatus()))
+                        .sorted(combinedComparator)
+                        .toList()
+        );
+
+        ObservableList<AnimeInfo> completedAnimeList = FXCollections.observableArrayList(
+                fullDatabase.getAnimeList().stream()
+                        .filter(anime -> "Completed".equals(anime.getOwnStatus()))
+                        .sorted(combinedComparator)
+                        .toList()
+        );
+
+        ObservableList<AnimeInfo> pausedAnimeList = FXCollections.observableArrayList(
+                fullDatabase.getAnimeList().stream()
+                        .filter(anime -> "Paused".equals(anime.getOwnStatus()))
+                        .sorted(combinedComparator)
+                        .toList()
+        );
+
+        ObservableList<AnimeInfo> droppedAnimeList = FXCollections.observableArrayList(
+                fullDatabase.getAnimeList().stream()
+                        .filter(anime -> "Dropped".equals(anime.getOwnStatus()))
+                        .sorted(combinedComparator)
+                        .toList()
+        );
+
+        // Async calls for the actual loading of the database content into VBoxes
+        List<CompletableFuture<Void>> gridFutures = new ArrayList<>();
+        gridFutures.add(reloadAnimeGridAsync(unfilteredAnimeLists.get(0), inProgressAnimeList));
+        gridFutures.add(reloadAnimeGridAsync(unfilteredAnimeLists.get(1), backlogAnimeList));
+        gridFutures.add(reloadAnimeGridAsync(unfilteredAnimeLists.get(2), completedAnimeList));
+        gridFutures.add(reloadAnimeGridAsync(unfilteredAnimeLists.get(3), pausedAnimeList));
+        gridFutures.add(reloadAnimeGridAsync(unfilteredAnimeLists.get(4), droppedAnimeList));
+        CompletableFuture<Void> allGridsLoaded = CompletableFuture.allOf(
+                gridFutures.toArray(new CompletableFuture[0])
+        );
+
+        // Once all content is loaded, call onFiltersChanged so the UI grids load the content in
+        allGridsLoaded.thenRun(() -> {
+            Platform.runLater(() -> {
+                onFiltersChanged();     // First call here also initializes the lazyLoader
+                this.listFinder = new ListFinder(unfilteredAnimeLists);
+            });
+        });
+    }
+
+
     private CompletableFuture<Void> reloadAnimeGridAsync(List<VBox> animeGrid, List<AnimeInfo> animeList) {
         return CompletableFuture.supplyAsync(() -> createAnimeGridItems(animeList))
                 .thenAccept(animeBoxes -> {
@@ -597,8 +556,6 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
                     });
                 });
     }
-
-
 
 
     private List<VBox> createAnimeGridItems(List<AnimeInfo> animeList) {
@@ -778,11 +735,11 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
             // Get correct grid to insert in
             List<VBox> targetGrid = switch (newAnimeInfo.getOwnStatus()) {
-                case "In progress" -> grids.get(0);
-                case "Backlog" -> grids.get(1);
-                case "Completed" -> grids.get(2);
-                case "Paused" -> grids.get(3);
-                case "Dropped" -> grids.get(4);
+                case "In progress" -> unfilteredAnimeLists.get(0);
+                case "Backlog" -> unfilteredAnimeLists.get(1);
+                case "Completed" -> unfilteredAnimeLists.get(2);
+                case "Paused" -> unfilteredAnimeLists.get(3);
+                case "Dropped" -> unfilteredAnimeLists.get(4);
                 default -> throw new IllegalArgumentException("Invalid status trying to insert new animeBox into log: " + newAnimeInfo.getOwnStatus());
             };
 
@@ -869,8 +826,8 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
 
     private void onFiltersChanged() {
-        for (int i = 0; i < grids.size(); i++) {
-            List<VBox> currentGrid = grids.get(i);
+        for (int i = 0; i < unfilteredAnimeLists.size(); i++) {
+            List<VBox> currentGrid = unfilteredAnimeLists.get(i);
             ObservableList<VBox> filteredList = filteredAnimeLists.get(i);
 
             filteredList.clear();
@@ -1015,37 +972,53 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
                 "grid-media-box-grey"
         );
 
-        if (anime.getOwnRating().equals("Heart")) {
-            animeBox.getStyleClass().add("grid-media-box-gold");
-        } else if (anime.getOwnRating().equals("Liked")) {
-            animeBox.getStyleClass().add("grid-media-box-green");
-        } else if (anime.getOwnRating().equals("Disliked")) {
-            animeBox.getStyleClass().add("grid-media-box-red");
-        } else {
-            animeBox.getStyleClass().add("grid-media-box-grey");
+        switch (anime.getOwnRating()) {
+            case "Heart" -> animeBox.getStyleClass().add("grid-media-box-gold");
+            case "Liked" -> animeBox.getStyleClass().add("grid-media-box-green");
+            case "Disliked" -> animeBox.getStyleClass().add("grid-media-box-red");
+            default -> animeBox.getStyleClass().add("grid-media-box-grey");
         }
     }
 
 
-    private ScrollPane createScrollPane(List<HBox> headers, List<FlowGridPane> grids) {
+    private ScrollPane createScrollPane() {
+
+        // Grid headers
+        List<HBox> headers = List.of(
+                createGridHeader("In progress", filteredAnimeLists.get(0)),
+                createGridHeader("Backlog", filteredAnimeLists.get(1)),
+                createGridHeader("Completed", filteredAnimeLists.get(2)),
+                createGridHeader("Paused", filteredAnimeLists.get(3)),
+                createGridHeader("Dropped", filteredAnimeLists.get(4))
+        );
+
+
+        // Grids
+        this.filteredGrids = new ArrayList<>(List.of(
+                createGrid(), createGrid(), createGrid(), createGrid(), createGrid()
+        ));
+
+
+        // Content wrapper
         VBox wrapper = new VBox(0);
         wrapper.setMaxWidth(Double.MAX_VALUE);
 
         for (int i = 0; i < headers.size(); i++) {
             wrapper.getChildren().add(headers.get(i));
-            wrapper.getChildren().add(grids.get(i));
+            wrapper.getChildren().add(filteredGrids.get(i));
         }
 
         ScrollPane scrollPane = new ScrollPane(wrapper);
         scrollPane.getStyleClass().add("grid-scroll-pane");
         VBox.setVgrow(scrollPane, Priority.ALWAYS);
 
+
+        // Call LazyLoader when window is shrunk or expanded
         scrollPane.vvalueProperty().addListener((obs, oldValue, newValue) -> {
             if (lazyLoader != null) {
                 lazyLoader.updateVisibilityFull();
             }
         });
-
 
 
         scrollPane.heightProperty().addListener((obs, oldValue, newValue) -> {
