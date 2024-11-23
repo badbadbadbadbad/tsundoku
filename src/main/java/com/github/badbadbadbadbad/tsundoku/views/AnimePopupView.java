@@ -18,6 +18,7 @@ import org.kordamp.ikonli.dashicons.Dashicons;
 import org.kordamp.ikonli.fluentui.FluentUiFilledMZ;
 import org.kordamp.ikonli.javafx.FontIcon;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -43,10 +44,24 @@ public class AnimePopupView {
 
         this.parentBox = parentBox;
         this.parentView = parentView;
-        this.anime = anime;
+        // this.anime = anime;
         this.darkBackground = darkBackground;
 
         this.databaseAnime = databaseRequestListener.requestAnimeFromDatabase(anime.getId());
+
+        AnimeInfo finalAnime = anime;
+
+        if (this.databaseAnime != null) {
+            // LocalDate animeDate = LocalDate.parse(this.anime.getLastUpdated());
+            LocalDate animeDate = LocalDate.parse(anime.getLastUpdated());
+            LocalDate databaseDate = LocalDate.parse(this.databaseAnime.getLastUpdated());
+
+            if (databaseDate.isAfter(animeDate)) {
+                finalAnime = this.databaseAnime;
+            }
+        }
+
+        this.anime = finalAnime;
     }
 
     public VBox createPopup() {
@@ -73,6 +88,7 @@ public class AnimePopupView {
 
 
     private Label createPopupTitle() {
+
         Label titleLabel = new Label(anime.getTitle());
         titleLabel.setMaxWidth(Double.MAX_VALUE);
         titleLabel.setMinHeight(popupBox.getMaxHeight() * 0.1);
