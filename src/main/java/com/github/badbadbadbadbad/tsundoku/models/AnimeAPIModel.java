@@ -178,6 +178,39 @@ public class AnimeAPIModel {
     }
 
 
+    public CompletableFuture<AnimeInfo> getAnimeByID(int id) {
+        String urlString = BASE_URL + "/anime/" + id;
+        URI uri = URI.create(urlString);
+        client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(uri)
+                .header("Accept", "application/json")
+                .header("User-Agent", userAgent)
+                .GET()
+                .build();
+
+
+        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(response -> {
+                    if (response.statusCode() != 200) {
+                        throw new RuntimeException("getAnimeByID: HTTP Error Code " + response.statusCode());
+                    }
+                    try {
+                        ObjectMapper mapper = new ObjectMapper();
+                        JsonNode rootNode = mapper.readTree(response.body());
+                        return parseSingleAnimeData(rootNode);
+                    } catch (IOException e) {
+                        System.out.println("Parsing error: " + e.getMessage());
+                        return null;
+                    }
+                })
+                .exceptionally(e -> {
+                    System.out.println("AnimeAPIModel getAnimeByID() error: " + e);
+                    return null;
+                });
+    }
+
+
     private AnimeListInfo parseAnimeData(JsonNode animeData) {
         List<AnimeInfo> animeList = new ArrayList<>();
         JsonNode dataArray = animeData.get("data");
@@ -281,6 +314,97 @@ public class AnimeAPIModel {
 
         List<AnimeInfo> filteredAnimeList = filterByTypeAndRating(animeList);
         return new AnimeListInfo(removeDuplicates(filteredAnimeList), lastPage);
+    }
+
+
+    private AnimeInfo parseSingleAnimeData(JsonNode node) {
+        JsonNode animeNode = node.get("data");
+
+        // ID, guaranteed to be an existing integer
+        int id = animeNode.get("mal_id").asInt();
+
+        // Image URL, String or null
+        String imageUrl = animeNode.get("images").get("jpg").get("large_image_url").asText();
+        if (imageUrl.equals("null"))
+            imageUrl = "Not yet provided";
+
+        // Small image URL, String or null
+        String smallImageUrl = animeNode.get("images").get("jpg").get("image_url").asText();
+        if (smallImageUrl.equals("null"))
+            smallImageUrl = "Not yet provided";
+
+        // Publication status, enum of "Finished Airing", "Currently Airing", "Not yet aired" or null
+        String publicationStatusFull = animeNode.get("status").asText();
+        String publicationStatus = (publicationStatusFull.equals("null")) ? "Not yet provided" :
+                publicationStatusFull.replace("Finished Airing", "Complete")
+                        .replace("Currently Airing", "Airing")
+                        .replace("Not yet aired", "Upcoming");
+
+        // Source, String or null
+        String source = animeNode.get("source").asText();
+        if (source.equals("null"))
+            source = "Not yet provided";
+
+        // Synopsis, String or null
+        String synopsis = animeNode.get("synopsis").asText();
+        if (synopsis.equals("null"))
+            synopsis = "Not yet provided";
+
+        // Type of anime, enum of "TV", "Movie", etc., or null
+        String animeType = animeNode.get("type").asText();
+        if (animeType.equals("null"))
+            animeType = "Not yet provided";
+
+        // Release season + year
+        String releaseSeason = animeNode.get("season").asText();
+        int releaseYear = animeNode.get("year").asInt();
+        int releaseMonthFromProp = animeNode.get("aired").get("prop").get("from").get("month").asInt();
+        int releaseYearFromProp = animeNode.get("aired").get("prop").get("from").get("year").asInt();
+        String release = calculateReleaseSeason(releaseSeason, releaseYear, releaseMonthFromProp, releaseYearFromProp);
+
+        // Total episodes
+        int episodesTotal = animeNode.get("episodes").asInt();
+        if (episodesTotal == 0)
+            episodesTotal = 1;
+
+        // Studios involved in anime creation
+        List<String> studioNames = new ArrayList<>();
+        animeNode.get("studios").forEach(studio -> studioNames.add(studio.get("name").asText()));
+        String studios = studioNames.isEmpty() ? "Not yet provided" : String.join(", ", studioNames);
+
+        // Age rating
+        String ageRatingFull = animeNode.get("rating").asText();
+        String ageRating = (ageRatingFull.equals("null")) ? "Not yet provided" :
+                ageRatingFull.replace("G - All Ages", "G")
+                        .replace("PG - Children", "PG")
+                        .replace("PG-13 - Teens 13 or older", "PG13")
+                        .replace("R - 17+ (violence & profanity)", "R17+")
+                        .replace("R+ - Mild Nudity", "R+")
+                        .replace("Rx - Hentai", "Rx");
+
+        // Titles
+        String title = "No title provided";
+        String titleJapanese = "Not yet provided";
+        String titleEnglish = "Not yet provided";
+        for (JsonNode titleNode : animeNode.get("titles")) {
+            String titleType = titleNode.get("type").asText();
+            String titleText = titleNode.get("title").asText();
+
+            if (titleType.equals("Default")) {
+                title = titleText;
+            } else if (titleType.equals("Japanese")) {
+                titleJapanese = titleText;
+            } else if (titleType.equals("English")) {
+                titleEnglish = titleText;
+            }
+        }
+
+        // Current date in UTC for lastUpdated timestamp
+        LocalDate currentDate = LocalDate.now(utcClock);
+        String dateString = currentDate.toString();
+
+        return new AnimeInfo(id, title, titleJapanese, titleEnglish, imageUrl, smallImageUrl, publicationStatus,
+                episodesTotal, source, ageRating, synopsis, release, studios, animeType, dateString);
     }
 
 

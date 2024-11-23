@@ -1,16 +1,32 @@
 package com.github.badbadbadbadbad.tsundoku.models;
 
+import com.github.badbadbadbadbad.tsundoku.controllers.APIRequestListener;
+
 import java.nio.file.Paths;
 import java.sql.*;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class DatabaseModel {
     private static final String appName = "tsundoku";
-    private final String databaseFilePath;
+    private static final long REQUEST_COOLDOWN_MS = 5000;
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-    public DatabaseModel() {
+    private final String databaseFilePath;
+    private final APIRequestListener apiRequestListener;
+
+    public DatabaseModel(APIRequestListener apiRequestListener) {
+        this.apiRequestListener = apiRequestListener;
         this.databaseFilePath = Paths.get(getAppDataPath(), "profiles", "Default.db").toString();
+
+        startAnimeUpdaterBackgroundService();
     }
 
     private String getAppDataPath() {
@@ -26,6 +42,7 @@ public class DatabaseModel {
             return homeDir + "/.local/share/" + appName;
         }
     }
+
 
     public void updateAnimeDatabaseWithEntry(AnimeInfo anime) {
         String url = "jdbc:sqlite:" + databaseFilePath;
@@ -152,5 +169,85 @@ public class DatabaseModel {
         }
 
         return new AnimeListInfo(animeList, 0);
+    }
+
+
+    private void startAnimeUpdaterBackgroundService() {
+        AnimeListInfo animeListInfo = getFullAnimeDatabase();
+        List<AnimeInfo> animeList = filterAndSortAnimeList(animeListInfo.getAnimeList());
+        processNextAnime(animeList, 0);
+    }
+
+
+    private List<AnimeInfo> filterAndSortAnimeList(List<AnimeInfo> animeList) {
+        LocalDate currentDate = LocalDate.now(ZoneOffset.UTC);
+
+        return animeList.stream()
+
+                // Filter out:
+                // Completed entries that were updated in the last 30 days
+                // All other entries that were updated today
+                .filter(anime -> {
+                    LocalDate lastUpdated = LocalDate.parse(anime.getLastUpdated(), DATE_FORMATTER);
+                    if ("Complete".equals(anime.getPublicationStatus())) {
+                        return lastUpdated.isBefore(currentDate.minusDays(30));
+                    } else {
+                        return !lastUpdated.isEqual(currentDate);
+                    }
+                })
+
+                // Sort by publication status and last updated
+                .sorted(Comparator
+                        .comparing((AnimeInfo anime) -> {
+                            switch (anime.getPublicationStatus()) {
+                                case "Upcoming":
+                                case "Not yet provided":
+                                    return 0;
+                                case "Airing":
+                                    return 1;
+                                case "Complete":
+                                    return 2;
+                                default:
+                                    return Integer.MAX_VALUE;
+                            }
+                        })
+                        .thenComparing(anime -> LocalDate.parse(anime.getLastUpdated(), DATE_FORMATTER)))
+                .collect(Collectors.toList());
+    }
+
+
+    private void processNextAnime(List<AnimeInfo> animeList, int index) {
+
+        // No more anime to process
+        if (index >= animeList.size()) {
+            // System.out.println("Finished updating database.");
+            return;
+        }
+
+        AnimeInfo animeInfo = animeList.get(index);
+        int animeId = animeInfo.getId();
+
+        apiRequestListener.getAnimeByID(animeId).thenAccept(newAnimeInfo -> {
+
+            // Testing if it works
+            /*
+            System.out.println("Updated anime " + newAnimeInfo.getTitle() +
+                    ", was last updated " + animeInfo.getLastUpdated() +
+                    ", new date is " + newAnimeInfo.getLastUpdated());
+
+             */
+
+            // We only update the static info, the user's info needs to be kept
+            newAnimeInfo.setOwnRating(animeInfo.getOwnRating());
+            newAnimeInfo.setOwnStatus(animeInfo.getOwnStatus());
+            newAnimeInfo.setEpisodesProgress(animeInfo.getEpisodesProgress());
+
+
+            updateAnimeDatabaseWithEntry(newAnimeInfo);
+
+            // Schedule the next anime processing with a delay
+            CompletableFuture.delayedExecutor(REQUEST_COOLDOWN_MS, TimeUnit.MILLISECONDS)
+                    .execute(() -> processNextAnime(animeList, index + 1));
+        });
     }
 }

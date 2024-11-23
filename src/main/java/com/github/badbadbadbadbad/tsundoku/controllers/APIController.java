@@ -35,6 +35,11 @@ public class APIController implements ConfigListener, APIRequestListener {
     }
 
     @Override
+    public CompletableFuture<AnimeInfo> getAnimeByID(int id) {
+        return animeAPIModel.getAnimeByID(id);
+    }
+
+    @Override
     public void onAnimeTypeAndRatingFiltersUpdated(Map<String, Boolean> animeTypeFilters, Map<String, Boolean> animeRatingFilters) {
         animeAPIModel.setTypeFilters(animeTypeFilters);
         animeAPIModel.setRatingFilters(animeRatingFilters);

@@ -30,7 +30,7 @@ public class TsundokuApplication extends Application {
         ConfigModel configModel = new ConfigModel();
         APIController apiController = new APIController(animeAPImodel, configModel);
         ConfigController configController = new ConfigController(configModel);
-        DatabaseModel databaseModel = new DatabaseModel();
+        DatabaseModel databaseModel = new DatabaseModel(apiController);
         DatabaseController databaseController = new DatabaseController(databaseModel);
         this.viewsController = new ViewsController(stage, apiController, configController, configModel, databaseController);
 
