@@ -401,24 +401,18 @@ public class AnimePopupView {
             label.getStyleClass().add("popup-meta-grid-header");
 
             Label content = new Label(contentText);
-            if (label.getText().equals("Studios")) {
-                // The text under the "Studios" label is set outside CSS so font size can be adjusted at runtime
-                content.getStyleClass().add("popup-meta-grid-text-but-without-font-size");
-                content.setFont(Font.font(14.0));
-            } else {
-                content.getStyleClass().add("popup-meta-grid-text");
-            }
+            content.getStyleClass().add("popup-meta-grid-text-but-without-font-size");
+            content.setFont(Font.font(14.0));
 
             VBox wrapper = new VBox(3, label, content);
 
-            // Resize the text under "Studios" label to fit its container due to some anime having many studios.
-            if (labelText.equals("Studios")) {
-                wrapper.widthProperty().addListener((obs, oldWidth, newWidth) -> {
-                    if (newWidth.doubleValue() > 0) {
-                        adjustFontSizeToContainer(content, newWidth.doubleValue(), 5);
-                    }
-                });
-            }
+            // "Not yet provided" string, common on upcoming anime, is too wide for meta info grid. Hence, resize when needed.
+            wrapper.widthProperty().addListener((obs, oldWidth, newWidth) -> {
+                if (newWidth.doubleValue() > 0) {
+                    adjustFontSizeToContainer(content, newWidth.doubleValue(), 5);
+                }
+            });
+
 
             return wrapper;
         };
