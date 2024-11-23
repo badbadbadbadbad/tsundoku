@@ -19,10 +19,11 @@ public class AnimeInfo {
     private final String release;                           // We attempt to calculate a "<Season> <Year>" String from provided data, else "Not yet provided"
     private final String studios;                           // Studios involved in creating, or "Not yet provided"
     private final String type;                              // Enum of "TV", "Movie", "OVA", "Special", "ONA", "Music", "CM", "PV", "TV Special", or "Not yet provided"
+    private final String lastUpdated;                       // Last update of this information container in YYYY-MM-DD format, UTC time zone (because SQLite uses that)
 
     public AnimeInfo(int id, String title, String titleJapanese, String titleEnglish, String imageUrl,
                      String smallImageUrl, String publicationStatus, int episodesTotal, String source,
-                     String ageRating, String synopsis, String release, String studios, String type) {
+                     String ageRating, String synopsis, String release, String studios, String type, String lastUpdated) {
         this.id = id;
         this.title = title;
         this.titleJapanese = titleJapanese;
@@ -37,6 +38,7 @@ public class AnimeInfo {
         this.release = release;
         this.studios = studios;
         this.type = type;
+        this.lastUpdated = lastUpdated;
     }
 
     public void setOwnRating(String newRating) {
@@ -62,6 +64,7 @@ public class AnimeInfo {
     public int getEpisodesProgress() {
         return episodesProgress;
     }
+
 
     public int getId() {
         return id;
@@ -118,4 +121,6 @@ public class AnimeInfo {
     public String getType() {
         return type;
     }
+
+    public String getLastUpdated() { return lastUpdated; }
 }

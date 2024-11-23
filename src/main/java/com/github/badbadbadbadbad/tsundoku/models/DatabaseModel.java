@@ -38,7 +38,7 @@ public class DatabaseModel {
         String sqlUpsert = """
         INSERT INTO anime (id, ownRating, ownStatus, episodesProgress, title, titleJapanese, titleEnglish, imageUrl, smallImageUrl,
                            publicationStatus, episodesTotal, source, ageRating, synopsis, release, studios, type, lastUpdate)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_DATE)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
             ownRating = excluded.ownRating,
             ownStatus = excluded.ownStatus,
@@ -56,7 +56,7 @@ public class DatabaseModel {
             release = excluded.release,
             studios = excluded.studios,
             type = excluded.type,
-            lastUpdate = CURRENT_DATE;""";
+            lastUpdate = excluded.lastUpdate;""";
 
         try (Connection conn = DriverManager.getConnection(url)) {
             if (anime.getOwnStatus().equals("Untracked")) {
@@ -83,6 +83,7 @@ public class DatabaseModel {
                     pstmt.setString(15, anime.getRelease());
                     pstmt.setString(16, anime.getStudios());
                     pstmt.setString(17, anime.getType());
+                    pstmt.setString(18, anime.getLastUpdated());
                     pstmt.executeUpdate();
                 }
             }
@@ -96,7 +97,7 @@ public class DatabaseModel {
     public AnimeInfo getAnimeEntryFromDatabase(int id) {
         String url = "jdbc:sqlite:" + databaseFilePath;
         String sqlSelect = "SELECT id, ownRating, ownStatus, episodesProgress, title, titleJapanese, titleEnglish, imageUrl, smallImageUrl, publicationStatus, "
-                + "episodesTotal, source, ageRating, synopsis, release, studios, type FROM anime WHERE id = ?";
+                + "episodesTotal, source, ageRating, synopsis, release, studios, type, lastUpdate FROM anime WHERE id = ?";
 
         try (Connection conn = DriverManager.getConnection(url);
              PreparedStatement pstmt = conn.prepareStatement(sqlSelect)) {
@@ -108,7 +109,7 @@ public class DatabaseModel {
 
                 AnimeInfo animeInfo = new AnimeInfo(rs.getInt("id"), rs.getString("title"), rs.getString("titleJapanese"), rs.getString("titleEnglish"),
                         rs.getString("imageUrl"), rs.getString("smallImageUrl"), rs.getString("publicationStatus"), rs.getInt("episodesTotal"), rs.getString("source"),
-                        rs.getString("ageRating"), rs.getString("synopsis"), rs.getString("release"), rs.getString("studios"), rs.getString("type")
+                        rs.getString("ageRating"), rs.getString("synopsis"), rs.getString("release"), rs.getString("studios"), rs.getString("type"), rs.getString("lastUpdate")
                 );
                 animeInfo.setOwnRating(rs.getString("ownRating"));
                 animeInfo.setOwnStatus(rs.getString("ownStatus"));
@@ -128,7 +129,7 @@ public class DatabaseModel {
     public AnimeListInfo getFullAnimeDatabase() {
         String url = "jdbc:sqlite:" + databaseFilePath;
         String sqlSelectAll = "SELECT id, ownRating, ownStatus, episodesProgress, title, titleJapanese, titleEnglish, imageUrl, smallImageUrl, publicationStatus, "
-                + "episodesTotal, source, ageRating, synopsis, release, studios, type FROM anime";
+                + "episodesTotal, source, ageRating, synopsis, release, studios, type, lastUpdate FROM anime";
         List<AnimeInfo> animeList = new ArrayList<>();
 
         try (Connection conn = DriverManager.getConnection(url);
@@ -138,7 +139,7 @@ public class DatabaseModel {
             while (rs.next()) {
                 AnimeInfo animeInfo = new AnimeInfo(rs.getInt("id"), rs.getString("title"), rs.getString("titleJapanese"), rs.getString("titleEnglish"),
                         rs.getString("imageUrl"), rs.getString("smallImageUrl"), rs.getString("publicationStatus"), rs.getInt("episodesTotal"), rs.getString("source"),
-                        rs.getString("ageRating"), rs.getString("synopsis"), rs.getString("release"), rs.getString("studios"), rs.getString("type")
+                        rs.getString("ageRating"), rs.getString("synopsis"), rs.getString("release"), rs.getString("studios"), rs.getString("type"), rs.getString("lastUpdate")
                 );
                 animeInfo.setOwnRating(rs.getString("ownRating"));
                 animeInfo.setOwnStatus(rs.getString("ownStatus"));

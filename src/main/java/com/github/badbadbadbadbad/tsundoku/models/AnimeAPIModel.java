@@ -14,12 +14,15 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 public class AnimeAPIModel {
 
+    Clock utcClock = Clock.systemUTC();
     private static final String BASE_URL = "https://api.jikan.moe/v4";
     HttpClient client;
 
@@ -264,8 +267,12 @@ public class AnimeAPIModel {
                     }
                 }
 
+                // Current date in UTC for lastUpdated timestamp
+                LocalDate currentDate = LocalDate.now(utcClock);
+                String dateString = currentDate.toString();
+
                 AnimeInfo anime = new AnimeInfo(id, title, titleJapanese, titleEnglish, imageUrl, smallImageUrl,
-                        publicationStatus, episodesTotal, source, ageRating, synopsis, release, studios, animeType);
+                        publicationStatus, episodesTotal, source, ageRating, synopsis, release, studios, animeType, dateString);
                 animeList.add(anime);
             }
         }
