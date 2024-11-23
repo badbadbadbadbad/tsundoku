@@ -430,10 +430,12 @@ public class AnimeGridView implements PopupMakerView {
 
     private HBox createButtons() {
         Button seasonButton = new Button("Season");
+        Button upcomingButton = new Button("Upcoming");
         Button topButton = new Button("Top");
         Button searchButton = new Button("Search");
 
         seasonButton.getStyleClass().add("controls-button");
+        upcomingButton.getStyleClass().add("controls-button");
         topButton.getStyleClass().add("controls-button");
         searchButton.getStyleClass().add("controls-button");
 
@@ -441,6 +443,15 @@ public class AnimeGridView implements PopupMakerView {
         seasonButton.setOnAction(event -> {
             if(!apiLock) {
                 searchMode = "SEASON";
+                apiLock = true;
+
+                invokeAnimatedAPICall(1);
+            }
+        });
+
+        upcomingButton.setOnAction(event -> {
+            if(!apiLock) {
+                searchMode = "UPCOMING";
                 apiLock = true;
 
                 invokeAnimatedAPICall(1);
@@ -466,7 +477,7 @@ public class AnimeGridView implements PopupMakerView {
         });
 
 
-        HBox leftButtons = new HBox(10, seasonButton, topButton);
+        HBox leftButtons = new HBox(10, seasonButton, upcomingButton, topButton);
         HBox rightButtons = new HBox(searchButton);
         HBox.setHgrow(leftButtons, Priority.ALWAYS);
         HBox.setHgrow(rightButtons, Priority.ALWAYS);
@@ -703,6 +714,8 @@ public class AnimeGridView implements PopupMakerView {
     private CompletableFuture<AnimeListInfo> getPageForCurrentQuery(int page) {
         if (searchMode.equals("SEASON")) {
             return apiRequestListener.getCurrentAnimeSeason(page);
+        } else if (searchMode.equals("UPCOMING")) {
+            return apiRequestListener.getUpcomingAnime(page);
         } else if (searchMode.equals("TOP")) {
             return apiRequestListener.getTopAnime(page);
         } else { // Default mode: SEARCH

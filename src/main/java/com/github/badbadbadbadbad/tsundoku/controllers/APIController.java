@@ -20,6 +20,11 @@ public class APIController implements ConfigListener, APIRequestListener {
     }
 
     @Override
+    public CompletableFuture<AnimeListInfo> getUpcomingAnime(int page) {
+        return animeAPIModel.getUpcoming(page);
+    }
+
+    @Override
     public CompletableFuture<AnimeListInfo> getTopAnime(int page) {
         return animeAPIModel.getTop(page);
     }

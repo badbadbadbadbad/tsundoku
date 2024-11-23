@@ -72,6 +72,39 @@ public class AnimeAPIModel {
     }
 
 
+    public CompletableFuture<AnimeListInfo> getUpcoming(int page) {
+        String urlString = BASE_URL + "/seasons/upcoming?page=" + page;
+        URI uri = URI.create(urlString);
+        client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(uri)
+                .header("Accept", "application/json")
+                .header("User-Agent", userAgent)
+                .GET()
+                .build();
+
+        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(response -> {
+                    if (response.statusCode() != 200) {
+                        throw new RuntimeException("getUpcoming(): HTTP Error Code " + response.statusCode());
+                    }
+                    // Handle the parsing and potential exceptions here
+                    try {
+                        ObjectMapper mapper = new ObjectMapper();
+                        JsonNode rootNode = mapper.readTree(response.body());
+                        return parseAnimeData(rootNode);
+                    } catch (IOException e) {
+                        System.out.println("Parsing error: " + e.getMessage());
+                        return null;
+                    }
+                })
+                .exceptionally(e -> {
+                    System.out.println("AnimeAPIModel getUpcoming() error: " + e);
+                    return null;
+                });
+    }
+
+
     public CompletableFuture<AnimeListInfo> getTop(int page) {
         String urlString = BASE_URL + "/top/anime?page=" + page;
         URI uri = URI.create(urlString);
