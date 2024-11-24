@@ -36,6 +36,8 @@ public class AnimePopupView {
     private final VBox darkBackground;              // The background surrounding the popup. Needed to call the destruction event.
 
     private final VBox popupBox;
+
+    private String activeRatingButton = "none";
     private final List<Button> ratingButtons = new ArrayList<>();
 
     public AnimePopupView(VBox parentBox, PopupMakerView parentView, AnimeInfo anime, DatabaseRequestListener databaseRequestListener, VBox darkBackground) {
@@ -285,16 +287,27 @@ public class AnimePopupView {
             button.getStyleClass().remove("ikonli-thumb-down-active");
         }
 
+        // Check if clicked button was the currently active button
+        // If so, we set none as active after
+        if (clickedButton.getStyleClass().contains(activeRatingButton)) {
+            activeRatingButton = "none";
+            anime.setOwnRating("Unscored");
+            return;
+        }
+
         // Add active state to clicked button
         // And set anime data rating to clicked button type
         if (clickedButton.getStyleClass().contains("heart")) {
             clickedButton.getStyleClass().add("ikonli-heart-active");
+            activeRatingButton = "heart";
             anime.setOwnRating("Heart");
         } else if (clickedButton.getStyleClass().contains("like")) {
             clickedButton.getStyleClass().add("ikonli-thumb-up-active");
+            activeRatingButton = "like";
             anime.setOwnRating("Liked");
         } else if (clickedButton.getStyleClass().contains("dislike")) {
             clickedButton.getStyleClass().add("ikonli-thumb-down-active");
+            activeRatingButton = "dislike";
             anime.setOwnRating("Disliked");
         }
 
