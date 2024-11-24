@@ -165,6 +165,9 @@
                             </vmArgs>
                             <jdkPath>/home/bad/Desktop/jdk-21.0.4-windows</jdkPath>
                             <platform>windows</platform>
+                            <winConfig>
+                                <exeCreationTool>launch4j</exeCreationTool>
+                            </winConfig>
                         </configuration>
                     </execution>
                 </executions>
