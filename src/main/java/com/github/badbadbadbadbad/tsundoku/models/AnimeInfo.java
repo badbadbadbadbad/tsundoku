@@ -12,7 +12,7 @@ public class AnimeInfo {
     private final String imageUrl;                          // URL pointing to cover art used on MyAnimeList, or "Not yet provided"
     private final String smallImageUrl;                     // URL pointing to smaller cover art used on MyAnimeList, or "Not yet provided"
     private final String publicationStatus;                 // Current status of an anime of "Airing", "Complete", "Upcoming", or "Not yet provided"
-    private final int episodesTotal;                        // Total episodes of this anime. May be 0, which we set to 1.
+    private final int episodesTotal;                        // Total episodes of this anime. May be 0, which we keep as a "not yet known".
     private final String source;                            // Original source of this anime, like "Manga", "Light Novel", "Original".
     private final String ageRating;                         // Age rating, includes both nudity and gore (thanks MAL for having a shit system), or "Not yet provided"
     private final String synopsis;                          // Synopsis / description text, or "Not yet provided"

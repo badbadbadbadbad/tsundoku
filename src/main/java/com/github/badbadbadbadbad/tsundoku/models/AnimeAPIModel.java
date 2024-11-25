@@ -261,10 +261,10 @@ public class AnimeAPIModel {
                 int releaseYearFromProp = animeNode.get("aired").get("prop").get("from").get("year").asInt();
                 String release = calculateReleaseSeason(releaseSeason, releaseYear, releaseMonthFromProp, releaseYearFromProp);
 
-                // Total amount of episodes. "1" for movies. Apparently this can be null, so we just set it to 1 as an ugly base case for those.
+                // Total amount of episodes. "1" for movies. This is 0 if not yet known, which we keep as a "not yet known" case.
                 int episodesTotal = animeNode.get("episodes").asInt();
-                if (episodesTotal == 0)
-                    episodesTotal = 1;
+                // if (episodesTotal == 0)
+                    // episodesTotal = 1;
 
                 // List of studios involved in anime creation, we comma-seperate it.
                 // Not sure if object can be empty, so if no studios are provided, set to "Not yet provided".
@@ -364,8 +364,8 @@ public class AnimeAPIModel {
 
         // Total episodes
         int episodesTotal = animeNode.get("episodes").asInt();
-        if (episodesTotal == 0)
-            episodesTotal = 1;
+        // if (episodesTotal == 0)
+        //     episodesTotal = 1;
 
         // Studios involved in anime creation
         List<String> studioNames = new ArrayList<>();
