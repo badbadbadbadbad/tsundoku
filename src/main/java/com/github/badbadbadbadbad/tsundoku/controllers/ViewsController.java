@@ -7,6 +7,7 @@ import com.github.badbadbadbadbad.tsundoku.views.LazyLoaderView;
 import com.github.badbadbadbadbad.tsundoku.views.SidebarView;
 import javafx.animation.*;
 import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -19,6 +20,7 @@ import javafx.util.Duration;
 public class ViewsController implements LoadingBarListener, ConfigListener {
 
     private final HBox root;
+    private final StackPane rootStack;
     private final Stage stage;
 
     private boolean firstTimeStartup = true;
@@ -40,12 +42,19 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
         root.setId("main-root");
         root.getStyleClass().add("root");
 
+        this.rootStack = new StackPane();
+        rootStack.getChildren().add(root);
+
 
         // Starts chain of events that invokes onSidebarModesUpdates() of this class to handle setup of all view elements
         configModel.addConfigListener(this);
 
 
-        Scene scene = new Scene(root);
+        // this.rootStack = new StackPane();
+        // rootStack.getChildren().add(root);
+
+        // Scene scene = new Scene(root);
+        Scene scene = new Scene(rootStack);
 
         // Fonts
         Font.loadFont(getClass().getResource("/fonts/NotoSerifJP-Black.ttf").toExternalForm(), -1);
@@ -124,50 +133,196 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
 
 
     private void updateMainContent(String mediaMode, String browseMode) {
+
+        // Dark background to overlay when switching to a browse mode
+        VBox darkBackground = new VBox();
+        darkBackground.getStyleClass().add("grid-media-popup-background");
+        VBox.setVgrow(darkBackground, Priority.ALWAYS);
+        HBox.setHgrow(darkBackground, Priority.ALWAYS);
+        darkBackground.setOpacity(0);
+
         if (currentLazyLoaderView != null) {
             currentLazyLoaderView.shutdownLazyLoader();
         }
 
-        Region gridView = null;
-
         switch (mediaMode) {
             case "Anime" -> {
                 if (browseMode.equals("Browse")) {
-                    AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController); // TODO Give anime grid initial filters
-                    gridView = animeGridView.createGridView();
-                    currentLazyLoaderView = null;
+
+
+                    if (firstTimeStartup) {
+                        darkenWindow(darkBackground, 0.0, () -> {
+                            AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController); // TODO Give anime grid initial filters
+                            Region gridView = animeGridView.createGridView();
+                            currentLazyLoaderView = null;
+
+                            if (root.getChildren().size() > 2) { // Content pane exists, remove it and add new one
+                                root.getChildren().remove(2);
+                            }
+                            root.getChildren().add(gridView);
+
+                            undarkdenWindow(darkBackground, 0.0);
+                        });
+                    } else {
+                        darkenWindow(darkBackground, 0.8, () -> {
+                            AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController); // TODO Give anime grid initial filters
+                            Region gridView = animeGridView.createGridView();
+                            currentLazyLoaderView = null;
+
+                            if (root.getChildren().size() > 2) { // Content pane exists, remove it and add new one
+                                root.getChildren().remove(2);
+                            }
+                            root.getChildren().add(gridView);
+
+                            undarkdenWindow(darkBackground, 0.8);
+                        });
+                    }
+
+                    firstTimeStartup = false;
+
                 } else {
                     AnimeLogView animeLogView = new AnimeLogView(databaseController);
-                    gridView = animeLogView.createGridView();
+                    Region gridView = animeLogView.createGridView();
                     currentLazyLoaderView = animeLogView;
+
+                    if (root.getChildren().size() > 2) { // Content pane exists, remove it and add new one
+                        root.getChildren().remove(2);
+                    }
+                    root.getChildren().add(gridView);
+
+                    firstTimeStartup = false;
                 }
             }
             case "Manga" -> {
-                AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController);
-                gridView = animeGridView.createGridView();
-                currentLazyLoaderView = null;
+                if (browseMode.equals("Browse")) {
+
+                    if (firstTimeStartup) {
+                        darkenWindow(darkBackground, 0.0, () -> {
+                            AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController); // TODO Give anime grid initial filters
+                            Region gridView = animeGridView.createGridView();
+                            currentLazyLoaderView = null;
+
+                            if (root.getChildren().size() > 2) { // Content pane exists, remove it and add new one
+                                root.getChildren().remove(2);
+                            }
+                            root.getChildren().add(gridView);
+
+                            undarkdenWindow(darkBackground, 0.0);
+                        });
+                    } else {
+                        darkenWindow(darkBackground, 0.8, () -> {
+                            AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController); // TODO Give anime grid initial filters
+                            Region gridView = animeGridView.createGridView();
+                            currentLazyLoaderView = null;
+
+                            if (root.getChildren().size() > 2) { // Content pane exists, remove it and add new one
+                                root.getChildren().remove(2);
+                            }
+                            root.getChildren().add(gridView);
+
+                            undarkdenWindow(darkBackground, 0.8);
+                        });
+                    }
+
+                    firstTimeStartup = false;
+
+                } else {
+                    AnimeLogView animeLogView = new AnimeLogView(databaseController);
+                    Region gridView = animeLogView.createGridView();
+                    currentLazyLoaderView = animeLogView;
+
+                    if (root.getChildren().size() > 2) { // Content pane exists, remove it and add new one
+                        root.getChildren().remove(2);
+                    }
+                    root.getChildren().add(gridView);
+
+                    firstTimeStartup = false;
+                }
             }
             case "Games" -> {
-                AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController);
-                gridView = animeGridView.createGridView();
-                currentLazyLoaderView = null;
+                if (browseMode.equals("Browse")) {
+
+                    if (firstTimeStartup) {
+                        darkenWindow(darkBackground, 0.0, () -> {
+                            AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController); // TODO Give anime grid initial filters
+                            Region gridView = animeGridView.createGridView();
+                            currentLazyLoaderView = null;
+
+                            if (root.getChildren().size() > 2) { // Content pane exists, remove it and add new one
+                                root.getChildren().remove(2);
+                            }
+                            root.getChildren().add(gridView);
+
+                            undarkdenWindow(darkBackground, 0.0);
+                        });
+                    } else {
+                        darkenWindow(darkBackground, 0.8, () -> {
+                            AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController); // TODO Give anime grid initial filters
+                            Region gridView = animeGridView.createGridView();
+                            currentLazyLoaderView = null;
+
+                            if (root.getChildren().size() > 2) { // Content pane exists, remove it and add new one
+                                root.getChildren().remove(2);
+                            }
+                            root.getChildren().add(gridView);
+
+                            undarkdenWindow(darkBackground, 0.8);
+                        });
+                    }
+
+                    firstTimeStartup = false;
+
+                } else {
+                    AnimeLogView animeLogView = new AnimeLogView(databaseController);
+                    Region gridView = animeLogView.createGridView();
+                    currentLazyLoaderView = animeLogView;
+
+                    if (root.getChildren().size() > 2) { // Content pane exists, remove it and add new one
+                        root.getChildren().remove(2);
+                    }
+                    root.getChildren().add(gridView);
+
+                    firstTimeStartup = false;
+                }
             }
             case "Profile" -> {
                 AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController);
-                gridView = animeGridView.createGridView();
+                Region gridView = animeGridView.createGridView();
                 currentLazyLoaderView = null;
             }
             case "Settings" -> {
                 AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController);
-                gridView = animeGridView.createGridView();
+                Region gridView = animeGridView.createGridView();
                 currentLazyLoaderView = null;
             }
         }
+    }
 
-        if (root.getChildren().size() > 2) { // Content pane exists, remove it and add new one
-            root.getChildren().remove(2);
-        }
-        root.getChildren().add(gridView);
+    private void darkenWindow(Node node, double finalOpacity, Runnable onFinished) {
+
+        rootStack.getChildren().add(node);
+
+        // Fade in
+        FadeTransition fadeIn = new FadeTransition(Duration.seconds(0.2), node);
+        fadeIn.setFromValue(0);
+        fadeIn.setToValue(finalOpacity);
+
+        fadeIn.setOnFinished(e -> {
+            if (onFinished != null) {
+                onFinished.run();
+            }
+        });
+
+        fadeIn.play();
+
+    }
+
+    private void undarkdenWindow(Node node, double startingOpacity) {
+        FadeTransition fadeOut = new FadeTransition(Duration.seconds(0.2), node);
+        fadeOut.setFromValue(startingOpacity);
+        fadeOut.setToValue(0);
+        fadeOut.setOnFinished(e -> rootStack.getChildren().remove(node));
+        fadeOut.play();
     }
 
     @Override
@@ -219,7 +374,7 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
 
             root.getChildren().addAll(sidebar, loadingSeparator);
 
-            firstTimeStartup = false;
+            // firstTimeStartup = false;
         }
         updateMainContent(mediaMode, browseMode);
     }
