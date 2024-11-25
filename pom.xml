@@ -143,7 +143,11 @@
                                 <vmArg>--add-modules=javafx.controls,javafx.fxml</vmArg>
                             </vmArgs>
                             <jdkPath>/home/bad/Desktop/jdk-21.0.4-linux</jdkPath>
+                            <assetsDir>/home/bad/repos/tsundoku/src/main/resources/assets</assetsDir>
                             <platform>linux</platform>
+                            <linuxConfig>
+                                <pngFile>src/main/resources/assets/windows/tsundoku.png</pngFile>
+                            </linuxConfig>
                         </configuration>
                     </execution>
                     <execution>
@@ -164,9 +168,11 @@
                                 <vmArg>--add-modules=javafx.controls,javafx.fxml</vmArg>
                             </vmArgs>
                             <jdkPath>/home/bad/Desktop/jdk-21.0.4-windows</jdkPath>
+                            <assetsDir>/home/bad/repos/tsundoku/src/main/resources/assets</assetsDir>
                             <platform>windows</platform>
                             <winConfig>
                                 <exeCreationTool>launch4j</exeCreationTool>
+                                <icoFile>src/main/resources/assets/windows/tsundoku.ico</icoFile>
                             </winConfig>
                         </configuration>
                     </execution>
