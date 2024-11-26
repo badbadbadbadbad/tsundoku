@@ -30,6 +30,70 @@
     src: url("../fonts/NotoSerifJP-SemiBold.ttf");
 }
 
+@font-face {
+    src: url("../fonts/Montserrat-Black.ttf"); /* "Montserrat Black */
+}
+
+@font-face {
+    src: url("../fonts/Montserrat-Bold.ttf");
+}
+
+@font-face {
+    src: url("../fonts/Montserrat-ExtraBold.ttf");
+}
+
+@font-face {
+    src: url("../fonts/Montserrat-ExtraLight.ttf");
+}
+
+@font-face {
+    src: url("../fonts/Montserrat-Light.ttf");
+}
+
+@font-face {
+    src: url("../fonts/Montserrat-Medium.ttf");
+}
+
+@font-face {
+    src: url("../fonts/Montserrat-Regular.ttf");
+}
+
+@font-face {
+    src: url("../fonts/Montserrat-SemiBold.ttf");
+}
+
+@font-face {
+    src: url("../fonts/Montserrat-BlackItalic.ttf"); /* "Montserrat Black Italic" */
+}
+
+@font-face {
+    src: url("../fonts/Montserrat-BoldItalic.ttf");
+}
+
+@font-face {
+    src: url("../fonts/Montserrat-ExtraBoldItalic.ttf");
+}
+
+@font-face {
+    src: url("../fonts/Montserrat-ExtraLightItalic.ttf");
+}
+
+@font-face {
+    src: url("../fonts/Montserrat-LightItalic.ttf");
+}
+
+@font-face {
+    src: url("../fonts/Montserrat-MediumItalic.ttf");
+}
+
+@font-face {
+    src: url("../fonts/Montserrat-Italic.ttf");
+}
+
+@font-face {
+    src: url("../fonts/Montserrat-SemiBoldItalic.ttf");
+}
+
 
 
 /* The root class is used to define colors for the scope of all CSS */
@@ -137,6 +201,10 @@
     -fx-background-insets: 0 0 0 0;
 }
 
+.text {
+    -fx-font-smoothing-type: gray; /* Experimental. May be heavy. */
+}
+
 #main-root {
     -fx-background-color: -main-background-color;
     -fx-focus-color: transparent;
@@ -191,6 +259,7 @@
 
 .sidebar-browse-mode-button {
     -fx-background-color: -sidebar-browse-button-inactive-color;
+    -fx-font-family: "Montserrat Medium";
     -fx-text-fill: white;
     -fx-pref-height: 35px;
     -fx-pref-width: 120px;
@@ -211,6 +280,7 @@
 }
 
 .sidebar-media-button {
+    -fx-font-family: "Montserrat Medium";
     -fx-background-color: transparent;
     -fx-text-fill: white;
     -fx-font-size: 26px;
@@ -254,6 +324,7 @@
 }
 
 #search-bar {
+    -fx-font-family: "Montserrat Medium";
     -fx-font-size: 16px;
     -fx-background-color: -content-grid-filters-input-color;
     -fx-pref-height: 35px;
@@ -264,6 +335,7 @@
 }
 
 .controls-button {
+    -fx-font-family: "Montserrat Medium";
     -fx-font-size: 16px;
     -fx-background-color: -content-grid-filters-button-color;
     -fx-text-fill: white;
@@ -276,11 +348,13 @@
 }
 
 .filter-label {
+    -fx-font-family: "Montserrat Medium";
     -fx-font-size: 14px;
     -fx-text-fill: rgba(255, 255, 255, 0.7);
 }
 
 .filter-combo-box {
+    -fx-font-family: "Montserrat Medium";
     -fx-font-size: 16px;
     -fx-background-color: -content-grid-filters-input-color;
     -fx-pref-height: 35px;
@@ -432,6 +506,7 @@
 
 /* This is the text and darkening background that appear when hovering on a grid box */
 .grid-media-box-text {
+    -fx-font-family: "Montserrat Medium";
     -fx-font-size: 25;
     -fx-text-alignment: center;
     -fx-wrap-text: true;
@@ -457,6 +532,7 @@
 }
 
 .pagination-button {
+    -fx-font-family: "Montserrat Medium";
     -fx-min-width: 40;
     -fx-max-width: 65;
     -fx-min-height: 40;
@@ -472,6 +548,7 @@
 }
 
 .pagination-input-field {
+    -fx-font-family: "Montserrat Medium";
     -fx-min-width: 60;
     -fx-max-width: 60;
     -fx-min-height: 40;
@@ -538,6 +615,7 @@
 
 
 .status-combo-box {
+    -fx-font-family: "Montserrat Medium";
     -fx-font-size: 16px;
     -fx-background-color: -popup-input-color;
     -fx-pref-height: 30px;
@@ -632,6 +710,7 @@
 
 
 .progress-text-field {
+    -fx-font-family: "Montserrat Medium";
     -fx-font-size: 16px;
     -fx-background-color: -popup-progress-color;
     -fx-pref-height: 30px;
@@ -641,6 +720,7 @@
 }
 
 .progress-label {
+    -fx-font-family: "Montserrat Medium";
     -fx-font-size: 16px;
     -fx-text-fill: white;
     -fx-min-height: 30px;
@@ -650,14 +730,13 @@
 
 
 
-
-
 .grid-media-popup-right {
     -fx-spacing: 10;
     -fx-padding: 0 10 0 0;
 }
 
 .popup-synopsis {
+    -fx-font-family: "Montserrat Medium";
     -fx-text-fill: white;
     -fx-font-size: 16;
     -fx-label-padding: 10 0 10 0;
@@ -685,11 +764,13 @@
 }
 
 .popup-meta-grid-header {
+    -fx-font-family: "Montserrat Medium";
     -fx-font-size: 12px;
     -fx-text-fill: rgba(255, 255, 255, 0.6);
 }
 
 .popup-meta-grid-text {
+    -fx-font-family: "Montserrat Medium";
     -fx-font-size: 14px;
     -fx-text-fill: white;
 }
@@ -723,11 +804,10 @@
 }
 
 .log-grid-header-text {
+    -fx-font-family: "Montserrat Italic";
     -fx-alignment: center;
     -fx-text-fill: -gold-highlight;
     -fx-font-size: 25;
-    -fx-font-style: italic;
-    /* -fx-font-weight: 200; */
 }
 
 

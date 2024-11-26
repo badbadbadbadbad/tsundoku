@@ -66,6 +66,31 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
         Font.loadFont(getClass().getResource("/fonts/NotoSerifJP-Regular.ttf").toExternalForm(), -1);
         Font.loadFont(getClass().getResource("/fonts/NotoSerifJP-SemiBold.ttf").toExternalForm(), -1);
 
+
+        Font.loadFont(getClass().getResource("/fonts/Montserrat-Black.ttf").toExternalForm(), -1);
+        Font.loadFont(getClass().getResource("/fonts/Montserrat-Bold.ttf").toExternalForm(), -1);
+        Font.loadFont(getClass().getResource("/fonts/Montserrat-ExtraBold.ttf").toExternalForm(), -1);
+        Font.loadFont(getClass().getResource("/fonts/Montserrat-ExtraLight.ttf").toExternalForm(), -1);
+        Font.loadFont(getClass().getResource("/fonts/Montserrat-Light.ttf").toExternalForm(), -1);
+        Font.loadFont(getClass().getResource("/fonts/Montserrat-Medium.ttf").toExternalForm(), -1);
+        Font.loadFont(getClass().getResource("/fonts/Montserrat-Regular.ttf").toExternalForm(), -1);
+        Font.loadFont(getClass().getResource("/fonts/Montserrat-SemiBold.ttf").toExternalForm(), -1);
+
+        Font.loadFont(getClass().getResource("/fonts/Montserrat-BlackItalic.ttf").toExternalForm(), -1);
+        Font.loadFont(getClass().getResource("/fonts/Montserrat-BoldItalic.ttf").toExternalForm(), -1);
+        Font.loadFont(getClass().getResource("/fonts/Montserrat-ExtraBoldItalic.ttf").toExternalForm(), -1);
+        Font.loadFont(getClass().getResource("/fonts/Montserrat-ExtraLightItalic.ttf").toExternalForm(), -1);
+        Font.loadFont(getClass().getResource("/fonts/Montserrat-LightItalic.ttf").toExternalForm(), -1);
+        Font.loadFont(getClass().getResource("/fonts/Montserrat-MediumItalic.ttf").toExternalForm(), -1);
+        Font.loadFont(getClass().getResource("/fonts/Montserrat-Italic.ttf").toExternalForm(), -1);
+        Font.loadFont(getClass().getResource("/fonts/Montserrat-SemiBoldItalic.ttf").toExternalForm(), -1);
+
+
+
+        // Font font1 = Font.loadFont(getClass().getResource("/fonts/Montserrat-Black.ttf").toExternalForm(), -1);
+        // Font font2 = Font.loadFont(getClass().getResource("/fonts/Montserrat-BlackItalic.ttf").toExternalForm(), -1);
+        // System.out.println(String.format("Fonts loaded, names to be used in CSS: %s %s", font1.getName(), font2.getName()));
+
         // Font.loadFont(getClass().getResource("/fonts/NotoSerifJP-ExtraLight.ttf").toExternalForm(), -1);
         // Font font1 = Font.loadFont(getClass().getResource("/fonts/NotoSerifJP-SemiBold.ttf").toExternalForm(), -1);
         // System.out.println(String.format("Fonts loaded, names to be used in CSS: %s", font1.getName()));
@@ -298,6 +323,7 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
         }
     }
 
+
     private void darkenWindow(Node node, double finalOpacity, Runnable onFinished) {
 
         rootStack.getChildren().add(node);
@@ -317,6 +343,7 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
 
     }
 
+
     private void undarkdenWindow(Node node, double startingOpacity) {
         FadeTransition fadeOut = new FadeTransition(Duration.seconds(0.2), node);
         fadeOut.setFromValue(startingOpacity);
@@ -324,6 +351,7 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
         fadeOut.setOnFinished(e -> rootStack.getChildren().remove(node));
         fadeOut.play();
     }
+
 
     @Override
     public void animateLoadingBar(double toPercent, double durationSeconds) {

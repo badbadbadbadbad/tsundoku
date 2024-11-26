@@ -96,7 +96,7 @@ public class AnimePopupView {
         titleLabel.setMinHeight(popupBox.getMaxHeight() * 0.1);
         titleLabel.setMaxHeight(popupBox.getMaxHeight() * 0.1);
         titleLabel.getStyleClass().add("grid-media-popup-title");
-        titleLabel.setFont(Font.font(30.0)); // Needs to be outside CSS for dynamic adjustments..
+        titleLabel.setFont(Font.font("Montserrat Medium", 30.0)); // Needs to be outside CSS for dynamic adjustments..
 
         // Adjust font size for very long titles to fit container
         titleLabel.layoutBoundsProperty().addListener((obs, oldBounds, newBounds) -> {
@@ -431,7 +431,7 @@ public class AnimePopupView {
 
             Label content = new Label(contentText);
             content.getStyleClass().add("popup-meta-grid-text-but-without-font-size");
-            content.setFont(Font.font(14.0));
+            content.setFont(Font.font("Montserrat Medium", 14.0));
 
             VBox wrapper = new VBox(3, label, content);
 
