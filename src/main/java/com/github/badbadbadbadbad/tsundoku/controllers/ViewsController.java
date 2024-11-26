@@ -181,6 +181,17 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
 
 
                     if (firstTimeStartup) {
+
+                        AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController, languagePreference); // TODO Give anime grid initial filters
+                        Region gridView = animeGridView.createGridView();
+                        currentLazyLoaderView = null;
+
+                        if (root.getChildren().size() > 2) { // Content pane exists, remove it and add new one
+                            root.getChildren().remove(2);
+                        }
+                        root.getChildren().add(gridView);
+
+                        /*
                         darkenWindow(darkBackground, 0.0, () -> {
                             AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController, languagePreference); // TODO Give anime grid initial filters
                             Region gridView = animeGridView.createGridView();
@@ -193,6 +204,8 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
 
                             undarkdenWindow(darkBackground, 0.0);
                         });
+
+                         */
                     } else {
                         darkenWindow(darkBackground, 0.8, () -> {
                             AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController, languagePreference); // TODO Give anime grid initial filters
@@ -227,6 +240,17 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
                 if (browseMode.equals("Browse")) {
 
                     if (firstTimeStartup) {
+
+                        AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController, languagePreference); // TODO Give anime grid initial filters
+                        Region gridView = animeGridView.createGridView();
+                        currentLazyLoaderView = null;
+
+                        if (root.getChildren().size() > 2) { // Content pane exists, remove it and add new one
+                            root.getChildren().remove(2);
+                        }
+                        root.getChildren().add(gridView);
+
+                        /*
                         darkenWindow(darkBackground, 0.0, () -> {
                             AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController, languagePreference); // TODO Give anime grid initial filters
                             Region gridView = animeGridView.createGridView();
@@ -239,6 +263,10 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
 
                             undarkdenWindow(darkBackground, 0.0);
                         });
+
+
+
+                         */
                     } else {
                         darkenWindow(darkBackground, 0.8, () -> {
                             AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController, languagePreference); // TODO Give anime grid initial filters
@@ -272,7 +300,19 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
             case "Games" -> {
                 if (browseMode.equals("Browse")) {
 
+
                     if (firstTimeStartup) {
+
+                        AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController, languagePreference); // TODO Give anime grid initial filters
+                        Region gridView = animeGridView.createGridView();
+                        currentLazyLoaderView = null;
+
+                        if (root.getChildren().size() > 2) { // Content pane exists, remove it and add new one
+                            root.getChildren().remove(2);
+                        }
+                        root.getChildren().add(gridView);
+
+                        /*
                         darkenWindow(darkBackground, 0.0, () -> {
                             AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController, languagePreference); // TODO Give anime grid initial filters
                             Region gridView = animeGridView.createGridView();
@@ -285,6 +325,8 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
 
                             undarkdenWindow(darkBackground, 0.0);
                         });
+
+                         */
                     } else {
                         darkenWindow(darkBackground, 0.8, () -> {
                             AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController, languagePreference); // TODO Give anime grid initial filters

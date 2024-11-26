@@ -33,7 +33,7 @@ public class LazyLoader {
     private int lastVisibleIndex;
 
     private final PauseTransition loaderPause = new PauseTransition(Duration.seconds(0.1));
-    private final PauseTransition imagePause = new PauseTransition(Duration.seconds(0.1));
+    private final PauseTransition imagePause = new PauseTransition(Duration.seconds(0.01));
 
     public LazyLoader(ScrollPane scrollPane, List<FlowGridPane> flowPanes) {
         this.scrollPane = scrollPane;
