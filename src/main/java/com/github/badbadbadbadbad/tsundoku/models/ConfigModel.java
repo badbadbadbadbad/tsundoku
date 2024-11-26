@@ -35,6 +35,8 @@ public class ConfigModel {
     private String animeStartYear;
     private String animeEndYear;
 
+    private String weebLanguagePreference;
+
     public ConfigModel() {
         this.configFilePath = Paths.get(getAppDataPath(), "config.json").toString();
         readConfigFile();
@@ -66,6 +68,8 @@ public class ConfigModel {
                 this.igdbSecret = (String) settings.get("igdbSecret");
                 this.mangadexSecret = (String) settings.get("mangadexSecret");
                 this.profiles = (String) settings.get("profiles");
+
+                this.weebLanguagePreference = (String) settings.get("weebLanguagePreference");
 
 
                 updateSidebarModes((String) settings.get("lastMediaMode"), (String) settings.get("lastBrowseMode"));
@@ -101,6 +105,8 @@ public class ConfigModel {
             animeSearchFilters.put("Start year", this.animeStartYear);
             animeSearchFilters.put("End year", this.animeEndYear);
             settings.put("animeSearchFilters", animeSearchFilters);
+
+            settings.put("weebLanguagePreference", this.weebLanguagePreference);
 
             objectMapper.writeValue(configFile, settings);
 
@@ -164,8 +170,11 @@ public class ConfigModel {
         notifyListenersSidebarChange();
     }
 
+
+
     public void addConfigListener(ConfigListener listener) {
         listeners.add(listener);
+        notifyListenersLanguageChange();
         notifyListenersAPIChange();
         notifyListenersSidebarChange();
     }
@@ -185,6 +194,12 @@ public class ConfigModel {
     private void notifyListenersSidebarChange() {
         for (ConfigListener listener : listeners) {
             listener.onSidebarModesUpdated(lastMediaMode, lastBrowseMode);
+        }
+    }
+
+    private void notifyListenersLanguageChange() {
+        for (ConfigListener listener : listeners) {
+            listener.onLanguagePreferenceUpdated(this.weebLanguagePreference);
         }
     }
 }

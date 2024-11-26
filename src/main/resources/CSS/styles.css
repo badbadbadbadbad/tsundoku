@@ -94,6 +94,18 @@
     src: url("../fonts/Montserrat-SemiBoldItalic.ttf");
 }
 
+@font-face {
+    src: url("../fonts/NotoSansJP-Light.ttf");
+}
+
+@font-face {
+    src: url("../fonts/NotoSansJP-Medium.ttf");
+}
+
+@font-face {
+    src: url("../fonts/NotoSansJP-Regular.ttf");
+}
+
 
 
 /* The root class is used to define colors for the scope of all CSS */
@@ -506,7 +518,7 @@
 
 /* This is the text and darkening background that appear when hovering on a grid box */
 .grid-media-box-text {
-    -fx-font-family: "Montserrat Medium";
+    /* -fx-font-family: "Montserrat Medium"; */
     -fx-font-size: 25;
     -fx-text-alignment: center;
     -fx-wrap-text: true;
@@ -517,6 +529,14 @@
     -fx-border-width: 5px;
     -fx-border-insets: -1;
     -fx-padding: 0 10 0 10;
+}
+
+.grid-media-box-text-en {
+    -fx-font-family: "Montserrat Medium";
+}
+
+.grid-media-box-text-jp {
+    -fx-font-family: "Noto Sans JP Regular";
 }
 
 .pagination-wrapper {

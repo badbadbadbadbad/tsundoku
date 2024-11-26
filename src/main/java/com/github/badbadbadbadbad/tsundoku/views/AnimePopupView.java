@@ -37,12 +37,15 @@ public class AnimePopupView {
 
     private final VBox popupBox;
 
+    private final String languagePreference;
     private String activeRatingButton = "none";
     private final List<Button> ratingButtons = new ArrayList<>();
 
-    public AnimePopupView(VBox parentBox, PopupMakerView parentView, AnimeInfo anime, DatabaseRequestListener databaseRequestListener, VBox darkBackground) {
+    public AnimePopupView(VBox parentBox, PopupMakerView parentView, AnimeInfo anime, DatabaseRequestListener databaseRequestListener,
+                          VBox darkBackground, String languagePreference) {
         this.popupBox = new VBox();
         this.databaseRequestListener = databaseRequestListener;
+        this.languagePreference = languagePreference;
 
         this.parentBox = parentBox;
         this.parentView = parentView;
@@ -91,12 +94,36 @@ public class AnimePopupView {
 
     private Label createPopupTitle() {
 
-        Label titleLabel = new Label(anime.getTitle());
+
+
+        Label titleLabel = new Label();
+
+        // Label with anime name to be shown on animeBox hover
+        // Change title depending on language preference
+        String title = anime.getTitle();
+        if (languagePreference.equals("JP") && !anime.getTitleJapanese().equals("Not yet provided")) {
+            title = anime.getTitleJapanese();
+            titleLabel.setFont(Font.font("Noto Sans JP Regular", 30.0));
+        } else if (languagePreference.equals("EN") && !anime.getTitleEnglish().equals("Not yet provided")) {
+            title = anime.getTitleEnglish();
+            titleLabel.setFont(Font.font("Montserrat Medium", 30.0));
+        } else {
+            titleLabel.setFont(Font.font("Montserrat Medium", 30.0));
+        }
+
+
+        titleLabel.setText(title);
+
+
+        // Label titleLabel = new Label(anime.getTitle());
         titleLabel.setMaxWidth(Double.MAX_VALUE);
         titleLabel.setMinHeight(popupBox.getMaxHeight() * 0.1);
         titleLabel.setMaxHeight(popupBox.getMaxHeight() * 0.1);
         titleLabel.getStyleClass().add("grid-media-popup-title");
-        titleLabel.setFont(Font.font("Montserrat Medium", 30.0)); // Needs to be outside CSS for dynamic adjustments..
+
+
+
+        // titleLabel.setFont(Font.font("Montserrat Medium", 30.0)); // Needs to be outside CSS for dynamic adjustments..
 
         // Adjust font size for very long titles to fit container
         titleLabel.layoutBoundsProperty().addListener((obs, oldBounds, newBounds) -> {

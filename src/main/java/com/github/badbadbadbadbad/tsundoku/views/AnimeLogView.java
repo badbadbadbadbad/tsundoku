@@ -51,9 +51,11 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
     private String endYearFilter = "";
 
     private final BooleanProperty filtersHidden = new SimpleBooleanProperty(true);
+    private String languagePreference;
 
-    public AnimeLogView(DatabaseRequestListener databaseRequestListener) {
+    public AnimeLogView(DatabaseRequestListener databaseRequestListener, String languagePreference) {
         this.databaseRequestListener = databaseRequestListener;
+        this.languagePreference = languagePreference;
 
         // Initialize empty lists
         this.unfilteredAnimeLists = new ArrayList<>(List.of(
@@ -612,8 +614,28 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         animeBox.setClip(clip);
 
 
+
+
+        Label testLabel = new Label();
+
         // Label with anime name to be shown on animeBox hover
-        Label testLabel = new Label(anime.getTitle());
+        // Change title depending on language preference
+        String title = anime.getTitle();
+        if (languagePreference.equals("JP") && !anime.getTitleJapanese().equals("Not yet provided")) {
+            title = anime.getTitleJapanese();
+            testLabel.getStyleClass().add("grid-media-box-text-jp");
+        } else if (languagePreference.equals("EN") && !anime.getTitleEnglish().equals("Not yet provided")) {
+            title = anime.getTitleEnglish();
+            testLabel.getStyleClass().add("grid-media-box-text-en");
+        } else {
+            testLabel.getStyleClass().add("grid-media-box-text-en");
+        }
+
+
+        testLabel.setText(title);
+
+        // Label with anime name to be shown on animeBox hover
+        // Label testLabel = new Label(anime.getTitle());
         testLabel.setAlignment(Pos.CENTER);
         testLabel.getStyleClass().add("grid-media-box-text");
         testLabel.setOpacity(0.0); // Seperate out to allow for fade animation
@@ -685,7 +707,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         HBox.setHgrow(darkBackground, Priority.ALWAYS);
 
         // The actual popup
-        AnimePopupView animePopupView = new AnimePopupView(parentBox, this, anime, databaseRequestListener, darkBackground);
+        AnimePopupView animePopupView = new AnimePopupView(parentBox, this, anime, databaseRequestListener, darkBackground, languagePreference);
         VBox popupBox = animePopupView.createPopup();
 
         // Initially transparent for fade-in effect

@@ -102,6 +102,8 @@ public class Initializer {
             defaultSettings.put("animeRatingFilters", animeRatingFilters);
             defaultSettings.put("animeSearchFilters", animeSearchFilters);
 
+            defaultSettings.put("weebLanguagePreference", "Default");
+
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.writeValue(settingsFile, defaultSettings);
         }

@@ -31,6 +31,8 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
 
     private LazyLoaderView currentLazyLoaderView = null;
 
+    private String languagePreference = "Default";
+
 
     public ViewsController(Stage stage, APIController apiController, ConfigController configController, ConfigModel configModel, DatabaseController databaseController) {
         this.apiController = apiController;
@@ -49,9 +51,6 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
         // Starts chain of events that invokes onSidebarModesUpdates() of this class to handle setup of all view elements
         configModel.addConfigListener(this);
 
-
-        // this.rootStack = new StackPane();
-        // rootStack.getChildren().add(root);
 
         // Scene scene = new Scene(root);
         Scene scene = new Scene(rootStack);
@@ -84,6 +83,12 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
         Font.loadFont(getClass().getResource("/fonts/Montserrat-MediumItalic.ttf").toExternalForm(), -1);
         Font.loadFont(getClass().getResource("/fonts/Montserrat-Italic.ttf").toExternalForm(), -1);
         Font.loadFont(getClass().getResource("/fonts/Montserrat-SemiBoldItalic.ttf").toExternalForm(), -1);
+
+
+        Font.loadFont(getClass().getResource("/fonts/NotoSansJP-Light.ttf").toExternalForm(), -1);
+        Font.loadFont(getClass().getResource("/fonts/NotoSansJP-Medium.ttf").toExternalForm(), -1);
+        Font.loadFont(getClass().getResource("/fonts/NotoSansJP-Regular.ttf").toExternalForm(), -1);
+
 
 
 
@@ -177,7 +182,7 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
 
                     if (firstTimeStartup) {
                         darkenWindow(darkBackground, 0.0, () -> {
-                            AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController); // TODO Give anime grid initial filters
+                            AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController, languagePreference); // TODO Give anime grid initial filters
                             Region gridView = animeGridView.createGridView();
                             currentLazyLoaderView = null;
 
@@ -190,7 +195,7 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
                         });
                     } else {
                         darkenWindow(darkBackground, 0.8, () -> {
-                            AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController); // TODO Give anime grid initial filters
+                            AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController, languagePreference); // TODO Give anime grid initial filters
                             Region gridView = animeGridView.createGridView();
                             currentLazyLoaderView = null;
 
@@ -206,7 +211,7 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
                     firstTimeStartup = false;
 
                 } else {
-                    AnimeLogView animeLogView = new AnimeLogView(databaseController);
+                    AnimeLogView animeLogView = new AnimeLogView(databaseController, languagePreference);
                     Region gridView = animeLogView.createGridView();
                     currentLazyLoaderView = animeLogView;
 
@@ -223,7 +228,7 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
 
                     if (firstTimeStartup) {
                         darkenWindow(darkBackground, 0.0, () -> {
-                            AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController); // TODO Give anime grid initial filters
+                            AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController, languagePreference); // TODO Give anime grid initial filters
                             Region gridView = animeGridView.createGridView();
                             currentLazyLoaderView = null;
 
@@ -236,7 +241,7 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
                         });
                     } else {
                         darkenWindow(darkBackground, 0.8, () -> {
-                            AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController); // TODO Give anime grid initial filters
+                            AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController, languagePreference); // TODO Give anime grid initial filters
                             Region gridView = animeGridView.createGridView();
                             currentLazyLoaderView = null;
 
@@ -252,7 +257,7 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
                     firstTimeStartup = false;
 
                 } else {
-                    AnimeLogView animeLogView = new AnimeLogView(databaseController);
+                    AnimeLogView animeLogView = new AnimeLogView(databaseController, languagePreference);
                     Region gridView = animeLogView.createGridView();
                     currentLazyLoaderView = animeLogView;
 
@@ -269,7 +274,7 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
 
                     if (firstTimeStartup) {
                         darkenWindow(darkBackground, 0.0, () -> {
-                            AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController); // TODO Give anime grid initial filters
+                            AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController, languagePreference); // TODO Give anime grid initial filters
                             Region gridView = animeGridView.createGridView();
                             currentLazyLoaderView = null;
 
@@ -282,7 +287,7 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
                         });
                     } else {
                         darkenWindow(darkBackground, 0.8, () -> {
-                            AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController); // TODO Give anime grid initial filters
+                            AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController, languagePreference); // TODO Give anime grid initial filters
                             Region gridView = animeGridView.createGridView();
                             currentLazyLoaderView = null;
 
@@ -298,7 +303,7 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
                     firstTimeStartup = false;
 
                 } else {
-                    AnimeLogView animeLogView = new AnimeLogView(databaseController);
+                    AnimeLogView animeLogView = new AnimeLogView(databaseController, languagePreference);
                     Region gridView = animeLogView.createGridView();
                     currentLazyLoaderView = animeLogView;
 
@@ -311,12 +316,12 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
                 }
             }
             case "Profile" -> {
-                AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController);
+                AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController, languagePreference);
                 Region gridView = animeGridView.createGridView();
                 currentLazyLoaderView = null;
             }
             case "Settings" -> {
-                AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController);
+                AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController, languagePreference);
                 Region gridView = animeGridView.createGridView();
                 currentLazyLoaderView = null;
             }
@@ -405,6 +410,12 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
             // firstTimeStartup = false;
         }
         updateMainContent(mediaMode, browseMode);
+    }
+
+
+    @Override
+    public void onLanguagePreferenceUpdated(String language) {
+        this.languagePreference = language;
     }
 
 

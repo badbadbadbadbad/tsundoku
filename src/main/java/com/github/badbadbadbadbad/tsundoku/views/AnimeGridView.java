@@ -50,7 +50,7 @@ public class AnimeGridView implements PopupMakerView {
     private StackPane stackPane;
     private SmoothScroll smoothScroll;
 
-    private PaneFinder paneFinder;
+    // private PaneFinder paneFinder;
 
     private String searchMode = "SEASON";  // Changes between SEASON, TOP, and SEARCH depending on last mode selected (so pagination calls "current mode")
     private String searchString = "";
@@ -58,14 +58,17 @@ public class AnimeGridView implements PopupMakerView {
     private ChangeListener<Number> filtersWidthListener;
     private final BooleanProperty filtersHidden = new SimpleBooleanProperty(true);
     private boolean apiLock = false;
+    private String languagePreference;
 
 
-    public AnimeGridView(Stage stage, LoadingBarListener loadingBarListener, APIRequestListener apiRequestListener, GridFilterListener gridFilterListener, DatabaseRequestListener databaseRequestListener) {
+    public AnimeGridView(Stage stage, LoadingBarListener loadingBarListener, APIRequestListener apiRequestListener,
+                         GridFilterListener gridFilterListener, DatabaseRequestListener databaseRequestListener, String languagePreference) {
         this.stage = stage;
         this.loadingBarListener = loadingBarListener;
         this.apiRequestListener = apiRequestListener;
         this.gridFilterListener = gridFilterListener;
         this.databaseRequestListener = databaseRequestListener;
+        this.languagePreference = languagePreference;
     }
 
 
@@ -498,7 +501,7 @@ public class AnimeGridView implements PopupMakerView {
         reloadAnimeGridAsync(animeListInfo.getAnimeList()).join();
 
         // Invoke paneFinder on the pane
-        this.paneFinder = new PaneFinder(new ArrayList<>(List.of(animeGrid)));
+        // this.paneFinder = new PaneFinder(new ArrayList<>(List.of(animeGrid)));
 
         // Change grid column amount based on window width
         Screen screen = Screen.getPrimary();
@@ -890,8 +893,25 @@ public class AnimeGridView implements PopupMakerView {
         animeBox.setClip(clip);
 
 
+        Label testLabel = new Label();
+
         // Label with anime name to be shown on animeBox hover
-        Label testLabel = new Label(anime.getTitle());
+        // Change title depending on language preference
+        String title = anime.getTitle();
+        if (languagePreference.equals("JP") && !anime.getTitleJapanese().equals("Not yet provided")) {
+            title = anime.getTitleJapanese();
+            testLabel.getStyleClass().add("grid-media-box-text-jp");
+        } else if (languagePreference.equals("EN") && !anime.getTitleEnglish().equals("Not yet provided")) {
+            title = anime.getTitleEnglish();
+            testLabel.getStyleClass().add("grid-media-box-text-en");
+        } else {
+            testLabel.getStyleClass().add("grid-media-box-text-en");
+        }
+
+
+        testLabel.setText(title);
+
+        // Label testLabel = new Label(title);
         testLabel.setAlignment(Pos.CENTER);
         testLabel.getStyleClass().add("grid-media-box-text");
         testLabel.setOpacity(0.0); // Seperate out to allow for fade animation
@@ -1003,7 +1023,7 @@ public class AnimeGridView implements PopupMakerView {
         HBox.setHgrow(darkBackground, Priority.ALWAYS);
 
         // The actual popup
-        AnimePopupView animePopupView = new AnimePopupView(parentBox, this, anime, databaseRequestListener, darkBackground);
+        AnimePopupView animePopupView = new AnimePopupView(parentBox, this, anime, databaseRequestListener, darkBackground, languagePreference);
         VBox popupBox = animePopupView.createPopup();
 
         // Initially transparent for fade-in effect
