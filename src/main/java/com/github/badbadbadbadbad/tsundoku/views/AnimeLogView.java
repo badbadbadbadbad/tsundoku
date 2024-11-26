@@ -153,8 +153,14 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         searchBar.textProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue.matches("[\\p{IsHan}\\p{IsHiragana}\\p{IsKatakana}\\p{Alnum} ]*")) {
                 this.searchString = newValue;
+
                 scrollPane.setVvalue(0);
                 smoothScroll.resetAccumulatedVValue();
+
+                if (lazyLoader != null) {
+                    lazyLoader.unloadVisible();
+                }
+
                 onFiltersChanged();
             } else {
                 searchBar.setText(oldValue);
@@ -237,15 +243,27 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         if (labelText.equals("Personal status")) {
             comboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
                 personalStatusFilter = newVal;
+
                 scrollPane.setVvalue(0);
                 smoothScroll.resetAccumulatedVValue();
+
+                if (lazyLoader != null) {
+                    lazyLoader.unloadVisible();
+                }
+
                 onFiltersChanged();
             });
         } else if (labelText.equals("Status")) {
             comboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
                 releaseStatusFilter = newVal;
+
                 scrollPane.setVvalue(0);
                 smoothScroll.resetAccumulatedVValue();
+
+                if (lazyLoader != null) {
+                    lazyLoader.unloadVisible();
+                }
+
                 onFiltersChanged();
             });
         }
@@ -280,8 +298,14 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
                 } else if (labelText.equals("End year ≤")) {
                     this.endYearFilter = newValue;
                 }
+
                 scrollPane.setVvalue(0);
                 smoothScroll.resetAccumulatedVValue();
+
+                if (lazyLoader != null) {
+                    lazyLoader.unloadVisible();
+                }
+
                 onFiltersChanged();
 
             } else {
@@ -822,6 +846,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
 
     private void onFiltersChanged() {
+
         for (int i = 0; i < unfilteredAnimeLists.size(); i++) {
             List<VBox> currentGrid = unfilteredAnimeLists.get(i);
             ObservableList<VBox> filteredList = filteredAnimeLists.get(i);

@@ -100,6 +100,33 @@ public class LazyLoader {
         }
     }
 
+    public void unloadVisible() {
+
+        // Also stop any potential loading still going on right now
+        loaderPause.stop();
+        imagePause.stop();
+        if (batchImageUpdaterTimer != null) {
+            batchImageUpdaterTimer.stop();
+            pendingImageUpdates.clear();
+        }
+
+
+        while (firstVisibleIndex <= lastVisibleIndex) {
+            Pair<FlowGridPane, Integer> firstNodePair = paneFinder.findPaneAndChildIndex(firstVisibleIndex);
+
+            if (firstNodePair == null) {
+                return;
+            }
+
+            Node firstNode = firstNodePair.getKey().getChildren().get(firstNodePair.getValue());
+
+            makeItemInvisible(firstNode);
+            firstVisibleIndex++;
+
+
+        }
+    }
+
     public void updateVisibilityFull() {
         loaderPause.stop();
         imagePause.stop();
