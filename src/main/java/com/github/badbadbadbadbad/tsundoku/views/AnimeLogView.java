@@ -117,22 +117,18 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
         scrollPane.vvalueProperty().addListener((obs, oldValue, newValue) -> {
 
-            // Platform.runLater else the border starts as shown on scrollPane default position on full grid reload
+            // This is so the controls-bottom-border can't start showing if the pane scroll bar is fully vertical (no scrolling possible)
+            boolean canScroll = scrollPane.getContent().getBoundsInLocal().getHeight() > scrollPane.getViewportBounds().getHeight();
 
-            Platform.runLater(() -> {
-                // This is so the controls-bottom-border can't start showing if the pane scroll bar is fully vertical (no scrolling possible)
-                boolean canScroll = scrollPane.getContent().getBoundsInLocal().getHeight() > scrollPane.getViewportBounds().getHeight();
-
-                if (newValue.doubleValue() > 0.00001 && canScroll) {
-                    if (separator.getOpacity() == 0.0) {
-                        fadeIn.playFromStart();
-                    }
-                } else {
-                    if (separator.getOpacity() == 1.0) {
-                        fadeOut.playFromStart();
-                    }
+            if (newValue.doubleValue() > 0.00001 && canScroll) {
+                if (separator.getOpacity() == 0.0) {
+                    fadeIn.playFromStart();
                 }
-            });
+            } else {
+                if (separator.getOpacity() == 1.0) {
+                    fadeOut.playFromStart();
+                }
+            }
         });
 
 
