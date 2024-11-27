@@ -1,53 +1,5 @@
 @font-face {
-    src: url("../fonts/NotoSerifJP-Black.ttf");
-}
-
-@font-face {
     src: url("../fonts/NotoSerifJP-Bold.ttf");
-}
-
-@font-face {
-    src: url("../fonts/NotoSerifJP-ExtraBold.ttf");
-}
-
-@font-face {
-    src: url("../fonts/NotoSerifJP-ExtraLight.ttf");
-}
-
-@font-face {
-    src: url("../fonts/NotoSerifJP-Light.ttf");
-}
-
-@font-face {
-    src: url("../fonts/NotoSerifJP-Medium.ttf");
-}
-
-@font-face {
-    src: url("../fonts/NotoSerifJP-Regular.ttf");
-}
-
-@font-face {
-    src: url("../fonts/NotoSerifJP-SemiBold.ttf");
-}
-
-@font-face {
-    src: url("../fonts/Montserrat-Black.ttf"); /* "Montserrat Black */
-}
-
-@font-face {
-    src: url("../fonts/Montserrat-Bold.ttf");
-}
-
-@font-face {
-    src: url("../fonts/Montserrat-ExtraBold.ttf");
-}
-
-@font-face {
-    src: url("../fonts/Montserrat-ExtraLight.ttf");
-}
-
-@font-face {
-    src: url("../fonts/Montserrat-Light.ttf");
 }
 
 @font-face {
@@ -55,51 +7,7 @@
 }
 
 @font-face {
-    src: url("../fonts/Montserrat-Regular.ttf");
-}
-
-@font-face {
-    src: url("../fonts/Montserrat-SemiBold.ttf");
-}
-
-@font-face {
-    src: url("../fonts/Montserrat-BlackItalic.ttf"); /* "Montserrat Black Italic" */
-}
-
-@font-face {
-    src: url("../fonts/Montserrat-BoldItalic.ttf");
-}
-
-@font-face {
-    src: url("../fonts/Montserrat-ExtraBoldItalic.ttf");
-}
-
-@font-face {
-    src: url("../fonts/Montserrat-ExtraLightItalic.ttf");
-}
-
-@font-face {
-    src: url("../fonts/Montserrat-LightItalic.ttf");
-}
-
-@font-face {
-    src: url("../fonts/Montserrat-MediumItalic.ttf");
-}
-
-@font-face {
     src: url("../fonts/Montserrat-Italic.ttf");
-}
-
-@font-face {
-    src: url("../fonts/Montserrat-SemiBoldItalic.ttf");
-}
-
-@font-face {
-    src: url("../fonts/NotoSansJP-Light.ttf");
-}
-
-@font-face {
-    src: url("../fonts/NotoSansJP-Medium.ttf");
 }
 
 @font-face {
