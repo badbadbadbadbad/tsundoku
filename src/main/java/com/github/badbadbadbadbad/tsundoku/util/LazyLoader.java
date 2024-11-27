@@ -22,8 +22,6 @@ public class LazyLoader {
 
     private final ExecutorService imageLoaderExecutor = Executors.newFixedThreadPool(3);
     private AnimationTimer batchImageUpdaterTimer;
-
-    private final List<Future<?>> activeImageTasks = new ArrayList<>();
     private final ConcurrentLinkedQueue<Pair<Node, String>> pendingImageUpdates = new ConcurrentLinkedQueue<>();
 
     private final PaneFinder paneFinder;
@@ -33,7 +31,7 @@ public class LazyLoader {
     private int lastVisibleIndex;
 
     private final PauseTransition loaderPause = new PauseTransition(Duration.seconds(0.1));
-    private final PauseTransition imagePause = new PauseTransition(Duration.seconds(0.01));
+    private final PauseTransition imagePause = new PauseTransition(Duration.seconds(0.1));
 
     public LazyLoader(ScrollPane scrollPane, List<FlowGridPane> flowPanes) {
         this.scrollPane = scrollPane;
@@ -290,9 +288,6 @@ public class LazyLoader {
                 });
             }, imageLoaderExecutor);
 
-            synchronized (activeImageTasks) {
-                activeImageTasks.add(future);
-            }
         }
     }
 
