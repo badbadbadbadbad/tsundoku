@@ -8,6 +8,7 @@ import com.github.badbadbadbadbad.tsundoku.models.AnimeAPIModel;
 import com.github.badbadbadbadbad.tsundoku.models.ConfigModel;
 import com.github.badbadbadbadbad.tsundoku.models.DatabaseModel;
 import javafx.application.Application;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -34,6 +35,7 @@ public class TsundokuApplication extends Application {
         DatabaseController databaseController = new DatabaseController(databaseModel);
         this.viewsController = new ViewsController(stage, apiController, configController, configModel, databaseController);
 
+        stage.getIcons().add(new Image(getClass().getResourceAsStream("/assets/linux/tsundoku.png")));
         stage.setTitle("tsundoku.");
         stage.show();
     }
