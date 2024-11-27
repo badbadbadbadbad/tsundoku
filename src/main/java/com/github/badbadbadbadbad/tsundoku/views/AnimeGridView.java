@@ -9,7 +9,6 @@ import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeListInfo;
 import com.github.badbadbadbadbad.tsundoku.external.FlowGridPane;
 import com.github.badbadbadbadbad.tsundoku.external.SmoothScroll;
-import com.github.badbadbadbadbad.tsundoku.util.PaneFinder;
 import javafx.animation.*;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
@@ -50,7 +49,6 @@ public class AnimeGridView implements PopupMakerView {
     private StackPane stackPane;
     private SmoothScroll smoothScroll;
 
-    // private PaneFinder paneFinder;
 
     private String searchMode = "SEASON";  // Changes between SEASON, TOP, and SEARCH depending on last mode selected (so pagination calls "current mode")
     private String searchString = "";

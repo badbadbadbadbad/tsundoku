@@ -154,6 +154,7 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
                         Region gridView = animeGridView.createGridView();
                         currentLazyLoaderView = null;
 
+
                         if (root.getChildren().size() > 2) { // Content pane exists, remove it and add new one
                             root.getChildren().remove(2);
                         }
