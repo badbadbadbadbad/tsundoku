@@ -20,9 +20,6 @@ public class TsundokuApplication extends Application {
     @Override
     public void start(Stage stage) throws IOException {
 
-        // Disable bad text anti aliasing, program-wide. Unsure if we want to go this route.
-        // System.setProperty("prism.lcdtext", "false");
-
         // Make sure data folder for settings and database exist
         Initializer.init();
 
@@ -35,8 +32,15 @@ public class TsundokuApplication extends Application {
         DatabaseController databaseController = new DatabaseController(databaseModel);
         this.viewsController = new ViewsController(stage, apiController, configController, configModel, databaseController);
 
-        stage.getIcons().add(new Image(getClass().getResourceAsStream("/assets/linux/tsundoku.png")));
+        // Window top left icon(s)
+        stage.getIcons().add(
+                new Image(getClass().getResourceAsStream("/assets/linux/32.png"))
+        );
+
+        // Window top bar name
         stage.setTitle("tsundoku.");
+
+
         stage.show();
     }
 
