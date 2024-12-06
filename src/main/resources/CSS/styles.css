@@ -161,6 +161,13 @@
     -fx-background-color: -gold-highlight;
 }
 
+.separator-thin {
+    -fx-min-height: 1px;
+    -fx-pref-height: 1px;
+    -fx-max-height: 1px;
+    -fx-background-color: -gold-highlight;
+}
+
 .loading-seperator {
     -fx-min-width: 2px;
     -fx-pref-width: 2px;

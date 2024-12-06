@@ -2,12 +2,16 @@ package com.github.badbadbadbadbad.tsundoku.controllers;
 
 import com.github.badbadbadbadbad.tsundoku.models.ConfigModel;
 
-public class ConfigController implements GridFilterListener, SidebarListener {
+import java.util.Map;
+
+public class ConfigController implements GridFilterListener, SidebarListener, SettingsListener {
     private final ConfigModel configModel;
 
     public ConfigController(ConfigModel configModel) {
         this.configModel = configModel;
     }
+
+    public Map<String, Object> getCurrentSettings() {return configModel.getCurrentSettings();}
 
     @Override
     public void onSidebarMediaModeChanged(String mode) {
@@ -18,6 +22,9 @@ public class ConfigController implements GridFilterListener, SidebarListener {
     public void onSidebarBrowseModeChanged(String mode) {
         configModel.setSidebarBrowseMode(mode);
     }
+
+    @Override
+    public void onSettingsChanged(Map<String, Object> settings) {configModel.updateSettings();}
 
     @Override
     public void onAnimeOrderByChanged(String orderBy) {

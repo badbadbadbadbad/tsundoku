@@ -18,6 +18,7 @@ public class ConfigModel {
 
     private final List<ConfigListener> listeners = new ArrayList<>();
 
+
     private String igdbSecret;
     private String mangadexSecret;
 
@@ -113,6 +114,29 @@ public class ConfigModel {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+
+    public Map<String, Object> getCurrentSettings() {
+        Map<String, Object> settings = new HashMap<>();
+
+        settings.put("igdbSecret", this.igdbSecret);
+        settings.put("mangadexSecret", this.mangadexSecret);
+        settings.put("profiles", this.profiles);
+
+        // Deep copy of animeTypeFilters and animeRatingFilters. They are mutable otherwise.
+        settings.put("animeTypeFilters", new HashMap<>(this.animeTypeFilters));
+        settings.put("animeRatingFilters", new HashMap<>(this.animeRatingFilters));
+
+
+        settings.put("weebLanguagePreference", this.weebLanguagePreference);
+
+        return settings;
+    }
+
+
+    public void updateSettings() {
+
     }
 
 

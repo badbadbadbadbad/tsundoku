@@ -1,10 +1,7 @@
 package com.github.badbadbadbadbad.tsundoku.controllers;
 
 import com.github.badbadbadbadbad.tsundoku.models.ConfigModel;
-import com.github.badbadbadbadbad.tsundoku.views.AnimeGridView;
-import com.github.badbadbadbadbad.tsundoku.views.AnimeLogView;
-import com.github.badbadbadbadbad.tsundoku.views.LazyLoaderView;
-import com.github.badbadbadbadbad.tsundoku.views.SidebarView;
+import com.github.badbadbadbadbad.tsundoku.views.*;
 import javafx.animation.*;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
@@ -15,6 +12,8 @@ import javafx.scene.text.Font;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+
+import java.util.Map;
 
 
 public class ViewsController implements LoadingBarListener, ConfigListener {
@@ -290,9 +289,25 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
                 currentLazyLoaderView = null;
             }
             case "Settings" -> {
-                AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController, languagePreference);
-                Region gridView = animeGridView.createGridView();
+
+                // Get current settings
+                Map<String, Object> currentSettings = configController.getCurrentSettings();
+
+                SettingsView settingsView = new SettingsView(configController, currentSettings);
+                Region settingsViewRegion = settingsView.createSettingsView();
+
+                // AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController, languagePreference);
+                // Region gridView = animeGridView.createGridView();
+
+
                 currentLazyLoaderView = null;
+
+                if (root.getChildren().size() > 2) { // Content pane exists, remove it and add new one
+                    root.getChildren().remove(2);
+                }
+                root.getChildren().add(settingsViewRegion);
+
+                firstTimeStartup = false;
             }
         }
     }
