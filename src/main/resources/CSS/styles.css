@@ -746,6 +746,75 @@
 }
 
 
+/* ************************************* */
+/* Settings view */
+/* ************************************* */
+.settings-header-text {
+    -fx-font-family: "Montserrat Medium";
+    -fx-text-alignment: center;
+    -fx-text-fill: white;
+    -fx-font-size: 25;
+}
+
+.settings-description-text {
+    -fx-font-family: "Montserrat Medium";
+    -fx-text-alignment: left;
+    -fx-text-fill: white;
+    -fx-font-size: 14;
+    -fx-wrap-text: true;
+}
+
+.settings-combo-box {
+    -fx-font-family: "Montserrat Medium";
+    -fx-font-size: 16px;
+    -fx-background-color: -popup-input-color;
+    -fx-pref-height: 35px;
+    -fx-min-width: 250;
+    -fx-max-width: 250;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+}
+
+.settings-combo-box .text-input {
+    -fx-background-color: -popup-input-color;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+}
+
+.settings-combo-box .combo-box-popup {
+    -fx-background-color: -popup-input-color;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+}
+
+.settings-combo-box .combo-box-popup .list-view {
+    -fx-background-color: -popup-input-color;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+    -fx-background-insets: 3 0 0 0;
+    -fx-padding: 3 0 0 0;
+}
+
+.settings-combo-box .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-pref-height: 35px;
+    -fx-padding: 5 10 5 10;
+}
+
+.settings-combo-box .list-cell:hover {
+    -fx-background-color: -popup-input-hover-color;
+    -fx-text-fill: white;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+}
+
+.settings-combo-box .arrow-button .arrow {
+    -fx-background-color: white;
+}
+
+
+
 /* Spinner stuff */
 /* Not sure if we'll be using spinners? */
 /*

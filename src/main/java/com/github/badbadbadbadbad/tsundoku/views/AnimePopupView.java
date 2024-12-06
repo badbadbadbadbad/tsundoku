@@ -101,10 +101,10 @@ public class AnimePopupView {
         // Label with anime name to be shown on animeBox hover
         // Change title depending on language preference
         String title = anime.getTitle();
-        if (languagePreference.equals("JP") && !anime.getTitleJapanese().equals("Not yet provided")) {
+        if (languagePreference.equals("Japanese") && !anime.getTitleJapanese().equals("Not yet provided")) {
             title = anime.getTitleJapanese();
             titleLabel.setFont(Font.font("Noto Sans JP Regular", 30.0));
-        } else if (languagePreference.equals("EN") && !anime.getTitleEnglish().equals("Not yet provided")) {
+        } else if (languagePreference.equals("English") && !anime.getTitleEnglish().equals("Not yet provided")) {
             title = anime.getTitleEnglish();
             titleLabel.setFont(Font.font("Montserrat Medium", 30.0));
         } else {

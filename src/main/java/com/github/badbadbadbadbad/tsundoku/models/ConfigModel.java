@@ -135,8 +135,16 @@ public class ConfigModel {
     }
 
 
-    public void updateSettings() {
+    public void updateSettings(Map<String, Object> settings) {
+        // Update internal settings values
+        this.weebLanguagePreference = (String) settings.get("weebLanguagePreference");
 
+        // Save to file
+        saveConfigFile();
+
+        // Pass new settings to listeners
+        notifyListenersAPIChange();
+        notifyListenersLanguageChange();
     }
 
 

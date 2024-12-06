@@ -896,10 +896,10 @@ public class AnimeGridView implements PopupMakerView {
         // Label with anime name to be shown on animeBox hover
         // Change title depending on language preference
         String title = anime.getTitle();
-        if (languagePreference.equals("JP") && !anime.getTitleJapanese().equals("Not yet provided")) {
+        if (languagePreference.equals("Japanese") && !anime.getTitleJapanese().equals("Not yet provided")) {
             title = anime.getTitleJapanese();
             testLabel.getStyleClass().add("grid-media-box-text-jp");
-        } else if (languagePreference.equals("EN") && !anime.getTitleEnglish().equals("Not yet provided")) {
+        } else if (languagePreference.equals("English") && !anime.getTitleEnglish().equals("Not yet provided")) {
             title = anime.getTitleEnglish();
             testLabel.getStyleClass().add("grid-media-box-text-en");
         } else {

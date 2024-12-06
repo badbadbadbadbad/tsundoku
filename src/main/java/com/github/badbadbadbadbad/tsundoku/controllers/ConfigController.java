@@ -24,7 +24,7 @@ public class ConfigController implements GridFilterListener, SidebarListener, Se
     }
 
     @Override
-    public void onSettingsChanged(Map<String, Object> settings) {configModel.updateSettings();}
+    public void onSettingsChanged(Map<String, Object> settings) {configModel.updateSettings(settings);}
 
     @Override
     public void onAnimeOrderByChanged(String orderBy) {

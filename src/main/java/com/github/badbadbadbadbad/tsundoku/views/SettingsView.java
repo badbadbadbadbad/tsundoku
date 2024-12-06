@@ -1,46 +1,35 @@
 package com.github.badbadbadbadbad.tsundoku.views;
 
 import com.github.badbadbadbadbad.tsundoku.controllers.*;
-import com.github.badbadbadbadbad.tsundoku.external.FlowGridPane;
 import com.github.badbadbadbadbad.tsundoku.external.SmoothScroll;
-import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
-import com.github.badbadbadbadbad.tsundoku.models.AnimeListInfo;
 import javafx.animation.*;
-import javafx.application.Platform;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.value.ChangeListener;
-import javafx.geometry.Bounds;
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
-import javafx.scene.Parent;
 import javafx.scene.control.*;
-import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
-import javafx.scene.shape.Rectangle;
-import javafx.stage.Screen;
-import javafx.stage.Stage;
 import javafx.util.Duration;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 public class SettingsView {
 
     private final SettingsListener settingsListener;
 
+    private boolean firstSettingsItemCreated;
+
     private ScrollPane scrollPane;
     private SmoothScroll smoothScroll;
+    private Button saveButton;
 
-    private String languagePreference;
+    private Map<String, Object> settings;
 
 
     public SettingsView(SettingsListener settingsListener, Map<String, Object> currentSettings) {
         this.settingsListener = settingsListener;
+
+        this.settings = currentSettings;
+
+        this.firstSettingsItemCreated = false;
     }
 
 
@@ -97,9 +86,9 @@ public class SettingsView {
         saveButtonWrapper.setMaxWidth(Double.MAX_VALUE);
 
 
-        saveButtonWrapper.setStyle("-fx-padding: 10 10 10 0; -fx-min-height: 55; -fx-max-height: 55;");
+        saveButtonWrapper.setStyle("-fx-padding: 15 15 15 15; -fx-min-height: 65; -fx-max-height: 65;");
 
-        Button saveButton = new Button("Save");
+        this.saveButton = new Button("Save");
         saveButtonWrapper.setAlignment(Pos.CENTER_RIGHT);
         saveButton.getStyleClass().add("controls-button");
 
@@ -113,8 +102,10 @@ public class SettingsView {
             // Disable after save (is re-enabled on any settings change)
             saveButton.setDisable(true);
 
+            // Bundle settings
+
             // Fire new settings towards configModel so it updates its states and passes the settings on
-            // settingsListener.onSettingsChanged();
+            settingsListener.onSettingsChanged(settings);
 
         });
 
@@ -122,10 +113,28 @@ public class SettingsView {
         return saveButtonWrapper;
     }
 
+
     private ScrollPane createScrollableSettings() {
 
         VBox wrapper = new VBox();
         wrapper.setMaxWidth(Double.MAX_VALUE);
+        wrapper.setStyle("-fx-padding: 15 10 0 10;");
+
+
+        // Language preference
+        VBox languagePreferenceSetting = makeSingleInputComboboxSetting(
+                "Title Language Preference",
+                "The language used for titles of anime and manga, if provided. \"Default\" will generally mean the Japanese title in Roumaji.",
+                List.of("Default", "Japanese", "English"),
+                (String) this.settings.get("weebLanguagePreference")
+        );
+
+        ComboBox<String> comboBox = (ComboBox<String>) ((HBox) languagePreferenceSetting.getChildren().get(1)).getChildren().get(1);
+        comboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+            this.settings.put("weebLanguagePreference", newValue);
+            this.saveButton.setDisable(false);
+        });
+
 
         ScrollPane scrollPane = new ScrollPane(wrapper);
         scrollPane.getStyleClass().add("grid-scroll-pane");
@@ -133,6 +142,89 @@ public class SettingsView {
 
         this.smoothScroll = new SmoothScroll(scrollPane, wrapper);
 
+
+        wrapper.getChildren().addAll(languagePreferenceSetting);
+
         return scrollPane;
+    }
+
+
+    private VBox makeSingleInputComboboxSetting(String headerText, String descriptionText, List<String> comboBoxItems, String defaultSelectedItem) {
+        VBox wrapper = new VBox(5);
+        wrapper.setMaxWidth(Double.MAX_VALUE);
+        wrapper.setStyle("-fx-padding: 0 0 10 0;");
+
+
+        // Separator between settings boxes. Each box gets a top separator.
+        // Except for the very first one, which makes all settings have a separator towards other settings.
+        if (firstSettingsItemCreated) {
+            Region separator = new Region();
+            separator.getStyleClass().add("separator-thin");
+
+            wrapper.getChildren().add(separator);
+        }
+
+
+        // Settings item header
+        Label headerLabel = new Label(headerText);
+        headerLabel.getStyleClass().add("settings-header-text");
+        headerLabel.setMaxWidth(Double.MAX_VALUE);
+        VBox.setVgrow(headerLabel, Priority.NEVER);
+
+        // Settings item content wrapper
+        HBox subWrapper = new HBox(20);
+        subWrapper.setMaxWidth(Double.MAX_VALUE);
+
+        // Settings item content, left: Description
+        Label descriptionLabel = new Label(descriptionText);
+        descriptionLabel.getStyleClass().add("settings-description-text");
+        HBox.setHgrow(descriptionLabel, Priority.ALWAYS);
+
+        // Settings item content, right: Settings input
+        ComboBox<String> comboBox = new ComboBox<>();
+        comboBox.getStyleClass().add("settings-combo-box");
+        comboBox.getItems().addAll(comboBoxItems);
+        comboBox.setValue(defaultSelectedItem);
+
+
+        subWrapper.getChildren().addAll(descriptionLabel, comboBox);
+
+
+        wrapper.getChildren().addAll(headerLabel, subWrapper);
+
+        this.firstSettingsItemCreated = true;
+        return wrapper;
+    }
+
+
+    private VBox makeMultiInputComboxboxSetting() {
+        VBox wrapper = new VBox();
+        wrapper.setMaxWidth(Double.MAX_VALUE);
+
+        if (firstSettingsItemCreated) {
+            Region separator = new Region();
+            separator.getStyleClass().add("separator-thin");
+
+            wrapper.getChildren().add(separator);
+        }
+
+        this.firstSettingsItemCreated = true;
+        return wrapper;
+    }
+
+
+    private VBox makeTextInputComboboxSetting() {
+        VBox wrapper = new VBox();
+        wrapper.setMaxWidth(Double.MAX_VALUE);
+
+        if (firstSettingsItemCreated) {
+            Region separator = new Region();
+            separator.getStyleClass().add("separator-thin");
+
+            wrapper.getChildren().add(separator);
+        }
+
+        this.firstSettingsItemCreated = true;
+        return wrapper;
     }
 }

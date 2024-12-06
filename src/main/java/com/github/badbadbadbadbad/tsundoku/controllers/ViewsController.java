@@ -296,9 +296,6 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
                 SettingsView settingsView = new SettingsView(configController, currentSettings);
                 Region settingsViewRegion = settingsView.createSettingsView();
 
-                // AnimeGridView animeGridView = new AnimeGridView(stage, this, apiController, configController, databaseController, languagePreference);
-                // Region gridView = animeGridView.createGridView();
-
 
                 currentLazyLoaderView = null;
 
