@@ -112,6 +112,10 @@
     -fx-background-insets: 0 0 0 0;
 }
 
+.combo-box:hover {
+    -fx-background-color: -popup-input-hover-color;
+}
+
 .text-field{
     -fx-focus-color: transparent;
     -fx-faint-focus-color: transparent;
@@ -812,6 +816,57 @@
 .settings-combo-box .arrow-button .arrow {
     -fx-background-color: white;
 }
+
+
+.settings-multi-combo-box {
+    -fx-font-family: "Montserrat Medium";
+    -fx-font-size: 16px;
+    -fx-background-color: -popup-input-color;
+    -fx-pref-height: 35px;
+    -fx-min-width: 250;
+    -fx-max-width: 250;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+    -fx-label-padding: 0 10 0 10;
+}
+
+.settings-multi-combo-box:hover {
+    -fx-background-color: -popup-input-hover-color;
+}
+
+.settings-multi-combo-box-popup {
+    -fx-background-color: -popup-input-color;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+    -fx-min-width: 250;
+    -fx-max-width: 250;
+}
+
+
+.settings-multi-combo-box-popup-cell {
+    -fx-background-color: transparent;
+    -fx-alignment: center-left;
+    -fx-pref-height: 35px;
+    -fx-padding: 5 10 5 10;
+}
+
+.settings-multi-combo-box-popup-cell:hover {
+    -fx-background-color: -popup-input-hover-color;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+}
+
+
+.settings-multi-combo-box-popup-cell-checkbox {
+    -fx-focus-traversable: false;
+}
+
+.settings-multi-combo-box-popup-cell-text {
+    -fx-font-family: "Montserrat Medium";
+    -fx-font-size: 16px;
+    -fx-text-fill: white;
+}
+
 
 
 

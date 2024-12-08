@@ -138,6 +138,8 @@ public class ConfigModel {
     public void updateSettings(Map<String, Object> settings) {
         // Update internal settings values
         this.weebLanguagePreference = (String) settings.get("weebLanguagePreference");
+        this.animeRatingFilters = (Map<String, Boolean>) settings.get("animeRatingFilters");
+        this.animeTypeFilters = (Map<String, Boolean>) settings.get("animeTypeFilters");
 
         // Save to file
         saveConfigFile();

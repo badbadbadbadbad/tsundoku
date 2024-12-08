@@ -3,13 +3,28 @@ package com.github.badbadbadbadbad.tsundoku.views;
 import com.github.badbadbadbadbad.tsundoku.controllers.*;
 import com.github.badbadbadbadbad.tsundoku.external.SmoothScroll;
 import javafx.animation.*;
+import javafx.application.Platform;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
+import javafx.geometry.Bounds;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.stage.Popup;
 import javafx.util.Duration;
+import org.controlsfx.control.CheckComboBox;
+import org.controlsfx.control.decoration.Decorator;
+import org.controlsfx.control.decoration.StyleClassDecoration;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class SettingsView {
 
@@ -89,7 +104,7 @@ public class SettingsView {
         saveButtonWrapper.setStyle("-fx-padding: 15 15 15 15; -fx-min-height: 65; -fx-max-height: 65;");
 
         this.saveButton = new Button("Save");
-        saveButtonWrapper.setAlignment(Pos.CENTER_RIGHT);
+        saveButtonWrapper.setAlignment(Pos.CENTER_LEFT);
         saveButton.getStyleClass().add("controls-button");
 
 
@@ -102,11 +117,8 @@ public class SettingsView {
             // Disable after save (is re-enabled on any settings change)
             saveButton.setDisable(true);
 
-            // Bundle settings
-
             // Fire new settings towards configModel so it updates its states and passes the settings on
             settingsListener.onSettingsChanged(settings);
-
         });
 
         saveButtonWrapper.getChildren().add(saveButton);
@@ -123,8 +135,8 @@ public class SettingsView {
 
         // Language preference
         VBox languagePreferenceSetting = makeSingleInputComboboxSetting(
-                "Title Language Preference",
-                "The language used for titles of anime and manga, if provided. \"Default\" will generally mean the Japanese title in Roumaji.",
+                "Title Language",
+                "The language used for titles of anime and manga, if provided. \"Default\" will generally mean the Japanese title in Roumaji, though this may vary.",
                 List.of("Default", "Japanese", "English"),
                 (String) this.settings.get("weebLanguagePreference")
         );
@@ -136,6 +148,26 @@ public class SettingsView {
         });
 
 
+        // Anime rating filters
+        VBox animeRatingFilterSetting = makeMultiInputComboboxSetting(
+                "Anime: Age Ratings",
+                "Only anime with the chosen age ratings (using the MyAnimeList system) will be displayed. This setting activates exclusively on the Browse view.",
+                "animeRatingFilters",
+                Arrays.asList("G", "PG", "PG13", "R17+", "R+", "Rx", "Not yet provided")
+        );
+
+
+        // Anime type filters
+        VBox animeTypeFilterSetting = makeMultiInputComboboxSetting(
+                "Anime: Types",
+                "Only anime of the chosen types (using the MyAnimeList system) will be displayed. This setting activates exclusively on the Browse view.",
+                "animeTypeFilters",
+                Arrays.asList("TV", "Movie", "OVA", "ONA", "Special", "TV Special", "PV", "CM", "Music", "Not yet provided")
+        );
+
+
+
+
         ScrollPane scrollPane = new ScrollPane(wrapper);
         scrollPane.getStyleClass().add("grid-scroll-pane");
         VBox.setVgrow(scrollPane, Priority.ALWAYS);
@@ -143,7 +175,7 @@ public class SettingsView {
         this.smoothScroll = new SmoothScroll(scrollPane, wrapper);
 
 
-        wrapper.getChildren().addAll(languagePreferenceSetting);
+        wrapper.getChildren().addAll(languagePreferenceSetting, animeRatingFilterSetting, animeTypeFilterSetting);
 
         return scrollPane;
     }
@@ -187,6 +219,7 @@ public class SettingsView {
         comboBox.setValue(defaultSelectedItem);
 
 
+
         subWrapper.getChildren().addAll(descriptionLabel, comboBox);
 
 
@@ -197,20 +230,121 @@ public class SettingsView {
     }
 
 
-    private VBox makeMultiInputComboxboxSetting() {
-        VBox wrapper = new VBox();
-        wrapper.setMaxWidth(Double.MAX_VALUE);
+    private VBox makeMultiInputComboboxSetting(String headerText, String descriptionText, String settingsMapName, List<String> desiredOrder) {
 
+        VBox wrapper = new VBox(5);
+        wrapper.setMaxWidth(Double.MAX_VALUE);
+        wrapper.setStyle("-fx-padding: 0 0 10 0;");
+
+        // Separator between settings boxes
         if (firstSettingsItemCreated) {
             Region separator = new Region();
             separator.getStyleClass().add("separator-thin");
-
             wrapper.getChildren().add(separator);
         }
+
+        // Settings item header
+        Label headerLabel = new Label(headerText);
+        headerLabel.getStyleClass().add("settings-header-text");
+        headerLabel.setMaxWidth(Double.MAX_VALUE);
+        VBox.setVgrow(headerLabel, Priority.NEVER);
+
+        // Settings item content wrapper
+        HBox subWrapper = new HBox(20);
+        subWrapper.setMaxWidth(Double.MAX_VALUE);
+
+        // Settings item content, left: Description
+        Label descriptionLabel = new Label(descriptionText);
+        descriptionLabel.getStyleClass().add("settings-description-text");
+        HBox.setHgrow(descriptionLabel, Priority.ALWAYS);
+
+        Map<String, Boolean> settingsMap = (Map<String, Boolean>) this.settings.get(settingsMapName);
+
+        // The actual setting. "Fake combo box".
+        Label selectionLabel = new Label();
+        selectionLabel.getStyleClass().add("settings-multi-combo-box");
+
+        // Display the currently selected items from the fake popup (in provided order)
+        Runnable updateLabel = () -> {
+            String selectedItems = desiredOrder.stream()
+                    .filter(key -> settingsMap.getOrDefault(key, false))
+                    .collect(Collectors.joining(", "));
+            selectionLabel.setText(selectedItems.isEmpty() ? "None" : selectedItems);
+        };
+        updateLabel.run();
+
+
+        // Listener for changes in the settings map
+        settingsMap.forEach((key, value) -> {
+            BooleanProperty prop = new SimpleBooleanProperty(value);
+            prop.addListener((obs, wasSelected, isSelected) -> {
+                settingsMap.put(key, isSelected);
+                updateLabel.run();
+            });
+        });
+
+        // The fake "combo box dropdown", a popup. Hides / unhides as expected from a combo box.
+        Popup popup = new Popup();
+        popup.setAutoHide(true);
+        popup.setHideOnEscape(true);
+        popup.getContent().add(createPopupContent(settingsMap, desiredOrder, updateLabel));
+
+        selectionLabel.setOnMouseClicked(event -> {
+            if (popup.isShowing()) {
+                popup.hide();
+            } else {
+                Bounds bounds = selectionLabel.localToScreen(selectionLabel.getBoundsInLocal());
+                double popupX = bounds.getMinX();
+                double popupY = bounds.getMinY() + 38; // 38 pixels is label size + offset of 3, same as normal combo box
+
+                popup.show(selectionLabel, popupX, popupY);
+            }
+        });
+
+        subWrapper.getChildren().addAll(descriptionLabel, selectionLabel);
+        wrapper.getChildren().addAll(headerLabel, subWrapper);
 
         this.firstSettingsItemCreated = true;
         return wrapper;
     }
+
+
+    private VBox createPopupContent(Map<String, Boolean> settingsMap, List<String> desiredOrder, Runnable updateLabel) {
+        VBox popupContent = new VBox();
+        popupContent.getStyleClass().add("settings-multi-combo-box-popup");
+
+        for (String key : desiredOrder) {
+            Boolean value = settingsMap.getOrDefault(key, false);
+
+            HBox itemBox = new HBox(10);
+            itemBox.setMaxWidth(Double.MAX_VALUE);
+            itemBox.getStyleClass().add("settings-multi-combo-box-popup-cell");
+
+            CheckBox checkBox = new CheckBox();
+            checkBox.getStyleClass().add("settings-multi-combo-box-popup-cell-checkbox");
+            checkBox.setSelected(value);
+            checkBox.setMouseTransparent(true);
+            checkBox.selectedProperty().addListener((obs, wasSelected, isSelected) -> {
+                settingsMap.put(key, isSelected);
+                updateLabel.run();
+                this.saveButton.setDisable(false);
+            });
+
+            itemBox.setOnMouseClicked(event -> {
+                checkBox.setSelected(!checkBox.isSelected());
+            });
+
+            Label nameLabel = new Label(key);
+            nameLabel.getStyleClass().add("settings-multi-combo-box-popup-cell-text");
+            HBox.setHgrow(nameLabel, Priority.ALWAYS);
+
+            itemBox.getChildren().addAll(checkBox, nameLabel);
+            popupContent.getChildren().add(itemBox);
+        }
+
+        return popupContent;
+    }
+
 
 
     private VBox makeTextInputComboboxSetting() {
