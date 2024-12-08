@@ -79,11 +79,13 @@ public class SettingsView {
             // This is so the controls-bottom-border can't start showing if the pane scroll bar is fully vertical (no scrolling possible)
             boolean canScroll = scrollPane.getContent().getBoundsInLocal().getHeight() > scrollPane.getViewportBounds().getHeight();
             if (newValue.doubleValue() < 0.99 && canScroll) {
-                if (separator.getOpacity() == 0.0) {
+                if (separator.getOpacity() == 0.0 || fadeOut.getStatus() == Animation.Status.RUNNING) {
+                    fadeOut.stop();
                     fadeIn.playFromStart();
                 }
             } else {
-                if (separator.getOpacity() == 1.0) {
+                if (separator.getOpacity() == 1.0 || fadeIn.getStatus() == Animation.Status.RUNNING) {
+                    fadeIn.stop();
                     fadeOut.playFromStart();
                 }
             }

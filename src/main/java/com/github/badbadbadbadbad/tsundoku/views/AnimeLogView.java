@@ -123,11 +123,13 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
             boolean canScroll = scrollPane.getContent().getBoundsInLocal().getHeight() > scrollPane.getViewportBounds().getHeight();
 
             if (newValue.doubleValue() > 0.00001 && canScroll) {
-                if (separator.getOpacity() == 0.0) {
+                if (separator.getOpacity() == 0.0 || fadeOut.getStatus() == Animation.Status.RUNNING) {
+                    fadeOut.stop();
                     fadeIn.playFromStart();
                 }
             } else {
-                if (separator.getOpacity() == 1.0) {
+                if (separator.getOpacity() == 1.0 || fadeIn.getStatus() == Animation.Status.RUNNING) {
+                    fadeIn.stop();
                     fadeOut.playFromStart();
                 }
             }
