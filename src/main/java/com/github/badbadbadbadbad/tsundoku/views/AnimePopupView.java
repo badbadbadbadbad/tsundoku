@@ -451,6 +451,14 @@ public class AnimePopupView {
         metaInfo.getColumnConstraints().addAll(col1, col2, col3);
 
 
+        RowConstraints row1 = new RowConstraints();
+        row1.setPercentHeight(50);
+        RowConstraints row2 = new RowConstraints();
+        row2.setPercentHeight(50);
+
+
+
+
         BiFunction<String, String, VBox> createPropertyBox = (labelText, contentText) -> {
 
             Label label = new Label(labelText);
@@ -467,7 +475,16 @@ public class AnimePopupView {
                 if (newWidth.doubleValue() > 0) {
                     adjustFontSizeToContainer(content, newWidth.doubleValue(), 5);
                 }
+
+                double newFontSize = content.getFont().getSize();
+                if (newFontSize <= 8) {
+                    wrapper.setSpacing(6);
+                } else if (newFontSize <= 13) {
+                    wrapper.setSpacing(5);
+                }
             });
+
+
 
 
             return wrapper;
