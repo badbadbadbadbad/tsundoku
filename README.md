@@ -6,9 +6,10 @@
 
 Track your backlog across different types of media.
 
+
 <p align="middle">
-   <img src="/src/main/resources/assets/github/01.png" width="45%" style="margin: 0 10px;">
-   <img src="/src/main/resources/assets/github/02.png" width="45%" style="margin: 0 10px;">
+   <img src="/src/main/resources/assets/github/01.png" width="49%">
+   <img src="/src/main/resources/assets/github/02.png" width="49%">
 </p>
 
 ## Features
