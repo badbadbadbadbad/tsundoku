@@ -6,7 +6,7 @@
 
     <groupId>com.github.badbadbadbadbad</groupId>
     <artifactId>tsundoku</artifactId>
-    <version>1.0-ALPHA</version>
+    <version>0.0-BETA</version>
     <name>tsundoku</name>
 
     <properties>
@@ -146,7 +146,7 @@
                             <assetsDir>/home/bad/repos/tsundoku/src/main/resources/assets</assetsDir>
                             <platform>linux</platform>
                             <linuxConfig>
-                                <pngFile>src/main/resources/assets/windows/256.png</pngFile>
+                                <pngFile>src/main/resources/assets/linux/256.png</pngFile>
                                 <generateDeb>false</generateDeb>
                                 <generateRpm>false</generateRpm>
                             </linuxConfig>

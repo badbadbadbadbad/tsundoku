@@ -1082,6 +1082,8 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
 
     public void shutdownLazyLoader() {
-        lazyLoader.shutdownImageLoaderExecutor();
+        if (lazyLoader != null) {
+            lazyLoader.shutdownImageLoaderExecutor();
+        }
     }
 }

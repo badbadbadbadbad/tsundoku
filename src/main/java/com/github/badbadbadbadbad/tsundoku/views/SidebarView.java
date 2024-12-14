@@ -76,7 +76,8 @@ public class SidebarView {
         Button settingsButton = createMediaModeButton("Settings");
 
         Collections.addAll(mediaModeButtons, gamesButton, mangaButton, animeButton, profileButton, settingsButton);
-        sidebar.getChildren().addAll(programLabel, separator, browseModeButtonBox, gamesButton, mangaButton, animeButton, stretchRegion, profileButton, settingsButton);
+        // sidebar.getChildren().addAll(programLabel, separator, browseModeButtonBox, gamesButton, mangaButton, animeButton, stretchRegion, profileButton, settingsButton);
+        sidebar.getChildren().addAll(programLabel, separator, browseModeButtonBox, animeButton, stretchRegion, settingsButton);
         return sidebar;
     }
 
