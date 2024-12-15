@@ -508,7 +508,14 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         });
 
         // Alphanumerical title sort
-        Comparator<AnimeInfo> byTitle = Comparator.comparing(AnimeInfo::getTitle);
+        Comparator<AnimeInfo> byTitle;
+        if (languagePreference.equals("Japanese")) {
+            byTitle = Comparator.comparing(AnimeInfo::getTitleJapanese);
+        } else if (languagePreference.equals("English")) {
+            byTitle = Comparator.comparing(AnimeInfo::getTitleEnglish);
+        } else {
+            byTitle = Comparator.comparing(AnimeInfo::getTitle);
+        }
 
         // Combine the two sorts
         Comparator<AnimeInfo> combinedComparator = byRating.thenComparing(byTitle);
