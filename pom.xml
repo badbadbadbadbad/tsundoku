@@ -80,8 +80,6 @@
             <artifactId>slf4j-simple</artifactId>
             <version>1.7.21</version>
         </dependency>
-
-
     </dependencies>
 
     <build>
@@ -143,7 +141,7 @@
                                 <vmArg>--add-modules=javafx.controls,javafx.fxml</vmArg>
                             </vmArgs>
                             <jdkPath>/home/bad/Desktop/jdk-21.0.4-linux</jdkPath>
-                            <assetsDir>/home/bad/repos/tsundoku/src/main/resources/assets</assetsDir>
+                            <assetsDir>src/main/resources/assets</assetsDir>
                             <platform>linux</platform>
                             <linuxConfig>
                                 <pngFile>src/main/resources/assets/linux/256.png</pngFile>
@@ -170,7 +168,7 @@
                                 <vmArg>--add-modules=javafx.controls,javafx.fxml</vmArg>
                             </vmArgs>
                             <jdkPath>/home/bad/Desktop/jdk-21.0.4-windows</jdkPath>
-                            <assetsDir>/home/bad/repos/tsundoku/src/main/resources/assets</assetsDir>
+                            <assetsDir>src/main/resources/assets</assetsDir>
                             <platform>windows</platform>
                             <winConfig>
                                 <exeCreationTool>launch4j</exeCreationTool>
