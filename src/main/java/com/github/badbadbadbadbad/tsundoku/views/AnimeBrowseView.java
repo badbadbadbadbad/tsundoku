@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 
-public class AnimeGridView implements PopupMakerView {
+public class AnimeBrowseView implements PopupMakerView {
 
     private final double RATIO = 318.0 / 225.0; // The aspect ratio to use for anime images. This doesn't match all exactly, but is close enough.
 
@@ -59,8 +59,8 @@ public class AnimeGridView implements PopupMakerView {
     private String languagePreference;
 
 
-    public AnimeGridView(Stage stage, LoadingBarListener loadingBarListener, APIRequestListener apiRequestListener,
-                         GridFilterListener gridFilterListener, DatabaseRequestListener databaseRequestListener, String languagePreference) {
+    public AnimeBrowseView(Stage stage, LoadingBarListener loadingBarListener, APIRequestListener apiRequestListener,
+                           GridFilterListener gridFilterListener, DatabaseRequestListener databaseRequestListener, String languagePreference) {
         this.stage = stage;
         this.loadingBarListener = loadingBarListener;
         this.apiRequestListener = apiRequestListener;
