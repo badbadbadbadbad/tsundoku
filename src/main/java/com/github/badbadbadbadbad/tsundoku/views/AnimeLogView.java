@@ -150,7 +150,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         // Search bar
         TextField searchBar = new TextField();
         searchBar.setId("search-bar");
-        searchBar.setPromptText("Enter anime name..");
+        searchBar.setPromptText("Enter anime title..");
         HBox.setHgrow(searchBar, Priority.ALWAYS);
 
         // Regex to allow only english alphanumeric, JP / CN / KR characters, and spaces

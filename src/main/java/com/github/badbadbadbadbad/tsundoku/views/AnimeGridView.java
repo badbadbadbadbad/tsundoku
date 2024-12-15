@@ -158,7 +158,7 @@ public class AnimeGridView implements PopupMakerView {
         // Search bar
         TextField searchBar = new TextField();
         searchBar.setId("search-bar");
-        searchBar.setPromptText("Enter search query..");
+        searchBar.setPromptText("Enter anime title..");
         HBox.setHgrow(searchBar, Priority.ALWAYS);
 
         // Regex to allow only english alphanumeric, JP / CN / KR characters, and spaces
