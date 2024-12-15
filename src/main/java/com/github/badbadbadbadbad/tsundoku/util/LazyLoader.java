@@ -183,9 +183,13 @@ public class LazyLoader {
         // Check upwards for new visible items
         int index = firstVisibleIndex - 1;
         while (index >= 0) {
+            
             Pair<FlowGridPane, Integer> nodePair = paneFinder.findPaneAndChildIndex(index);
-            Node node = nodePair.getKey().getChildren().get(nodePair.getValue());
+            if (nodePair == null) {
+                break;
+            }
 
+            Node node = nodePair.getKey().getChildren().get(nodePair.getValue());
             boolean inViewport = isItemInViewport(node, paneBounds);
 
             if (inViewport) {
@@ -201,10 +205,12 @@ public class LazyLoader {
         index = lastVisibleIndex + 1;
         while (index < paneFinder.getTotalItemCount()) {
             Pair<FlowGridPane, Integer> nodePair = paneFinder.findPaneAndChildIndex(index);
+            if (nodePair == null) {
+                break;
+            }
+
             Node node = nodePair.getKey().getChildren().get(nodePair.getValue());
-
             boolean inViewport = isItemInViewport(node, paneBounds);
-
 
             if (inViewport) {
                 lastVisibleIndex = index;
