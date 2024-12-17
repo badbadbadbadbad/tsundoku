@@ -11,14 +11,29 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
 
+/**
+ * Responsible for making sure the background settings and database file used by the application are present.
+ * If not, creates them.
+ *
+ * <p>Used once on program startup in main entry point.</p>
+ */
 public class Initializer {
     private static final String appName = "tsundoku";
     private static String appDataPath;
 
+
+    /**
+     * The overall "main" function calling everything else.
+     * @throws IOException
+     */
     public static void init() throws IOException {
         verifyFileIntegrity();
     }
 
+    /**
+     * "Main" function calling all functions making sure that files exist.
+     * @throws IOException
+     */
     private static void verifyFileIntegrity() throws IOException {
         getFolderLocation();
         createProgramFolder();
@@ -26,6 +41,9 @@ public class Initializer {
         createDefaultProfile();
     }
 
+    /**
+     * Determines folder location for this program's files, depending on user's operating system.
+     */
     private static void getFolderLocation() {
         String homeDir  = System.getProperty("user.home");
         String os = System.getProperty("os.name").toLowerCase();
@@ -42,6 +60,10 @@ public class Initializer {
         }
     }
 
+    /**
+     * Checks if program file folder already exists. If not, creates it.
+     * @throws IOException
+     */
     private static void createProgramFolder() throws IOException {
         Path path = Paths.get(appDataPath);
         try {
@@ -53,6 +75,11 @@ public class Initializer {
         }
     }
 
+    /**
+     * Checks if a settings file already exists in program file folder.
+     * If not, creates it and initializes with default settings.
+     * @throws IOException
+     */
     private static void createSettingsFile() throws IOException {
         String settingsFilePath = Paths.get(appDataPath, "config.json").toString();
         File settingsFile = new File(settingsFilePath);
@@ -109,6 +136,11 @@ public class Initializer {
         }
     }
 
+    /**
+     * Checks if a database already exists in program file folder.
+     * If not, creates a default empty database.
+     * @throws IOException
+     */
     private static void createDefaultProfile() throws IOException {
         Path profilesDir = Paths.get(appDataPath, "profiles");
         if (Files.exists(profilesDir)) {
@@ -120,6 +152,7 @@ public class Initializer {
 
         // DB stuff
         String url = "jdbc:sqlite:" + databaseFilePath;
+
 
         String sqlCreateGamesTable = "CREATE TABLE IF NOT EXISTS games ("
                 + "id INTEGER PRIMARY KEY AUTOINCREMENT, "

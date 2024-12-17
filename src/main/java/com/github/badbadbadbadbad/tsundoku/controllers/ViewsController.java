@@ -16,6 +16,10 @@ import javafx.util.Duration;
 import java.util.Map;
 
 
+/**
+ * This class serves as the manager to create every single view.
+ * It also handles the switching of views in the main content area (when sidebar buttons are clicked).
+ */
 public class ViewsController implements LoadingBarListener, ConfigListener {
 
     private final HBox root;
@@ -43,6 +47,7 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
         root.setId("main-root");
         root.getStyleClass().add("root");
 
+        // StackPane for full window darkener effect on view changes
         this.rootStack = new StackPane();
         rootStack.getChildren().add(root);
 
@@ -76,8 +81,6 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
         scene.setFill(Color.rgb(35, 36, 42));
 
 
-
-
         // There is some bug here specific to Windows. On Linux, this works fine to set width to 50% of monitor.
         // On Windows, it's more like 48%. Yet, the screen's dimensions of my setup are correctly found as 1920x1080.
         // Unsure what's causing it, could not find a fix.
@@ -106,6 +109,12 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
     }
 
 
+    /**
+     * The thin separator-like Region between sidebar and main content view.
+     * Serves as a separator and as a loading bar.
+     * We use a Region instead of JavaFX's separator because the JavaFX implementation is annoying.
+     * @return The finished UI element.
+     */
     private Region createLoadingSeparator() {
 
         // Empty loading bar as separator between sidebar and content
@@ -129,6 +138,14 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
     }
 
 
+    /**
+     * Invoked when sidebar buttons are clicked. Determines the new main content view to show.
+     * Removes the current main content view, then loads in the new main content view.
+     *
+     * <p>Loads a window darkener effect into the main stackPane as a "loading screen" when switching to a Browse view.</p>
+     * @param mediaMode
+     * @param browseMode
+     */
     private void updateMainContent(String mediaMode, String browseMode) {
 
         // Dark background to overlay when switching to a browse mode
@@ -310,6 +327,12 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
     }
 
 
+    /**
+     * Loads the fading in of the loading screen.
+     * @param node The loading screen node.
+     * @param finalOpacity Opacity of the loading screen.
+     * @param onFinished The actual content loading to be executed when the loading screen is loaded in.
+     */
     private void darkenWindow(Node node, double finalOpacity, Runnable onFinished) {
 
         rootStack.getChildren().add(node);
@@ -329,7 +352,11 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
 
     }
 
-
+    /**
+     * Loads the fading out of the loading screen.
+     * @param node The loading screen node.
+     * @param startingOpacity Opacity of the loading screen.
+     */
     private void undarkdenWindow(Node node, double startingOpacity) {
         FadeTransition fadeOut = new FadeTransition(Duration.seconds(0.2), node);
         fadeOut.setFromValue(startingOpacity);
@@ -339,6 +366,11 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
     }
 
 
+    /**
+     * Animates the loading bar separator towards the next step (beginning at whatever it is currently at).
+     * @param toPercent Percentage of the loading bar to stop the animation at.
+     * @param durationSeconds Duration in seconds to take for the animation.
+     */
     @Override
     public void animateLoadingBar(double toPercent, double durationSeconds) {
         // Calculate the heights as a percentage of the parent region's height
@@ -362,6 +394,10 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
         parallelTransition.play();
     }
 
+    /**
+     * Fades the loading bar separator out, then resets it to 0%.
+     * @param durationSeconds Duration in seconds to take for the fading animation.
+     */
     @Override
     public void fadeOutLoadingBar(double durationSeconds) {
         FadeTransition fadeTransition = new FadeTransition(Duration.seconds(durationSeconds), loadingBar);
@@ -377,6 +413,12 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
     }
 
 
+    /**
+     * Called when sidebar buttons are clicked. Invokes the logic to switch out the main content view.
+     * Also called during the program startup, where it first creates the sidebar and loading bar separator too.
+     * @param mediaMode Active media mode (Anime, Games, Manga..) in sidebar.
+     * @param browseMode Active browse mode (Browse / Log) in sidebar.
+     */
     @Override
     public void onSidebarModesUpdated(String mediaMode, String browseMode) {
         if (firstTimeStartup) {
@@ -394,12 +436,19 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
     }
 
 
+    /**
+     * Setter for language preference setting.
+     * @param language
+     */
     @Override
     public void onLanguagePreferenceUpdated(String language) {
         this.languagePreference = language;
     }
 
 
+    /**
+     * Shuts down active threads in use for background loading on program close.
+     */
     public void shutdownLazyLoader() {
         if (currentLazyLoaderView != null) {
             currentLazyLoaderView.shutdownLazyLoader();

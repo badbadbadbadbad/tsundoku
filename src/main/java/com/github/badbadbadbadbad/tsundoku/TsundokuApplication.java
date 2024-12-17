@@ -17,6 +17,12 @@ public class TsundokuApplication extends Application {
 
     private ViewsController viewsController;
 
+    /**
+     * JavaFX main application entrypoint.
+     *
+     * @param stage JavaFX default. The stage of the application.
+     * @throws IOException JavaFX default.
+     */
     @Override
     public void start(Stage stage) throws IOException {
 
@@ -44,11 +50,18 @@ public class TsundokuApplication extends Application {
         stage.show();
     }
 
+    /**
+     * Shuts down active threads in use for background loading on program close.
+     */
     @Override
     public void stop() {
         viewsController.shutdownLazyLoader();
     }
 
+    /**
+     * JavaFX default. Main entry point (in case default entry point does not work).
+     * @param args JavaFX default. Function arguments.
+     */
     public static void main(String[] args) {
         launch();
     }
