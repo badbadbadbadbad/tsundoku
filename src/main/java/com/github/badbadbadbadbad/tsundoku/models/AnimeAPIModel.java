@@ -1,6 +1,6 @@
 package com.github.badbadbadbadbad.tsundoku.models;
 
-/* Using Jikan.moe API */
+/* Using Jikan.moe API (original data from MyAnimeList) */
 /* https://jikan.moe/ */
 /* docs.api.jikan.moe */
 
@@ -20,14 +20,18 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+/**
+ * This module takes care of all requests for data of the Anime media type.
+ * Requests are forwarded from here to the API we use, and the returned data is processed, then forwarded to the original caller.
+ */
 public class AnimeAPIModel {
 
     Clock utcClock = Clock.systemUTC();
     private static final String BASE_URL = "https://api.jikan.moe/v4";
     HttpClient client;
 
-    private Map<String, Boolean> typeFilters;
-    private Map<String, Boolean> ratingFilters;
+    private Map<String, Boolean> typeFilters;               // Types like TV, Movie, OVA..
+    private Map<String, Boolean> ratingFilters;             // Age ratings like G, PG, R17+..
     private String orderBy;
     private String status;
     private String startYear;
@@ -35,13 +39,19 @@ public class AnimeAPIModel {
 
 
     private String programName = "tsundoku";
-    private String programVersion = "1.0";
+    private String programVersion = "0.0-beta";
     private String os = System.getProperty("os.name");
     private String osVersion = System.getProperty("os.version");
     private String javaVersion = "21.0.4";                          // Statically bundled version of the program
     private String userAgent = programName + "/" + programVersion + " (Java " + javaVersion + ", " + os + " " + osVersion + ")";
 
 
+    /**
+     * API request for anime of the current season.
+     * <p><a href="https://docs.api.jikan.moe/#tag/seasons/operation/getSeasonNow">Link to documentation</a></p>
+     * @param page Jikan.moe API always returns (max) 25 items as a page. This specifies the page to be returned of the full data.
+     * @return Result of API call, processed with parseAnimeData function.
+     */
     public CompletableFuture<AnimeListInfo> getCurrentSeason(int page) {
         String urlString = BASE_URL + "/seasons/now?page=" + page;
         URI uri = URI.create(urlString);
@@ -58,7 +68,7 @@ public class AnimeAPIModel {
                     if (response.statusCode() != 200) {
                         throw new RuntimeException("getCurrentSeason(): HTTP Error Code " + response.statusCode());
                     }
-                    // Handle the parsing and potential exceptions here
+
                     try {
                         ObjectMapper mapper = new ObjectMapper();
                         JsonNode rootNode = mapper.readTree(response.body());
@@ -75,6 +85,12 @@ public class AnimeAPIModel {
     }
 
 
+    /**
+     * API request for anime of upcoming seasons.
+     * <p><a href="https://docs.api.jikan.moe/#tag/seasons/operation/getSeasonUpcoming">Link to documentation</a></p>
+     * @param page Jikan.moe API always returns (max) 25 items as a page. This specifies the page to be returned of the full data.
+     * @return Result of API call, processed with parseAnimeData function.
+     */
     public CompletableFuture<AnimeListInfo> getUpcoming(int page) {
         String urlString = BASE_URL + "/seasons/upcoming?page=" + page;
         URI uri = URI.create(urlString);
@@ -108,6 +124,12 @@ public class AnimeAPIModel {
     }
 
 
+    /**
+     * API request for top anime of all time.
+     * <p><a href="https://docs.api.jikan.moe/#tag/top/operation/getTopAnime">Link to documentation</a></p>
+     * @param page Jikan.moe API always returns (max) 25 items as a page. This specifies the page to be returned of the full data.
+     * @return Result of API call, processed with parseAnimeData function.
+     */
     public CompletableFuture<AnimeListInfo> getTop(int page) {
         String urlString = BASE_URL + "/top/anime?page=" + page;
         URI uri = URI.create(urlString);
@@ -141,6 +163,13 @@ public class AnimeAPIModel {
     }
 
 
+    /**
+     * API request for anime depending on a search string.
+     * <p><a href="https://docs.api.jikan.moe/#tag/anime/operation/getAnimeSearch">Link to documentation</a></p>
+     * @param query The search string to be used in the request.
+     * @param page Jikan.moe API always returns (max) 25 items as a page. This specifies the page to be returned of the full data.
+     * @return Result of API call, processed with parseAnimeData function.
+     */
     public CompletableFuture<AnimeListInfo> getSearchByName(String query, int page) {
         String urlString = BASE_URL + "/anime?page=" + page + "&q=" + URLEncoder.encode("\"" + query + "\"", StandardCharsets.UTF_8);
         urlString += decodeOrderBy() + decodeStatus() + decodeStartYear() + decodeEndYear(); // Order and filters for search query
@@ -178,6 +207,12 @@ public class AnimeAPIModel {
     }
 
 
+    /**
+     * API request for a specific anime depending on its MyAnimeList ID.
+     * <p><a href="https://docs.api.jikan.moe/#tag/anime/operation/getAnimeById">Link to documentation</a></p>
+     * @param id The ID to be used for the request. As Jikan.Moe uses MyAnimeList data, they also use their ID system.
+     * @return Result of API call, processed with parseSingleAnimeData function.
+     */
     public CompletableFuture<AnimeInfo> getAnimeByID(int id) {
         String urlString = BASE_URL + "/anime/" + id;
         URI uri = URI.create(urlString);
@@ -211,9 +246,16 @@ public class AnimeAPIModel {
     }
 
 
-    private AnimeListInfo parseAnimeData(JsonNode animeData) {
+    /**
+     * Processes results of an API call from JSON tree form to something more usable.
+     * Data for every anime element is parsed and stored in a AnimeInfo container object.
+     * The full list of AnimeInfo objects are stored in an AnimeListInfo object, together with the page number of the original request.
+     * @param node The JSON tree full of anime data returned by an API request.
+     * @return An AnimeListInfo object, containing a List of processed anime data in AnimeInfo form, together with the page number of the request.
+     */
+    private AnimeListInfo parseAnimeData(JsonNode node) {
         List<AnimeInfo> animeList = new ArrayList<>();
-        JsonNode dataArray = animeData.get("data");
+        JsonNode dataArray = node.get("data");
 
         if (dataArray.isArray()) {
             for (JsonNode animeNode : dataArray) {
@@ -310,13 +352,18 @@ public class AnimeAPIModel {
             }
         }
 
-        int lastPage = animeData.get("pagination").get("last_visible_page").asInt();
+        int lastPage = node.get("pagination").get("last_visible_page").asInt();
 
         List<AnimeInfo> filteredAnimeList = filterByTypeAndRating(animeList);
         return new AnimeListInfo(removeDuplicates(filteredAnimeList), lastPage);
     }
 
 
+    /**
+     * The same functionality as parseAnimeData, but adjusted to a single anime instead of a List.
+     * @param node The JSON tree containing data on a single anime returned by an API request.
+     * @return An AnimeInfo object containing the processed anime data.
+     */
     private AnimeInfo parseSingleAnimeData(JsonNode node) {
         JsonNode animeNode = node.get("data");
 
@@ -408,6 +455,15 @@ public class AnimeAPIModel {
     }
 
 
+    /**
+     * Attempts to calculate a release date String.
+     * MyAnimeList stores dates in strange formats in multiple ways, so if the main date field is not provided, we use the alternate date data fields.
+     * @param releaseSeason The main data field for release season used by MyAnimeList.
+     * @param releaseYear The main data field for release year used by MyAnimeList.
+     * @param releaseMonthFromProp Alternative data field for release month used by MyAnimeList.
+     * @param releaseYearFromProp Alternative data field for release year used by MyAnimeList.
+     * @return A String for the release date in the form of "Season + Year", if possible. Else, "Not yet provided".
+     */
     // MAL data can be pretty decroded. This attempts to use provided release timings to get a usable "Season + Year" string from it.
     private String calculateReleaseSeason(String releaseSeason, int releaseYear, int releaseMonthFromProp, int releaseYearFromProp) {
         String release;
@@ -443,6 +499,10 @@ public class AnimeAPIModel {
     }
 
 
+    /**
+     * Turns the "Order by" filter String from the View element into URL form for API requests.
+     * @return The converted String.
+     */
     private String decodeOrderBy() {
         return switch (orderBy) {
             case "Title: Ascending" -> "&order_by=title&sort=asc";
@@ -456,7 +516,10 @@ public class AnimeAPIModel {
         };
     }
 
-
+    /**
+     * Turns the "Status" filter String from the View element into URL form for API requests.
+     * @return The converted String.
+     */
     private String decodeStatus() {
         if (status.equals("Any")) {
             return "";
@@ -466,6 +529,10 @@ public class AnimeAPIModel {
     }
 
 
+    /**
+     * Turns the "Start year" filter String from the View element into URL form for API requests.
+     * @return The converted String.
+     */
     private String decodeStartYear() {
         if (startYear.isEmpty()) {
             return "";
@@ -475,6 +542,10 @@ public class AnimeAPIModel {
     }
 
 
+    /**
+     * Turns the "End year" filter String from the View element into URL form for API requests.
+     * @return The converted String.
+     */
     private String decodeEndYear() {
         if (endYear.isEmpty()) {
             return "";
@@ -484,6 +555,13 @@ public class AnimeAPIModel {
     }
 
 
+    /**
+     * The Jikan.Moe API produces duplicates in some cases due to some issues on their backend.
+     * There are multiple bug reports on this behaviour, for example <a href="https://github.com/jikan-me/jikan-rest/issues/262">here</a>.
+     * This function is always called during parsing of data returned by the API to filter out such duplicates.
+     * @param animeList A List of AnimeInfo objects, created by parseAnimeData().
+     * @return The same List, with duplicates filtered from the List.
+     */
     private List<AnimeInfo> removeDuplicates(List<AnimeInfo> animeList) {
         Set<Integer> seenIds = new HashSet<>();
         return animeList.stream()
@@ -492,6 +570,13 @@ public class AnimeAPIModel {
     }
 
 
+    /**
+     * The Jikan.Moe API provides filters for age and type ratings in requests, but multi-selections are not possible.
+     * Thus, we always call for unfiltered data on their end, then filter the data on our end.
+     * The filter options themselves are provided by the user via the SettingsView.
+     * @param animeList A List of AnimeInfo objects, created by parseAnimeData().
+     * @return The same List, with anime of unwanted age / type ratings removed from the List.
+     */
     private List<AnimeInfo> filterByTypeAndRating(List<AnimeInfo> animeList) {
         return animeList.stream()
                 .filter(anime -> typeFilters.getOrDefault(anime.getType(), false))

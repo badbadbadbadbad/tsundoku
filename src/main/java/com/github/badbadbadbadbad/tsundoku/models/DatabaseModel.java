@@ -14,6 +14,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+/**
+ * This module takes care of everything related to database input / output.
+ */
 public class DatabaseModel {
     private static final String appName = "tsundoku";
     private static final long REQUEST_COOLDOWN_MS = 5000;
@@ -29,6 +32,10 @@ public class DatabaseModel {
         startAnimeUpdaterBackgroundService();
     }
 
+
+    /**
+     * Determines folder location for this program's files depending on user's operating system.
+     */
     private String getAppDataPath() {
         String homeDir = System.getProperty("user.home");
         String os = System.getProperty("os.name").toLowerCase();
@@ -44,6 +51,11 @@ public class DatabaseModel {
     }
 
 
+    /**
+     * Inserts data of a single anime into the database.
+     * This is done as an upsert operation - if an anime with that ID is already present, we overwrite its values.
+     * @param anime The data of the anime to be inserted into the database.
+     */
     public void updateAnimeDatabaseWithEntry(AnimeInfo anime) {
         String url = "jdbc:sqlite:" + databaseFilePath;
 
@@ -111,6 +123,10 @@ public class DatabaseModel {
     }
 
 
+    /**
+     * Reads data of a single anime from the database.
+     * @param id The ID of the anime to be read from the database.
+     */
     public AnimeInfo getAnimeEntryFromDatabase(int id) {
         String url = "jdbc:sqlite:" + databaseFilePath;
         String sqlSelect = "SELECT id, ownRating, ownStatus, episodesProgress, title, titleJapanese, titleEnglish, imageUrl, smallImageUrl, publicationStatus, "
@@ -142,7 +158,9 @@ public class DatabaseModel {
         return null;
     }
 
-
+    /**
+     * Reads the full data of the anime database as a List of AnimeInfo objects.
+     */
     public AnimeListInfo getFullAnimeDatabase() {
         String url = "jdbc:sqlite:" + databaseFilePath;
         String sqlSelectAll = "SELECT id, ownRating, ownStatus, episodesProgress, title, titleJapanese, titleEnglish, imageUrl, smallImageUrl, publicationStatus, "
@@ -171,7 +189,10 @@ public class DatabaseModel {
         return new AnimeListInfo(animeList, 0);
     }
 
-
+    /**
+     * Data on anime - especially upcoming anime - may change every so often. Hence, the local database needs to be updated regularly.
+     * This function reads the full anime database once on startup, then updates it slowly while the program is open.
+     */
     private void startAnimeUpdaterBackgroundService() {
         AnimeListInfo animeListInfo = getFullAnimeDatabase();
         List<AnimeInfo> animeList = filterAndSortAnimeList(animeListInfo.getAnimeList());
@@ -179,6 +200,15 @@ public class DatabaseModel {
     }
 
 
+    /**
+     * A difficulty with the database update service is that the API only allows requests for single anime by ID instead of a list at once.
+     * Yet, we also don't want to overload the API.
+     *
+     * <p>We filter anime entries that were updated somewhat recently from this updating process, and also
+     * assign a lower priority to entries that are not releasing right now or upcoming.</p>
+     * @param animeList The anime information to be filtered in List form.
+     * @return The same List, but filtered and sorted by importance.
+     */
     private List<AnimeInfo> filterAndSortAnimeList(List<AnimeInfo> animeList) {
         LocalDate currentDate = LocalDate.now(ZoneOffset.UTC);
 
@@ -216,6 +246,12 @@ public class DatabaseModel {
     }
 
 
+    /**
+     * The actual "update this database entry with updated information" function for the background updater service.
+     * Forwards the request for current data on some anime to the API communication service, then invokes a database update with the returned data.
+     * @param animeList The full list of anime to be updated.
+     * @param index Current index of the list to update. Updates when the update is finished and a timeout has passed.
+     */
     private void processNextAnime(List<AnimeInfo> animeList, int index) {
 
         // No more anime to process

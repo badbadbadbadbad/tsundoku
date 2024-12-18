@@ -12,12 +12,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * This module takes care of everything related to configuration input / output.
+ * Updated settings are taken in from the SettingsView and forwarded to all Listeners of this class.
+ */
 public class ConfigModel {
     private static final String appName = "tsundoku";
     private final String configFilePath;
 
     private final List<ConfigListener> listeners = new ArrayList<>();
-
 
     private String igdbSecret;
     private String mangadexSecret;
@@ -43,6 +46,10 @@ public class ConfigModel {
         readConfigFile();
     }
 
+
+    /**
+     * Determines folder location for this program's files depending on user's operating system.
+     */
     private String getAppDataPath() {
         String homeDir = System.getProperty("user.home");
         String os = System.getProperty("os.name").toLowerCase();
@@ -58,6 +65,9 @@ public class ConfigModel {
     }
 
 
+    /**
+     * Reads the config file's settings on program startup into the corresponding variables of this class.
+     */
     private void readConfigFile() {
         File configFile = new File(configFilePath);
         if (configFile.exists()) {
@@ -85,6 +95,9 @@ public class ConfigModel {
     }
 
 
+    /**
+     * Saves current settings variables of this class to config file.
+     */
     private void saveConfigFile() {
         File configFile = new File(configFilePath);
         try {
@@ -135,6 +148,10 @@ public class ConfigModel {
     }
 
 
+    /**
+     * Updates settings stored in this module, saves them to settings file, and notifies settings listeners of changes.
+     * @param settings Updated settings map received by SettingsView.
+     */
     public void updateSettings(Map<String, Object> settings) {
         // Update internal settings values
         this.weebLanguagePreference = (String) settings.get("weebLanguagePreference");

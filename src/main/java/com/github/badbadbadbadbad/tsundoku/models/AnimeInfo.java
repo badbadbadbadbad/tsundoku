@@ -1,5 +1,11 @@
 package com.github.badbadbadbadbad.tsundoku.models;
 
+/**
+ * A container object for data on a single anime. The data is provided by Jikan.Moe API,
+ * <a href="https://docs.api.jikan.moe/#tag/anime/operation/getAnimeById">see example here</a>.
+ *
+ * <p>We specifically do not use a Java Record class because this class also contains the user's progress data for this anime, which is mutable.</p>
+ */
 public class AnimeInfo {
     private String ownRating = "Unscored";                  // Rating of "Unscored", "Heart", "Liked", "Disliked"
     private String ownStatus = "Untracked";                 // Own progress status of "Untracked", "Backlog", "In progress", "Completed", "Paused", "Dropped"
