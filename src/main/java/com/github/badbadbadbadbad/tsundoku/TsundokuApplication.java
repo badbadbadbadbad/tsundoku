@@ -60,7 +60,7 @@ public class TsundokuApplication extends Application {
 
     /**
      * JavaFX default. Main entry point (in case default entry point does not work).
-     * @param args JavaFX default. Function arguments.
+     * @param args JavaFX default
      */
     public static void main(String[] args) {
         launch();

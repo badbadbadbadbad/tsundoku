@@ -17,10 +17,21 @@ import java.util.concurrent.*;
 
 import javafx.animation.AnimationTimer;
 
+
+/**
+ * While the Browse views are restricted to pagination due to relying on APIs,
+ * the Log views are an infinite scroll. The bottleneck here isn't necessarily the amount of items in the log
+ * (as there just aren't that many anime / manga..), but rather each item loading an image in the log.
+ * Hence, we use a lazy loader background service to only keep images in view loaded.
+ */
 public class LazyLoader {
     private final double RATIO = 318.0 / 225.0;
 
+    // Threads dedicated to image loading
     private final ExecutorService imageLoaderExecutor = Executors.newFixedThreadPool(3);
+
+    // Simple background timer taking loaded images and setting them as backgrounds, once per frame
+    // (Somewhat hacky JavaFX way to have a timed background service in the JavaFX thread without Platform.runLater)
     private AnimationTimer batchImageUpdaterTimer;
     private final ConcurrentLinkedQueue<Pair<Node, String>> pendingImageUpdates = new ConcurrentLinkedQueue<>();
 
@@ -30,6 +41,10 @@ public class LazyLoader {
     private int firstVisibleIndex;
     private int lastVisibleIndex;
 
+    // There's some slight issues if the image loader / image setter services run all the time;
+    // it's possible for actions to "overwrite" each other in a way.
+    // Hence, we pause the services on scroll events, and resume them when the scrolling ends.
+    // May have to tinker with the timers still.
     private final PauseTransition loaderPause = new PauseTransition(Duration.seconds(0.1));
     private final PauseTransition imagePause = new PauseTransition(Duration.seconds(0.1));
 
@@ -45,6 +60,9 @@ public class LazyLoader {
 
         Pair<FlowGridPane, Integer> first = paneFinder.findPaneAndChildIndex(0);
 
+        // We only initialize stuff if the log actually contains items.
+        // If the log contains no items, then it's impossible to add any without switching to Browse view first.
+        // Hence, there's no way of having a Log view open without a LazyLoader.
         if (first != null) {
 
             setFirstVisibleIndex(0);
@@ -84,6 +102,10 @@ public class LazyLoader {
     }
 
 
+    /**
+     * Runs once on LazyLoader startup (which is when a Log view is created).
+     * JavaFX and item heights in our Log grids are janky, hence we enforce them according to our wanted aspect ratio.
+     */
     private void adjustGridItemHeights() {
         for (FlowGridPane pane: flowPanes) {
             for (Node node : pane.getChildren()) {
@@ -98,6 +120,11 @@ public class LazyLoader {
         }
     }
 
+
+    /**
+     * Unloads the image backgrounds of all log items currently visible,
+     * which is the items with indices from firstVisible to lastVisible.
+     */
     public void unloadVisible() {
 
         // Also stop any potential loading still going on right now
@@ -125,6 +152,12 @@ public class LazyLoader {
         }
     }
 
+
+    /**
+     * Does not actually start the visibility update.
+     * Instead, this starts the timer that initiates the visibility update when it ends
+     * (which may be interrupted / restarted by other calls).
+     */
     public void updateVisibilityFull() {
         loaderPause.stop();
         imagePause.stop();
@@ -135,6 +168,13 @@ public class LazyLoader {
         loaderPause.playFromStart();
     }
 
+
+    /**
+     * The actual function to start up a new visibility update.
+     * Step 1: Go through visible items and turn them invisible if they left the viewport.
+     * Step 2: If no visible items remain, get a new visible item via binary search over the full Log.
+     * Step 3: Go through nearby invisible items (starting at visible items) and turn them invisible if in viewport.
+     */
     public void executeUpdateVisibilityFull() {
         Bounds paneBounds = scrollPane.localToScene(scrollPane.getBoundsInLocal());
 
@@ -226,7 +266,11 @@ public class LazyLoader {
         }
     }
 
-    // Basic binary search to identify new visible content on long scrolls
+    /**
+     * Basic binary search to identify some child of the Log which is currently in the viewport.
+     * The test performed in each search step is just an intersection test between the currently chosen item and the viewport.
+     * @param paneBounds The viewport bounds of the scrollPane containing the Log.
+     */
     void identifyNewVisibleNode(Bounds paneBounds) {
         int low = 0;
         int high = paneFinder.getTotalItemCount() - 1;
@@ -256,12 +300,19 @@ public class LazyLoader {
     }
 
 
+
     private boolean isItemInViewport(Node n, Bounds paneBounds) {
         Bounds nodeBounds = n.localToScene(n.getBoundsInLocal());
         return paneBounds.intersects(nodeBounds);
     }
 
 
+    /**
+     * Does not actually start the image loading itself.
+     * This goes through the items that _should_ be visible and adds the task to make them visible to the background async pipeline.
+     * It's done this way to have an extra check of sorts if this item is still visible or if the user already scrolled past
+     * by the time the loader routine reaches this item.
+     */
     private void loadVisibleImages() {
         for (int i = firstVisibleIndex; i <= lastVisibleIndex; i++) {
             Pair<FlowGridPane, Integer> nodePair = paneFinder.findPaneAndChildIndex(i);
@@ -276,6 +327,10 @@ public class LazyLoader {
     }
 
 
+    /**
+     * Adds a background thread task to the queue of image loader tasks so this image will be loaded eventually.
+     * @param n The Log grid node for which an image needs to be loaded.
+     */
     private void makeItemVisible(Node n) {
         if (!n.isVisible()){
             AnimeInfo anime = (AnimeInfo) n.getUserData();
@@ -321,6 +376,10 @@ public class LazyLoader {
     }
 
 
+    /**
+     * Initialization for the background image setter timer running once per frame.
+     * If some image has finished loading, the timer takes it and sets it as the background of the corresponding node.
+     */
     public void startBatchImageUpdater() {
 
         this.batchImageUpdaterTimer = new AnimationTimer() {
@@ -350,9 +409,14 @@ public class LazyLoader {
 
     }
 
+    /**
+     * Specifically designated extra worker threads need to be shut down manually.
+     * (Else they stay open when the program is closed. That's bad.)
+     */
     public void shutdownImageLoaderExecutor() {
         imageLoaderExecutor.shutdown();
 
+        // Force close if issues arise. Internet said this is a good idea
         try {
             if (!imageLoaderExecutor.awaitTermination(1, TimeUnit.SECONDS)) {
                 imageLoaderExecutor.shutdownNow();
