@@ -24,8 +24,17 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.BiFunction;
 
+
+/**
+ * The full view component displayed when some anime in the AnimeBrowseView or AnimeLogView is clicked.
+ */
 public class AnimePopupView {
-    double RATIO = 318.0 / 225.0; // The aspect ratio to use for anime images. Close to most cover images.
+
+    /**
+     * Aspect ratio we use for anime images.
+     * This matches most of them well enough (there's no perfect standard used for anime covers).
+     */
+    private final double RATIO = 318.0 / 225.0;
 
     private final DatabaseRequestListener databaseRequestListener;
 
@@ -41,7 +50,7 @@ public class AnimePopupView {
     private String activeRatingButton = "none";
     private final List<Button> ratingButtons = new ArrayList<>();
 
-    public AnimePopupView(VBox parentBox, PopupMakerView parentView, AnimeInfo anime, DatabaseRequestListener databaseRequestListener,
+    public AnimePopupView(VBox parentBox, PopupMakerView parentView, DatabaseRequestListener databaseRequestListener,
                           VBox darkBackground, String languagePreference) {
         this.popupBox = new VBox();
         this.databaseRequestListener = databaseRequestListener;
@@ -52,13 +61,14 @@ public class AnimePopupView {
         // this.anime = anime;
         this.darkBackground = darkBackground;
 
-        this.databaseAnime = databaseRequestListener.requestAnimeFromDatabase(anime.getId());
+        AnimeInfo finalAnime = (AnimeInfo) parentBox.getUserData();
+        this.databaseAnime = databaseRequestListener.requestAnimeFromDatabase(finalAnime.getId());
 
-        AnimeInfo finalAnime = anime;
 
+        // Check if database version info or parentBox anime info is more recent, and use that
         if (this.databaseAnime != null) {
             // LocalDate animeDate = LocalDate.parse(this.anime.getLastUpdated());
-            LocalDate animeDate = LocalDate.parse(anime.getLastUpdated());
+            LocalDate animeDate = LocalDate.parse(finalAnime.getLastUpdated());
             LocalDate databaseDate = LocalDate.parse(this.databaseAnime.getLastUpdated());
 
             if (databaseDate.isAfter(animeDate)) {
@@ -69,6 +79,11 @@ public class AnimePopupView {
         this.anime = finalAnime;
     }
 
+
+    /**
+     * Called once by the parentBox, creates the whole View component
+     * @return The finished view
+     */
     public VBox createPopup() {
         final double screenWidth = Screen.getPrimary().getVisualBounds().getWidth();
         final double screenHeight = Screen.getPrimary().getVisualBounds().getHeight();
@@ -92,9 +107,12 @@ public class AnimePopupView {
     }
 
 
+    /**
+     * Title for the full View depending on the preferred language.
+     * Some titles can be veeery long, so we attempt to adjust the font size down to make it fit.
+     * @return The finished component
+     */
     private Label createPopupTitle() {
-
-
 
         Label titleLabel = new Label();
 
@@ -122,9 +140,6 @@ public class AnimePopupView {
         titleLabel.getStyleClass().add("grid-media-popup-title");
 
 
-
-        // titleLabel.setFont(Font.font("Montserrat Medium", 30.0)); // Needs to be outside CSS for dynamic adjustments..
-
         // Adjust font size for very long titles to fit container
         titleLabel.layoutBoundsProperty().addListener((obs, oldBounds, newBounds) -> {
             adjustFontSizeToContainer(titleLabel, popupBox.getMaxWidth() - 15, 10);
@@ -134,6 +149,12 @@ public class AnimePopupView {
     }
 
 
+    /**
+     * Turns the font size of some label down bit by bit until it fits some container without overflow.
+     * @param label The label to change font size for
+     * @param containerWidth The container the label should fit into
+     * @param minFontSize A minimum font size where the function stops
+     */
     private void adjustFontSizeToContainer(Label label, double containerWidth, double minFontSize) {
         Font font = label.getFont();
         double fontSize = font.getSize();
@@ -166,6 +187,16 @@ public class AnimePopupView {
     }
 
 
+    /**
+     * Wrapper creator function for left half of the popup's content:
+     * <ul>
+     *     <li>Cover image</li>
+     *     <li>Personal status dropdown</li>
+     *     <li>Rating buttons</li>
+     *     <li>Progress tracker</li>
+     * </ul>
+     * @return The finished component
+     */
     private VBox createLeftPopupContent() {
         VBox imageAndSelfStatsWrapper = new VBox();
         VBox.setVgrow(imageAndSelfStatsWrapper, Priority.ALWAYS);
@@ -184,6 +215,11 @@ public class AnimePopupView {
     }
 
 
+    /**
+     * Cover image box, created much the same way as in the main Views (but without hover functionality).
+     * @param wrapper The parent this image will be put into (so the image box can scale to its width).
+     * @return
+     */
     private VBox createCoverImage(VBox wrapper) {
         VBox imageBox = new VBox();
         imageBox.setStyle("-fx-background-image: url('" + anime.getImageUrl() + "');");
@@ -211,19 +247,17 @@ public class AnimePopupView {
     }
 
 
+    /**
+     * Dropdown component for the personal status types of the anime.
+     * Note that some personal status types are only put here if the corresponding anime could actually have them
+     * (e.g. an anime that hasn't aired yet cannot be set to "finished").
+     * @return The finished component
+     */
     private ComboBox<String> createStatusBox() {
         ComboBox<String> status = new ComboBox<>();
         status.setMaxWidth(Double.MAX_VALUE);
         VBox.setVgrow(status, Priority.ALWAYS);
         status.getStyleClass().add("status-combo-box");
-
-        // Colors for the future?
-        // Untracked: Grey
-        // Backlog: Tsundoku gold (goldenrod)
-        // In progress: Blue?
-        // Completed: Green
-        // Paused: Blue?
-        // Dropped: Red
 
         // Always possible
         status.getItems().addAll("Untracked", "Backlog");
@@ -252,6 +286,10 @@ public class AnimePopupView {
     }
 
 
+    /**
+     * Box of rating buttons. Lots of boilerplate to get modern functionality of colouring in the selected rating etc.
+     * @return The finished component
+     */
     private HBox createRatingBox() {
         HBox rating = new HBox();
         rating.setMaxWidth(Double.MAX_VALUE);
@@ -305,6 +343,11 @@ public class AnimePopupView {
     }
 
 
+    /**
+     * Used by createRatingBox.
+     * Invoked when one of the rating buttons is clicked to update button colourings and parent anime rating.
+     * @param clickedButton The button this function listens to
+     */
     private void handleRatingButtonClick(Button clickedButton) {
 
         // Set all rating buttons to unclicked state
@@ -341,6 +384,11 @@ public class AnimePopupView {
     }
 
 
+    /**
+     * A number input field to track episode progress for the parent anime.
+     * @param unit The unit in which the media type is counted, which is only "episodes" for anime.
+     * @return The finished component
+     */
     private HBox createProgressTracker(String unit) {
         // Wrapper
         HBox progressTracker = new HBox();
@@ -392,6 +440,15 @@ public class AnimePopupView {
     }
 
 
+    /**
+     * Wrapper creator function for right half of the popup's content:
+     * <ul>
+     *     <li>Grid of some meta info</li>
+     *     <li>Synopsis</li>
+     *     <li>Save button</li>
+     * </ul>
+     * @return The finished component
+     */
     private VBox createRightPopupContent() {
         VBox metaStatsAndSaveWrapper = new VBox();
         VBox.setVgrow(metaStatsAndSaveWrapper, Priority.ALWAYS);
@@ -427,6 +484,11 @@ public class AnimePopupView {
     }
 
 
+    /**
+     * Meta info of the anime, put into a GridPane.
+     * Font sizes are also adjusted here since some fields like "Studios" can again be very long.
+     * @return The finished component
+     */
     private GridPane createMetaInfo() {
 
         GridPane metaInfo = new GridPane();
@@ -505,6 +567,12 @@ public class AnimePopupView {
     }
 
 
+    /**
+     * Save button component. When pressed, invokes an update in the database and the parent of this PopupView,
+     * then closes this PopupView.
+     * @param wrapper Wrapper this component is a child of (passed so height-binding is possible)
+     * @return The finished component
+     */
     private HBox createSaveButton(VBox wrapper) {
         HBox saveButtonWrapper = new HBox();
         HBox.setHgrow(saveButtonWrapper, Priority.ALWAYS);

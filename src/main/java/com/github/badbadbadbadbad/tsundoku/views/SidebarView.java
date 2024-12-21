@@ -11,9 +11,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+
+/**
+ * The full sidebar component on the left of the main window.
+ */
 public class SidebarView {
 
-    private static final double SIDEBAR_WIDTH = 0.12; // Percent of screen width, not scaling with window size for now
+    private static final double SIDEBAR_WIDTH = 0.12; // Percent of screen width, not scaling with window size (for now?)
 
     private SidebarListener sidebarListener;
 
@@ -28,6 +32,11 @@ public class SidebarView {
         this.currentBrowseMode = browseMode;
     }
 
+
+    /**
+     * Called once by ViewsController, creates the whole sidebar
+     * @return The finished view
+     */
     public Region createSidebar() {
 
         Screen screen = Screen.getPrimary();
@@ -81,7 +90,7 @@ public class SidebarView {
         return sidebar;
     }
 
-    // TODO Combine button creator functions
+
     private Button createBrowseModeButton(String label) {
         Button button = new Button(label);
         // button.getStyleClass().addAll("controls-button", "sidebar-browse-mode-button");
@@ -100,6 +109,7 @@ public class SidebarView {
         return button;
     }
 
+
     private void setActiveBrowseModeButton(Button selectedButton) {
         for (Button button : browseModeButtons) {
             button.getStyleClass().removeAll("sidebar-browse-mode-button-active");
@@ -108,6 +118,7 @@ public class SidebarView {
         currentBrowseMode = selectedButton.getText();
         sidebarListener.onSidebarBrowseModeChanged(selectedButton.getText());
     }
+
 
     private Button createMediaModeButton(String label) {
         Button button = new Button(label);
@@ -126,6 +137,7 @@ public class SidebarView {
 
         return button;
     }
+
 
     private void setActiveMediaModeButton(Button selectedButton) {
         for (Button button : mediaModeButtons) {

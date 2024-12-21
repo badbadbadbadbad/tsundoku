@@ -27,9 +27,19 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * The full view component displayed in the main content pane for browse mode "Log" and media mode "Anime".
+ *
+ * <p>It would be far cleaner to have some LogView superclass with this inheriting, but I don't want to overcomplicate things
+ * before I know what quirks the main content views for other media modes may involve (due to relying on data from external APIs).</p>
+ */
 public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
-    private final double RATIO = 318.0 / 225.0; // The aspect ratio to use for anime images. This doesn't match all exactly, but is close enough.
+    /**
+     * Aspect ratio we use for anime images.
+     * This matches most of them well enough (there's no perfect standard used for anime covers).
+     */
+    private final double RATIO = 318.0 / 225.0;
 
     private final DatabaseRequestListener databaseRequestListener;
 
@@ -69,6 +79,11 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         ));
     }
 
+
+    /**
+     * Called once by ViewsController, creates the whole View component
+     * @return The finished view
+     */
     public Region createGridView() {
 
         VBox root = new VBox();
@@ -141,10 +156,14 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
     }
 
 
+    /**
+     * First part of the controls component above the grid, the search bar and filters toggle button.
+     * @param filters The FlowPane of the filters to be shown / hidden on toggle button click
+     * @return The finished component
+     */
     private HBox createSearchAndFilterToggle(FlowGridPane filters) {
         // Wrapper
         HBox searchAndModeBox = new HBox();
-        // searchAndModeBox.setStyle("-fx-spacing: 10;");
         searchAndModeBox.getStyleClass().add("search-bar-and-filter-toggle");
 
         // Search bar
@@ -153,11 +172,13 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         searchBar.setPromptText("Enter anime title..");
         HBox.setHgrow(searchBar, Priority.ALWAYS);
 
-        // Regex to allow only english alphanumeric, JP / CN / KR characters, and spaces
+
         searchBar.textProperty().addListener((observable, oldValue, newValue) -> {
+            // Regex to allow only english alphanumeric, JP / CN / KR characters, and spaces
             if (newValue.matches("[\\p{IsHan}\\p{IsHiragana}\\p{IsKatakana}\\p{Alnum} ]*")) {
                 this.searchString = newValue;
 
+                // Refresh content according to search bar text
                 scrollPane.setVvalue(0);
                 smoothScroll.resetAccumulatedVValue();
 
@@ -194,6 +215,10 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
     }
 
 
+    /**
+     * The filter FlowPane of the controls component above the grid.
+     * @return The finished component
+     */
     private FlowGridPane createFilters() {
         FlowGridPane filtersGrid = new FlowGridPane(2, 2);
         filtersGrid.setHgap(10);
@@ -232,6 +257,13 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
     }
 
 
+    /**
+     * Creates a single "dropdown" type filter to be used in the createFilters function.
+     * @param labelText String to be used for label above the dropdown filter
+     * @param options Array of Strings to be used for the dropdown options
+     * @param defaultValue String to be selected as the default choice
+     * @return The finished component
+     */
     private VBox createDropdownFilter(String labelText, String[] options, String defaultValue) {
         Label label = new Label(labelText);
         label.getStyleClass().add("filter-label");
@@ -283,6 +315,11 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
     }
 
 
+    /**
+     * Creates a single "number input" type filter to be used in the createFilters function.
+     * @param labelText String to be used for label above the dropdown filter
+     * @return The finished component
+     */
     private VBox createNumberFilter(String labelText) {
         Label label = new Label(labelText);
         label.getStyleClass().add("filter-label");
@@ -317,19 +354,6 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
             }
         });
 
-        /*
-        // Filter change listeners
-        if (labelText.equals("Start year ≥")) {
-            textField.textProperty().addListener((obs, oldVal, newVal) -> {
-                startYearFilter
-            });
-        } else if (labelText.equals("End year ≤")) {
-            textField.textProperty().addListener((obs, oldVal, newVal) -> {
-
-            });
-        }
-
-         */
 
         // Even when filters are hidden, mouse cursor changes to text field cursor when hovering
         // where the number filters would be.
@@ -345,6 +369,12 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
     }
 
 
+    /**
+     * Run when the filter toggle button is set to hide filters.
+     * Animates the filters out of existence.
+     * @param filters The FlowPane of the filters to be hidden
+     * @param button The filter toggle button (included here so it can be disabled during the animation)
+     */
     private void hideFilters(FlowGridPane filters, ToggleButton button) {
 
         filtersHidden.set(true);
@@ -386,6 +416,12 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
     }
 
 
+    /**
+     * Run when the filter toggle button is set to show filters.
+     * Animates the filters into existence.
+     * @param filters The FlowPane of the filters to be shown
+     * @param button The filter toggle button (included here so it can be disabled during the animation)
+     */
     private void showFilters(FlowGridPane filters, ToggleButton button) {
 
         filtersHidden.set(false);
@@ -430,6 +466,13 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
     }
 
 
+    /**
+     * Creates a header component used for one of the log grids (to show which grid this is, e.g. the Backlog grid).
+     * The header automatically hides if the corresponding grid is empty.
+     * @param labelText The text used for the header
+     * @param animeList The list of items (filtered) which the header listens to to know if it should be hidden
+     * @return The finished component
+     */
     private HBox createGridHeader(String labelText, ObservableList<VBox> animeList) {
         HBox headerBox = new HBox(5);
         headerBox.setPrefHeight(40);
@@ -448,20 +491,23 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         leftRegion.getStyleClass().add("log-grid-header-separator");
         HBox.setHgrow(leftRegion, Priority.ALWAYS);
 
-        // TODO: Fix font weight. https://stackoverflow.com/a/77339072
+
         // Middle label
         Label label = new Label(labelText);
         label.getStyleClass().add("log-grid-header-text");
+
 
         // Right region
         Region rightRegion = new Region();
         rightRegion.getStyleClass().add("log-grid-header-separator");
         HBox.setHgrow(rightRegion, Priority.ALWAYS);
 
+
         // Add components to the HBox
         headerBox.getChildren().addAll(leftRegion, label, rightRegion);
 
 
+        // Show / hide depending on if the corresponding filtered grid has items
         animeList.addListener((ListChangeListener<VBox>) change -> {
 
             boolean hasItems = animeList.size() > 0;
@@ -483,6 +529,11 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
     }
 
 
+    /**
+     * Creates a FlowPane of anime.
+     * Does not actually create the child elements themselves, that is done seperately to work with the filtering.
+     * @return The finished component
+     */
     private FlowGridPane createGrid() {
         FlowGridPane animeGrid = new FlowGridPane(3, 1);
         animeGrid.setHgap(20);
@@ -494,6 +545,13 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
     }
 
 
+    /**
+     * Gets the full local anime database, then splits it into sub-lists based on personal status and sorts them.
+     * The UI grids are then initialized (async) with the created lists.
+     *
+     * <p>When the async calls (one per grid) are all finished, the filter refresh mechanism is invoked
+     * so the finished correct UI can be displayed.</p>
+     */
     private void loadDatabaseIntoGridsAsync() {
         // The full database
         AnimeListInfo fullDatabase = databaseRequestListener.requestFullAnimeDatabase();
@@ -578,6 +636,13 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
     }
 
 
+    /**
+     * Invoked by loadDatabaseIntoGridsAsync.
+     * Async call to create grid elements from a List of anime info.
+     * @param animeGrid The grid to fill with the finished elements
+     * @param animeList The information to turn into grid elements
+     * @return A CompletableFuture call so loadDatabaseIntoGridsAsync can track when all grids have finished this async call
+     */
     private CompletableFuture<Void> reloadAnimeGridAsync(List<VBox> animeGrid, List<AnimeInfo> animeList) {
         return CompletableFuture.supplyAsync(() -> createAnimeGridItems(animeList))
                 .thenAccept(animeBoxes -> {
@@ -592,14 +657,19 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
     private List<VBox> createAnimeGridItems(List<AnimeInfo> animeList) {
         List<VBox> animeBoxes = new ArrayList<>();
         for (AnimeInfo anime : animeList) {
-            VBox animeBox = createAnimeBox(anime, stackPane);
+            VBox animeBox = createAnimeBox(anime);
             animeBoxes.add(animeBox);
         }
         return animeBoxes;
     }
 
 
-    private VBox createAnimeBox(AnimeInfo anime, StackPane stackPane) {
+    /**
+     * Makes a VBox component to be used in the anime grids.
+     * @param anime The information on the corresponding anime.
+     * @return The finished component.
+     */
+    private VBox createAnimeBox(AnimeInfo anime) {
 
         // Make image into VBox background, CSS cover sizing to look okay
         // Yes, JavaFX has an Image class, but I could not get it to work properly
@@ -697,7 +767,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
         // Popup when the box is clicked
         animeBox.setOnMouseClicked(event -> {
-            createPopupScreen(animeBox, anime, stackPane);
+            createPopupScreen(animeBox);
         });
 
 
@@ -708,7 +778,11 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
     }
 
 
-    private void createPopupScreen(VBox parentBox, AnimeInfo anime, StackPane stackPane) {
+    /**
+     * Creates a PopupView for an anime (and a window darkener effect) when its VBox in the FlowPane is clicked.
+     * @param parentBox The anime box that was clicked
+     */
+    private void createPopupScreen(VBox parentBox) {
         // Fake darkener effect
         VBox darkBackground = new VBox();
         darkBackground.getStyleClass().add("grid-media-popup-background");
@@ -716,7 +790,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         HBox.setHgrow(darkBackground, Priority.ALWAYS);
 
         // The actual popup
-        AnimePopupView animePopupView = new AnimePopupView(parentBox, this, anime, databaseRequestListener, darkBackground, languagePreference);
+        AnimePopupView animePopupView = new AnimePopupView(parentBox, this, databaseRequestListener, darkBackground, languagePreference);
         VBox popupBox = animePopupView.createPopup();
 
         // Initially transparent for fade-in effect
@@ -756,6 +830,13 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
     }
 
 
+    /**
+     * Invoked when a created PopupView is closed.
+     * If the anime was set to Untracked in the PopupView, it is deleted from the corresponding grid.
+     * Else, its position in the grids is adjusted (depending on the new personal status and rating).
+     * At the end, onFiltersChanged is invoked to update visibilities correctly.
+     * @param popupParent The parent PopupView whose closing invoked this function call
+     */
     @Override
     public void onPopupClosed(VBox popupParent) {
         // Old info of popup spawner
@@ -781,7 +862,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         // This includes the case of the anime not changing status / rating, but we'll just be lazy here
         else {
 
-            VBox newAnimeBox = createAnimeBox(animeNew, stackPane);
+            VBox newAnimeBox = createAnimeBox(animeNew);
             AnimeInfo newAnimeInfo = (AnimeInfo) newAnimeBox.getUserData();
 
             // Get correct grid to insert in
@@ -876,6 +957,14 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
     }
 
 
+    /**
+     * Invoked when any filters are changed or a PopupView is closed.
+     * Refreshes the filtered anime lists based on the current filter contents, then
+     * reloads the grid with the new filtered lists to display, and finally invokes a
+     * LazyLoader visibility update.
+     *
+     * <p>The LazyLoader is also created here during creation of the Log View.</p>
+     */
     private void onFiltersChanged() {
 
         for (int i = 0; i < unfilteredAnimeLists.size(); i++) {
@@ -1014,6 +1103,17 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
     }
 
 
+    /**
+     * Changes the border of an anime in a FlowPane based on its rating.
+     * <ul>
+     *     <li>Grey: Default</li>
+     *     <li>Gold: Rated with Heart</li>
+     *     <li>Green: Rated with Liked</li>
+     *     <li>Red: Rated with Disliked</li>
+     * </ul>
+     * This is done by altering CSS classes of the anime's VBox component in the FlowPane.
+     * @param animeBox The box to change the border for
+     */
     private void setRatingBorder(VBox animeBox) {
         AnimeInfo anime = (AnimeInfo) animeBox.getUserData();
 
@@ -1033,6 +1133,11 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
     }
 
 
+    /**
+     * Creates the wrapping scrollPane for the different grids used (so they all become one long scrollable content view),
+     * together with the headers and empty grids it is filled with.
+     * @return The finished component
+     */
     private ScrollPane createScrollPane() {
 
         // Grid headers

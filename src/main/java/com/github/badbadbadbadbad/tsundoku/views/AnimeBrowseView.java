@@ -33,9 +33,19 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 
+/**
+ * The full view component displayed in the main content pane for browse mode "Browse" and media mode "Anime".
+ *
+ * <p>It would be far cleaner to have some BrowseView superclass with this inheriting, but I don't want to overcomplicate things
+ * before I know what quirks the main content views for other media modes may involve (due to relying on data from external APIs).</p>
+ */
 public class AnimeBrowseView implements PopupMakerView {
 
-    private final double RATIO = 318.0 / 225.0; // The aspect ratio to use for anime images. This doesn't match all exactly, but is close enough.
+    /**
+     * Aspect ratio we use for anime images.
+     * This matches most of them well enough (there's no perfect standard used for anime covers).
+     */
+    private final double RATIO = 318.0 / 225.0;
 
     private final Stage stage;
     private final GridFilterListener gridFilterListener;
@@ -70,6 +80,10 @@ public class AnimeBrowseView implements PopupMakerView {
     }
 
 
+    /**
+     * Called once by ViewsController, creates the whole View component
+     * @return The finished view
+     */
     public Region createGridView() {
 
         VBox root = new VBox();
@@ -150,6 +164,11 @@ public class AnimeBrowseView implements PopupMakerView {
     }
 
 
+    /**
+     * First part of the controls component above the grid, the search bar and filters toggle button.
+     * @param filters The FlowPane of the filters to be shown / hidden on toggle button click
+     * @return The finished component
+     */
     private HBox createSearchAndFilterToggle(FlowGridPane filters) {
         // Wrapper
         HBox searchAndModeBox = new HBox();
@@ -202,6 +221,10 @@ public class AnimeBrowseView implements PopupMakerView {
     }
 
 
+    /**
+     * The filter FlowPane of the controls component above the grid.
+     * @return The finished component
+     */
     private FlowGridPane createFilters() {
         FlowGridPane filtersGrid = new FlowGridPane(2, 3);
         filtersGrid.setHgap(10);
@@ -262,6 +285,13 @@ public class AnimeBrowseView implements PopupMakerView {
     }
 
 
+    /**
+     * Creates a single "dropdown" type filter to be used in the createFilters function.
+     * @param labelText String to be used for label above the dropdown filter
+     * @param options Array of Strings to be used for the dropdown options
+     * @param defaultValue String to be selected as the default choice
+     * @return The finished component
+     */
     private VBox createDropdownFilter(String labelText, String[] options, String defaultValue) {
         Label label = new Label(labelText);
         label.getStyleClass().add("filter-label");
@@ -295,6 +325,11 @@ public class AnimeBrowseView implements PopupMakerView {
     }
 
 
+    /**
+     * Creates a single "number input" type filter to be used in the createFilters function.
+     * @param labelText String to be used for label above the dropdown filter
+     * @return The finished component
+     */
     private VBox createNumberFilter(String labelText) {
         Label label = new Label(labelText);
         label.getStyleClass().add("filter-label");
@@ -345,6 +380,12 @@ public class AnimeBrowseView implements PopupMakerView {
     }
 
 
+    /**
+     * Run when the filter toggle button is set to hide filters.
+     * Animates the filters out of existence.
+     * @param filters The FlowPane of the filters to be hidden
+     * @param button The filter toggle button (included here so it can be disabled during the animation)
+     */
     private void hideFilters(FlowGridPane filters, ToggleButton button) {
 
         filtersHidden.set(true);
@@ -384,6 +425,12 @@ public class AnimeBrowseView implements PopupMakerView {
     }
 
 
+    /**
+     * Run when the filter toggle button is set to show filters.
+     * Animates the filters into existence.
+     * @param filters The FlowPane of the filters to be shown
+     * @param button The filter toggle button (included here so it can be disabled during the animation)
+     */
     private void showFilters(FlowGridPane filters, ToggleButton button) {
 
         filtersHidden.set(false);
@@ -426,6 +473,10 @@ public class AnimeBrowseView implements PopupMakerView {
     }
 
 
+    /**
+     * First part of the controls component above the grid, the buttons invoking API calls.
+     * @return The finished component
+     */
     private HBox createButtons() {
         Button seasonButton = new Button("Season");
         Button upcomingButton = new Button("Upcoming");
@@ -490,6 +541,12 @@ public class AnimeBrowseView implements PopupMakerView {
     }
 
 
+    /**
+     * Creates the FlowPane of anime, wrapped by a scrollPane.
+     * Does not actually create the child elements themselves, that is done in an async sub-function.
+     * @param animeListInfo A List of AnimeInfo (to be passed to the async function filling the FlowPane on creation of this full View)
+     * @return The finished component
+     */
     private ScrollPane createBrowseGrid(AnimeListInfo animeListInfo) {
 
         animeGrid = new FlowGridPane(2, 3);  // Default values here shouldn't matter but are needed, so..
@@ -570,10 +627,14 @@ public class AnimeBrowseView implements PopupMakerView {
     }
 
 
-    // Idea: https://stackoverflow.com/a/30780960
-    // Triggered on scroll, window resize, and filter hide / unhide
-    // Checks for all nodes if they intersect the scrollPane.
-    // Images are only loaded on the animeGrid boxes if they are currently in the viewport.
+    /**
+     * Even though it's not strictly necessary for the Browse views due to small page size, we
+     * employ a LazyLoader-like approach on them.
+     * <p>This is a far less efficient approach than the LazyLoader implementation the Log views use,
+     * but it still works fine exactly because of the small page size.</p>
+     * <p><a href="https://stackoverflow.com/a/30780960">Idea from StackOverflow</a></p>
+     * @param scrollPane The scrollPane wrapping the FlowPane of anime (where the lazy loading is run on)
+     */
     private void updateVisibleGridItems(ScrollPane scrollPane) {
 
         // Wrap in runLater for scrollPane resize update, make sure scrollPane size is set correctly.
@@ -609,6 +670,11 @@ public class AnimeBrowseView implements PopupMakerView {
     }
 
 
+    /**
+     * Pagination component below the FlowPane of anime.
+     * @param pages Total amount of pages
+     * @return The finished component
+     */
     private HBox createPagination(int pages) {
 
         // Wrapper (full width HBox)
@@ -629,6 +695,13 @@ public class AnimeBrowseView implements PopupMakerView {
     }
 
 
+    /**
+     * Refreshes the pagination buttons of the pagination component.
+     * Runs on pagination component creating and after any API call.
+     * @param selectedPage The clicked page of the API call (set to 1 on component creation and on API call of a new type
+     *                     e.g. switching from Browse - Season to Browse - Top)
+     * @param pages Total amount of pages
+     */
     private void updatePaginationButtons(int selectedPage, int pages) {
         paginationButtons.getChildren().clear();
 
@@ -664,9 +737,15 @@ public class AnimeBrowseView implements PopupMakerView {
     }
 
 
+    /**
+     * Called on API button ("Season", "Top"..) or pagination button click.
+     * Send the correct async API call to the API call listener, refreshes the grid, and invokes the loading bar animation.
+     * @param page The called page of the API call (set to 1 on component creation and on API call of a new type
+     *             e.g. switching from Browse - Season to Browse - Top)
+     */
     private void invokeAnimatedAPICall(int page) {
         // Begin load animation
-        VBox darkBackground = createSearchBackground(stackPane);
+        VBox darkBackground = createSearchBackground();
         FadeTransition fadeInBackground = createFadeInTransition(darkBackground, 0.2, 0.8);
         fadeInBackground.play();
 
@@ -682,10 +761,9 @@ public class AnimeBrowseView implements PopupMakerView {
             reloadAnimeGridAsync(info.getAnimeList());
 
             Platform.runLater(() -> {
-                // Update pagination. Maybe move later? Needs testing
                 updatePaginationButtons(page, info.getLastPage());
 
-                // Inner runLater for animation end after everything is loaded. Needs testing if inner runLater is needed.
+                // Inner runLater for animation end after everything is loaded
                 Platform.runLater(() -> {
                     PauseTransition pause = new PauseTransition(Duration.seconds(0.1));
                     pause.setOnFinished(ev -> {
@@ -722,6 +800,11 @@ public class AnimeBrowseView implements PopupMakerView {
     }
 
 
+    /**
+     * Reloads the FlowPane of anime with new information when the answer of an API call is received.
+     * @param animeList The List of anime to load into the FlowPane.
+     * @return A CompletableFuture so this can be used as a blocking function for the first API call on creation of the full View
+     */
     private CompletableFuture<Void> reloadAnimeGridAsync(List<AnimeInfo> animeList) {
         return CompletableFuture.supplyAsync(() -> createAnimeGridItems(animeList))
                 .thenAccept(animeBoxes -> {
@@ -764,13 +847,17 @@ public class AnimeBrowseView implements PopupMakerView {
     private List<VBox> createAnimeGridItems(List<AnimeInfo> animeList) {
         List<VBox> animeBoxes = new ArrayList<>();
         for (AnimeInfo anime : animeList) {
-            VBox animeBox = createAnimeBox(anime, stackPane);
+            VBox animeBox = createAnimeBox(anime);
             animeBoxes.add(animeBox);
         }
         return animeBoxes;
     }
 
 
+    /**
+     * Runs when the FlowPane of anime is refreshed.
+     * JavaFX and item heights are janky, hence we enforce them according to our wanted aspect ratio.
+     */
     private void adjustGridItemHeights() {
         for (Node node : animeGrid.getChildren()) {
             if (node instanceof VBox animeBox) {
@@ -784,6 +871,13 @@ public class AnimeBrowseView implements PopupMakerView {
     }
 
 
+    /**
+     * Creates a numbered page button for the pagination component.
+     * @param ownPage The number set as the String for this button's text
+     * @param selectedPage The selected page number that triggered the pagination component's refresh
+     *                     (so this button knows if it's already the clicked button or not)
+     * @return The finished Button
+     */
     private Button createPageButton(int ownPage, int selectedPage) {
         Button pageButton =  new Button(String.valueOf(ownPage));
         pageButton.getStyleClass().add("pagination-button");
@@ -801,6 +895,14 @@ public class AnimeBrowseView implements PopupMakerView {
     }
 
 
+    /**
+     * Creates an ellipsis page button for the pagination component (that's a "...").
+     * Ellipsis buttons bridge gaps between large amount of pages (so the pagination only shows the first, current, and last pages).
+     * They can also be clicked to change into a "page search" number input field.
+     * @param paginationButtons The pagination component
+     * @param pages Amount of max pages of the pagination component
+     * @return The finished Button
+     */
     private Button createEllipsisButton(HBox paginationButtons, int pages) {
         Button ellipsisButton =  new Button("...");
         ellipsisButton.getStyleClass().add("pagination-button");
@@ -817,6 +919,13 @@ public class AnimeBrowseView implements PopupMakerView {
     }
 
 
+    /**
+     * Creates a number input text field, used to replace an ellipsis button of the pagination component when it's clicked.
+     * On focus loss, replaces itself with an ellipsis button again.
+     * @param paginationButtons The pagination component
+     * @param pages Amount of max pages of the pagination component
+     * @return The finished number input field
+     */
     private TextField createPageInputField(HBox paginationButtons, int pages) {
         TextField pageInputField = new TextField();
         pageInputField.getStyleClass().add("pagination-input-field");
@@ -842,6 +951,13 @@ public class AnimeBrowseView implements PopupMakerView {
     }
 
 
+    /**
+     * Triggers when a number input text field (the replacement for an activated ellipsis pagination button) is activated.
+     * Invokes an API call for reasonable input.
+     * @param paginationButtons The pagination component
+     * @param pageInputField The number input field whose input is considered
+     * @param pages Amount of max pages of the pagination component
+     */
     private void handlePageInput(HBox paginationButtons, TextField pageInputField, int pages) {
         String input = pageInputField.getText();
         int index = paginationButtons.getChildren().indexOf(pageInputField);
@@ -868,7 +984,12 @@ public class AnimeBrowseView implements PopupMakerView {
     }
 
 
-    private VBox createAnimeBox(AnimeInfo anime, StackPane stackPane) {
+    /**
+     * Makes a VBox component to be used as a child for the full FlowPane of anime.
+     * @param anime The information on the corresponding anime.
+     * @return The finished component.
+     */
+    private VBox createAnimeBox(AnimeInfo anime) {
 
         // Make image into VBox background, CSS cover sizing to look okay
         // Yes, JavaFX has an Image class, but I could not get it to work properly
@@ -964,7 +1085,7 @@ public class AnimeBrowseView implements PopupMakerView {
 
         // Popup when the box is clicked
         animeBox.setOnMouseClicked(event -> {
-            createPopupScreen(animeBox, anime, stackPane);
+            createPopupScreen(animeBox);
         });
 
 
@@ -975,6 +1096,18 @@ public class AnimeBrowseView implements PopupMakerView {
     }
 
 
+    /**
+     * Changes the border of an anime in the FlowPane based on its status in the Log and its rating.
+     * <ul>
+     *     <li>Grey: Default</li>
+     *     <li>Blue: In Log, unrated</li>
+     *     <li>Gold: In Log, rated with Heart</li>
+     *     <li>Green: In Log, rated with Liked</li>
+     *     <li>Red: In Log, rated with Disliked</li>
+     * </ul>
+     * This is done by altering CSS classes of the anime's VBox component in the FlowPane.
+     * @param animeBox The box to change the border for
+     */
     private void setRatingBorder(VBox animeBox) {
         AnimeInfo anime = (AnimeInfo) animeBox.getUserData();
         AnimeInfo databaseAnime = databaseRequestListener.requestAnimeFromDatabase(anime.getId());
@@ -1014,16 +1147,20 @@ public class AnimeBrowseView implements PopupMakerView {
     }
 
 
-    // TODO: Clean up code, reuse animations
-    private void createPopupScreen(VBox parentBox, AnimeInfo anime, StackPane stackPane) {
+    /**
+     * Creates a PopupView for an anime (and a window darkener effect) when its VBox in the FlowPane is clicked.
+     * @param parentBox The anime box that was clicked
+     */
+    private void createPopupScreen(VBox parentBox) {
         // Fake darkener effect
         VBox darkBackground = new VBox();
         darkBackground.getStyleClass().add("grid-media-popup-background");
         VBox.setVgrow(darkBackground, Priority.ALWAYS);
         HBox.setHgrow(darkBackground, Priority.ALWAYS);
 
+
         // The actual popup
-        AnimePopupView animePopupView = new AnimePopupView(parentBox, this, anime, databaseRequestListener, darkBackground, languagePreference);
+        AnimePopupView animePopupView = new AnimePopupView(parentBox, this, databaseRequestListener, darkBackground, languagePreference);
         VBox popupBox = animePopupView.createPopup();
 
         // Initially transparent for fade-in effect
@@ -1070,13 +1207,17 @@ public class AnimeBrowseView implements PopupMakerView {
     }
 
 
-    private VBox createSearchBackground(StackPane parent) {
+    /**
+     * Creates a darkener full screen effect.
+     * @return The finished background.
+     */
+    private VBox createSearchBackground() {
         VBox darkBackground = new VBox();
         darkBackground.getStyleClass().add("grid-media-popup-background");
         VBox.setVgrow(darkBackground, Priority.ALWAYS);
         HBox.setHgrow(darkBackground, Priority.ALWAYS);
         darkBackground.setOpacity(0);
-        parent.getChildren().add(darkBackground);
+        stackPane.getChildren().add(darkBackground);
         return darkBackground;
     }
 

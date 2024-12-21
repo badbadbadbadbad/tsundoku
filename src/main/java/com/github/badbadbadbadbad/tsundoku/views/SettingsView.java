@@ -3,29 +3,24 @@ package com.github.badbadbadbadbad.tsundoku.views;
 import com.github.badbadbadbadbad.tsundoku.controllers.*;
 import com.github.badbadbadbadbad.tsundoku.external.SmoothScroll;
 import javafx.animation.*;
-import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
-import javafx.collections.ObservableList;
 import javafx.geometry.Bounds;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Popup;
 import javafx.util.Duration;
-import org.controlsfx.control.CheckComboBox;
-import org.controlsfx.control.decoration.Decorator;
-import org.controlsfx.control.decoration.StyleClassDecoration;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
+
+/**
+ * The full view component displayed in the main content pane for media mode "Settings".
+ */
 public class SettingsView {
 
     private final SettingsListener settingsListener;
@@ -48,6 +43,10 @@ public class SettingsView {
     }
 
 
+    /**
+     * Called once by ViewsController, creates the whole View component
+     * @return The finished view
+     */
     public Region createSettingsView() {
 
         VBox root = new VBox();
@@ -97,6 +96,10 @@ public class SettingsView {
     }
 
 
+    /**
+     * Save button component. When clicked, fires a settings update so other components of this program may be updated.
+     * @return The finished component
+     */
     private HBox createSaveButtonElement() {
         HBox saveButtonWrapper = new HBox();
         HBox.setHgrow(saveButtonWrapper, Priority.ALWAYS);
@@ -128,6 +131,10 @@ public class SettingsView {
     }
 
 
+    /**
+     * Wrapper scrollPane for all the settings (which also creates the settings)
+     * @return The finished component
+     */
     private ScrollPane createScrollableSettings() {
 
         VBox wrapper = new VBox();
@@ -183,6 +190,14 @@ public class SettingsView {
     }
 
 
+    /**
+     * Creates the first type of setting component that we need, a combobox only allowing single items to be chosen.
+     * @param headerText Name of the setting
+     * @param descriptionText Description text for the setting
+     * @param comboBoxItems The choices for this setting
+     * @param defaultSelectedItem Value to initialize this setting with (provided by config)
+     * @return The finished component
+     */
     private VBox makeSingleInputComboboxSetting(String headerText, String descriptionText, List<String> comboBoxItems, String defaultSelectedItem) {
         VBox wrapper = new VBox(5);
         wrapper.setMaxWidth(Double.MAX_VALUE);
@@ -232,6 +247,17 @@ public class SettingsView {
     }
 
 
+    /**
+     * Creates the second type of setting component that we need, a combobox allowing multi-inputs.
+     *
+     * <p>JavaFX somehow does not have this, and the custom version by ControlsFX is horribly buggy.
+     * Hence, we're making a custom version here as a "popup" of sorts (looks the same as normal comboboxes).</p>
+     * @param headerText Name of the setting
+     * @param descriptionText Description text for the setting
+     * @param settingsMapName The choices for this setting and their current true / false values
+     * @param desiredOrder Order of the choices for this setting (because the raw Map from the config file has jumbled order)
+     * @return The finished component
+     */
     private VBox makeMultiInputComboboxSetting(String headerText, String descriptionText, String settingsMapName, List<String> desiredOrder) {
 
         VBox wrapper = new VBox(5);
@@ -311,6 +337,13 @@ public class SettingsView {
     }
 
 
+    /**
+     * Creates the fake dropdown created by makeMultiInputComboboxSetting.
+     * @param settingsMap The choices for this setting and their current true / false values
+     * @param desiredOrder Order of the choices for this setting (because the raw Map from the config file has jumbled order)
+     * @param updateLabel A Runnable that changes the label of the dropdown invoker based on the settings currently set to "true"
+     * @return The finished dropdown popup
+     */
     private VBox createPopupContent(Map<String, Boolean> settingsMap, List<String> desiredOrder, Runnable updateLabel) {
         VBox popupContent = new VBox();
         popupContent.getStyleClass().add("settings-multi-combo-box-popup");
@@ -348,7 +381,11 @@ public class SettingsView {
     }
 
 
-
+    /**
+     * Creates the third type of setting component that we need, a password-like text input.
+     * Not used yet.
+     * @return The finished component.
+     */
     private VBox makeTextInputComboboxSetting() {
         VBox wrapper = new VBox();
         wrapper.setMaxWidth(Double.MAX_VALUE);
