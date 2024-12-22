@@ -171,7 +171,7 @@
                             <assetsDir>src/main/resources/assets</assetsDir>
                             <platform>windows</platform>
                             <winConfig>
-                                <exeCreationTool>launch4j</exeCreationTool>
+                                <exeCreationTool>winrun4j</exeCreationTool>
                                 <icoFile>src/main/resources/assets/windows/tsundoku.ico</icoFile>
                                 <generateSetup>false</generateSetup>
                                 <generateMsi>false</generateMsi>
