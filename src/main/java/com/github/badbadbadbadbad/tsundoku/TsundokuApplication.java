@@ -40,7 +40,7 @@ public class TsundokuApplication extends Application {
 
         // Window top left icon(s)
         stage.getIcons().add(
-                new Image(getClass().getResourceAsStream("/assets/linux/32.png"))
+                new Image(getClass().getResourceAsStream("/assets/linux/32_crop.png"))
         );
 
         // Window top bar name
