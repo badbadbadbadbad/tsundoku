@@ -207,7 +207,7 @@ public class AnimePopupView {
         VBox image = createCoverImage(imageAndSelfStatsWrapper);
         ComboBox<String> status = createStatusBox();
         HBox rating = createRatingBox();
-        HBox progress = createProgressTracker("episodes");
+        HBox progress = createProgressTracker("EP");
 
         imageAndSelfStatsWrapper.getChildren().addAll(image, status, rating, progress);
 
@@ -431,7 +431,7 @@ public class AnimePopupView {
         });
 
 
-        Label progressLabel = new Label(" / " + anime.getEpisodesTotal() + " " + unit);
+        Label progressLabel = new Label("  /  " + anime.getEpisodesTotal() + " " + unit);
         progressLabel.getStyleClass().add("progress-label");
         progressLabel.setMinWidth(Region.USE_PREF_SIZE);
 
