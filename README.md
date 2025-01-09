@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="/src/main/resources/assets/github/tsundoku_icon_large.svg" width="150" height="150" alt="tsundoku icon"/>
+    <img src="/src/main/resources/assets/linux/256.png" width="150" height="150" alt="tsundoku icon"/>
 </p>
 
 # tsundoku
