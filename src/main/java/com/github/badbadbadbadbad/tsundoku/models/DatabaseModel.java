@@ -2,11 +2,16 @@ package com.github.badbadbadbadbad.tsundoku.models;
 
 import com.github.badbadbadbadbad.tsundoku.controllers.APIRequestListener;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.*;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -28,6 +33,8 @@ public class DatabaseModel {
     public DatabaseModel(APIRequestListener apiRequestListener) {
         this.apiRequestListener = apiRequestListener;
         this.databaseFilePath = Paths.get(getAppDataPath(), "profiles", "Default.db").toString();
+
+        updateDatabaseBackup();
 
         startAnimeUpdaterBackgroundService();
     }
@@ -285,5 +292,73 @@ public class DatabaseModel {
             CompletableFuture.delayedExecutor(REQUEST_COOLDOWN_MS, TimeUnit.MILLISECONDS)
                     .execute(() -> processNextAnime(animeList, index + 1));
         });
+    }
+
+
+    /**
+     * Attempts to create a backup of the database.
+     * If a recent backup (under a week) exists, it is overwritten, else no new backup is made.
+     */
+    private void updateDatabaseBackup() {
+        try {
+            File backupFile = getExistingBackup();
+            if (backupFile != null) {
+                LocalDate backupDate = getDateFromBackupFile(backupFile.getName());
+                LocalDate currentDate = LocalDate.now();
+
+                if (ChronoUnit.DAYS.between(backupDate, currentDate) < 7) {
+                    return;
+                }
+                Files.delete(backupFile.toPath());
+            }
+
+            Path backupFilePath = getBackupFilePath();
+            Files.copy(Paths.get(this.databaseFilePath), backupFilePath);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    /**
+     * Checks the database folder for an existing backup.
+     * If multiple backups exist (because the user added some to the folder), we just take the first one found.
+     * This is slightly lazy, but oh well.
+     * @return The backup file, if it exists. Else null.
+     */
+    private File getExistingBackup() {
+        Path databaseDir = Paths.get(getAppDataPath(), "profiles");
+        File[] files = databaseDir.toFile().listFiles((dir, name) -> name.startsWith("Backup-") && name.endsWith(".db"));
+        if (files != null && files.length > 0) {
+            return files[0];
+        }
+        return null;
+    }
+
+
+    /**
+     * For some backup file, reads the date in its filename to a LocalDate object.
+     * @param fileName The provided backup file
+     * @return The corresponding LocalDote object
+     */
+    private LocalDate getDateFromBackupFile(String fileName) {
+        String[] parts = fileName.replace("Backup-", "").replace(".db", "").split("-");
+        int year = Integer.parseInt(parts[0]);
+        int month = Integer.parseInt(parts[1]);
+        int day = Integer.parseInt(parts[2]);
+        return LocalDate.of(year, month, day);
+    }
+
+
+    /**
+     * Gets file path to use for a new backup file with today's date.
+     * @return The finished path
+     */
+    private Path getBackupFilePath() {
+        LocalDate currentDate = LocalDate.now();
+        String backupFileName = String.format("Backup-%d-%02d-%02d.db",
+                currentDate.getYear(), currentDate.getMonthValue(), currentDate.getDayOfMonth());
+        return Paths.get(getAppDataPath(), "profiles", backupFileName);
     }
 }
