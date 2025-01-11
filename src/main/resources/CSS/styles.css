@@ -149,8 +149,6 @@
 
 #main-label {
     -fx-text-fill: white;
-    -fx-font-size: 42px;
-    -fx-font-family: "Noto Serif JP Bold";
     -fx-padding: 0 0 0 10; /* The padding is used because the つんどく looks slightly off-center due to the use of 。*/
 }
 
@@ -190,12 +188,11 @@
 
 .sidebar-browse-mode-button {
     -fx-background-color: -sidebar-browse-button-inactive-color;
-    -fx-font-family: "Montserrat Medium";
     -fx-text-fill: white;
     -fx-pref-height: 35px;
     -fx-pref-width: 120px;
     -fx-background-insets: 0;
-    -fx-font-size: 20px;
+    -fx-padding: 5 5 5 5;
 }
 
 .sidebar-browse-mode-button:hover {
@@ -211,10 +208,9 @@
 }
 
 .sidebar-media-button {
-    -fx-font-family: "Montserrat Medium";
     -fx-background-color: transparent;
     -fx-text-fill: white;
-    -fx-font-size: 26px;
+    -fx-padding: 5 10 5 10;
 }
 
 .sidebar-media-button:hover {

@@ -52,25 +52,25 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
         rootStack.getChildren().add(root);
 
 
+
+        // Fonts (loaded here before actual view items are made so they can be used properly)
+        Font.loadFont(getClass().getResource("/fonts/NotoSerifJP-Bold.ttf").toExternalForm(), -1);
+        Font.loadFont(getClass().getResource("/fonts/NotoSansJP-Regular.ttf").toExternalForm(), -1);
+        Font.loadFont(getClass().getResource("/fonts/Montserrat-Medium.ttf").toExternalForm(), -1);
+        Font.loadFont(getClass().getResource("/fonts/Montserrat-Italic.ttf").toExternalForm(), -1);
+
+        // Figuring out the internal names used for the fonts by JavaFX
+        // Font font1 = Font.loadFont(getClass().getResource("/fonts/Montserrat-Medium.ttf").toExternalForm(), -1);
+        // Font font2 = Font.loadFont(getClass().getResource("/fonts/Montserrat-Italic.ttf").toExternalForm(), -1);
+        // System.out.println(String.format("Fonts loaded, names to be used in CSS: %s %s", font1.getName(), font2.getName()));
+
+
         // Starts chain of events that invokes onSidebarModesUpdates() of this class to handle setup of all view elements
         configModel.addConfigListener(this);
 
 
         // Scene scene = new Scene(root);
         Scene scene = new Scene(rootStack);
-
-
-        // Fonts
-        Font.loadFont(getClass().getResource("/fonts/NotoSerifJP-Bold.ttf").toExternalForm(), -1);
-        Font.loadFont(getClass().getResource("/fonts/NotoSansJP-Regular.ttf").toExternalForm(), -1);
-        Font.loadFont(getClass().getResource("/fonts/Montserrat-Medium.ttf").toExternalForm(), -1);
-        Font.loadFont(getClass().getResource("/fonts/Montserrat-Italic.ttf").toExternalForm(), -1);
-
-
-        // Figuring out the internal names used for the fonts by JavaFX
-        // Font font1 = Font.loadFont(getClass().getResource("/fonts/Montserrat-Medium.ttf").toExternalForm(), -1);
-        // Font font2 = Font.loadFont(getClass().getResource("/fonts/Montserrat-Italic.ttf").toExternalForm(), -1);
-        // System.out.println(String.format("Fonts loaded, names to be used in CSS: %s %s", font1.getName(), font2.getName()));
 
 
         // CSS

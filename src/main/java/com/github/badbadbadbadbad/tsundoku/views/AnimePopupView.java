@@ -141,8 +141,19 @@ public class AnimePopupView {
 
 
         // Adjust font size for very long titles to fit container
+        /*
         titleLabel.layoutBoundsProperty().addListener((obs, oldBounds, newBounds) -> {
             adjustFontSizeToContainer(titleLabel, popupBox.getMaxWidth() - 15, 10);
+        });
+
+         */
+
+        // Adjust font size for very long titles to fit container
+        titleLabel.heightProperty().addListener((obs, oldBounds, newBounds) -> {
+            if (titleLabel.getHeight() > 1.0) {
+                // adjustFontSizeToContainer(titleLabel, popupBox.getMaxWidth() - 15, 10);
+                adjustFontSizeToContainer(titleLabel, 10, -1);
+            }
         });
 
         return titleLabel;
@@ -150,26 +161,49 @@ public class AnimePopupView {
 
 
     /**
-     * Turns the font size of some label down bit by bit until it fits some container without overflow.
-     * @param label The label to change font size for
-     * @param containerWidth The container the label should fit into
-     * @param minFontSize A minimum font size where the function stops
+     * Adjusts font size on the text of some Labeled (labels, buttons..) downwards until it fits into the rectangular
+     * label container without overflow, both vertical and horizontal, padding included in the calculation.
+     * @param labeled The Labeled whose font is to be adjusted
+     * @param minFontSize A minimum font size at which point the routine is forced to stop
+     * @param startingFontSize An optional font size to start from instead of the font size the label currently has.
+     *                         Ignored if not a positive number.
+     * @return The final font size the Lebeled is set to
      */
-    private void adjustFontSizeToContainer(Label label, double containerWidth, double minFontSize) {
-        Font font = label.getFont();
+    private double adjustFontSizeToContainer(Labeled labeled, double minFontSize, double startingFontSize) {
+        Font font = labeled.getFont();
         double fontSize = font.getSize();
         String fontFamily = font.getFamily();
 
-        // Temporary font needs to be used because JavaFX buggy when overwriting active font.
-        Text text = new Text(label.getText());
-        text.setFont(font);
 
+        if (startingFontSize > 0) {
+            fontSize = startingFontSize;
+        }
+
+
+        Insets insets = labeled.getInsets();
+        double containerWidth = labeled.getWidth() - insets.getLeft() - insets.getRight();
+        double containerHeight = labeled.getHeight() - insets.getTop() - insets.getBottom();
+
+        // Temporary font needs to be used because JavaFX buggy when overwriting active font.
+        Text text = new Text(labeled.getText());
+        text.setFont(Font.font(fontFamily, fontSize));
+
+
+        // Make smaller until no vertical overflow
+        while (text.getBoundsInLocal().getHeight() > containerHeight  && fontSize > minFontSize) {
+            fontSize--;
+            text.setFont(Font.font(fontFamily, fontSize));
+        }
+
+
+        // Make smaller until no horizontal overflow
         while (text.getBoundsInLocal().getWidth() > containerWidth  && fontSize > minFontSize) {
             fontSize--;
             text.setFont(Font.font(fontFamily, fontSize));
         }
 
-        label.setFont(Font.font(fontFamily, fontSize));
+        labeled.setFont(Font.font(fontFamily, fontSize));
+        return fontSize;
     }
 
 
@@ -534,8 +568,12 @@ public class AnimePopupView {
 
             // "Not yet provided" string, common on upcoming anime, is too wide for meta info grid. Hence, resize when needed.
             wrapper.widthProperty().addListener((obs, oldWidth, newWidth) -> {
+
+
                 if (newWidth.doubleValue() > 0) {
-                    adjustFontSizeToContainer(content, newWidth.doubleValue(), 5);
+
+                    // adjustFontSizeToContainer(content, newWidth.doubleValue(), 5);
+                    // adjustFontSizeToContainer(content, 5);
                 }
 
                 double newFontSize = content.getFont().getSize();
