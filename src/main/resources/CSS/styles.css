@@ -434,7 +434,7 @@
 /* This is the text and darkening background that appear when hovering on a grid box */
 .grid-media-box-text {
     /* -fx-font-family: "Montserrat Medium"; */
-    -fx-font-size: 25;
+    -fx-font-size: 22;
     -fx-text-alignment: center;
     -fx-wrap-text: true;
     -fx-background-color: rgba(0, 0, 0, 0.8); /* "Darkening effect" */
