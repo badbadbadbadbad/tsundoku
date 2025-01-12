@@ -81,27 +81,25 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
         scene.setFill(Color.rgb(35, 36, 42));
 
 
-        // There is some bug here specific to Windows. On Linux, this works fine to set width to 50% of monitor.
-        // On Windows, it's more like 48%. Yet, the screen's dimensions of my setup are correctly found as 1920x1080.
-        // Unsure what's causing it, could not find a fix.
+        // There is some bug here specific to Windows; Window sizing is not applied correctly, there is a slight difference.
+        // Further, the error is slightly different based on my testing Win11 and Win10 environments.
+        // It's fortunately just a very minor issue, so I will not care to investigate further.
         Screen screen = Screen.getPrimary();
         double screenWidth = screen.getBounds().getWidth();
         double screenHeight = screen.getBounds().getHeight();
 
         if (screenWidth > screenHeight) { // "Normal" monitor
             stage.setWidth(screenWidth / 2);
-            stage.setMinWidth(screenWidth / 2);
-            stage.setMaxWidth(screenWidth / 2);
+            stage.setMinWidth(950);
 
             stage.setHeight(screenHeight / 1.5);
-            stage.setMinHeight(screenHeight / 1.7);
+            stage.setMinHeight(700);
         } else { // Vertical monitor
             stage.setWidth(screenWidth);
-            stage.setMinWidth(screenWidth);
-            stage.setMaxWidth(screenWidth);
+            stage.setMinWidth(950);
 
             stage.setHeight(screenHeight / 1.5);
-            stage.setMinHeight(screenHeight / 2);
+            stage.setMinHeight(700);
         }
 
 

@@ -5,6 +5,7 @@ import com.github.badbadbadbadbad.tsundoku.controllers.APIRequestListener;
 import com.github.badbadbadbadbad.tsundoku.controllers.GridFilterListener;
 import com.github.badbadbadbadbad.tsundoku.controllers.LoadingBarListener;
 import com.github.badbadbadbadbad.tsundoku.controllers.DatabaseRequestListener;
+import com.github.badbadbadbadbad.tsundoku.external.FlowGapPane;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeListInfo;
 import com.github.badbadbadbadbad.tsundoku.external.FlowGridPane;
@@ -54,7 +55,7 @@ public class AnimeBrowseView implements PopupMakerView {
     private final DatabaseRequestListener databaseRequestListener;
 
     private ScrollPane scrollPane;
-    private FlowGridPane animeGrid;
+    private FlowGapPane animeGrid;
     private HBox paginationButtons;
     private StackPane stackPane;
     private SmoothScroll smoothScroll;
@@ -549,21 +550,24 @@ public class AnimeBrowseView implements PopupMakerView {
      */
     private ScrollPane createBrowseGrid(AnimeListInfo animeListInfo) {
 
+        /*
         animeGrid = new FlowGridPane(2, 3);  // Default values here shouldn't matter but are needed, so..
         animeGrid.setHgap(20);
         animeGrid.setVgap(20);
         animeGrid.setMaxWidth(Double.MAX_VALUE);
+         */
+
+
+        Screen screen = Screen.getPrimary();
+        double screenWidth = screen.getBounds().getWidth();
+        animeGrid = new FlowGapPane(screenWidth / 9, screenWidth / 9 * RATIO, 20);
+        // VBox.setVgrow(animeGrid, Priority.ALWAYS);
+        // animeGrid.setMaxWidth(Double.MAX_VALUE);
 
         // Load anime grid with grid items
         reloadAnimeGridAsync(animeListInfo.getAnimeList()).join();
 
-        // Invoke paneFinder on the pane
-        // this.paneFinder = new PaneFinder(new ArrayList<>(List.of(animeGrid)));
-
-        // Change grid column amount based on window width
-        Screen screen = Screen.getPrimary();
-        double screenWidth = screen.getBounds().getWidth();
-
+        /*
         ChangeListener<Number> widthListener = (obs, oldWidth, newWidth) -> {
             double windowWidth = newWidth.doubleValue();
             int animesAmount = animeGrid.getChildren().size();
@@ -584,13 +588,10 @@ public class AnimeBrowseView implements PopupMakerView {
 
             rows = (int) Math.ceil((double) animesAmount / cols);
 
-            animeGrid.setColsCount(cols);
-            animeGrid.setRowsCount(rows);
-
-
         };
         stage.widthProperty().addListener(widthListener);
         widthListener.changed(stage.widthProperty(), stage.getWidth(), stage.getWidth());
+         */
 
 
         // Pagination element
@@ -607,6 +608,14 @@ public class AnimeBrowseView implements PopupMakerView {
         scrollPane.getStyleClass().add("grid-scroll-pane");
         VBox.setVgrow(scrollPane, Priority.ALWAYS);
 
+        // Lets the FlowGapPane know who to listen to for size changes
+        animeGrid.setWrapperPane(scrollPane);
+
+
+        // Smooth scroll listener because JavaFX does not hav smooth scrolling..
+        // in /util/, SmoothScroll
+        this.smoothScroll = new SmoothScroll(scrollPane, wrapper);
+
 
         // New: Try to set non-visible grid items to not render to improve performance on large grids
         scrollPane.vvalueProperty().addListener((obs, oldValue, newValue) -> {
@@ -614,14 +623,20 @@ public class AnimeBrowseView implements PopupMakerView {
         });
 
 
-
         scrollPane.widthProperty().addListener(e -> updateVisibleGridItems(scrollPane));
         scrollPane.heightProperty().addListener(e -> updateVisibleGridItems(scrollPane));
 
 
-        // Smooth scroll listener because JavaFX does not hav smooth scrolling..
-        // in /util/, SmoothScroll
-        this.smoothScroll = new SmoothScroll(scrollPane, wrapper);
+        // Another instance of having to reset the SmoothScroll accumulator on pane changes
+        // Needs to be on a small delay, else it doesn't always work.
+        // Not quite sure why, probably due to _when_ exactly rendering of pane size happens in the render pipeline etc.
+        PauseTransition pause = new PauseTransition(Duration.seconds(0.3));
+        scrollPane.widthProperty().addListener((obs, oldValue, newValue) -> {
+            pause.setOnFinished(e -> {
+                smoothScroll.adjustAccumulatedVValue();
+            });
+            pause.playFromStart();
+        });
 
         return scrollPane;
     }
@@ -645,6 +660,8 @@ public class AnimeBrowseView implements PopupMakerView {
             if (scrollPane.getContent() instanceof Parent) {
                 for (Node n : animeGrid.getChildren()) {
                     Bounds nodeBounds = n.localToScene(n.getBoundsInLocal());
+
+
 
                     boolean inViewport = paneBounds.intersects(nodeBounds);
                     AnimeInfo anime = (AnimeInfo) n.getUserData();
@@ -808,14 +825,10 @@ public class AnimeBrowseView implements PopupMakerView {
     private CompletableFuture<Void> reloadAnimeGridAsync(List<AnimeInfo> animeList) {
         return CompletableFuture.supplyAsync(() -> createAnimeGridItems(animeList))
                 .thenAccept(animeBoxes -> {
-                    // animeGrid.getChildren().clear();
-                    // animeGrid.getChildren().addAll(animeBoxes);
-                    // animeGrid.setRowsCount((int) Math.ceil((double) animeGrid.getChildren().size() / animeGrid.getColsCount()));
                     Platform.runLater(() -> {
                         animeGrid.getChildren().clear();
                         paginationButtons.setVisible(false);
                         animeGrid.getChildren().addAll(animeBoxes);
-                        animeGrid.setRowsCount((int) Math.ceil((double) animeGrid.getChildren().size() / animeGrid.getColsCount()));
 
                         new AnimationTimer() {
                             @Override
@@ -825,15 +838,19 @@ public class AnimeBrowseView implements PopupMakerView {
 
                                     adjustGridItemHeights();
 
-                                    // And a nested Platform.runLater because adjustGridItemHeights sets min/max/pref height
-                                    // This is needed so JavaFX can actually set the _true_ height, which this function needs
-                                    // Thanks, JavaFX
-                                    Platform.runLater(() -> {
+                                    // Wait one frame so JavaFX can actually set the real heights
+                                    // (For visibility intersection tests)
+                                    PauseTransition pause = new PauseTransition(Duration.millis(16));
+                                    pause.setOnFinished(e -> {
+                                        if (smoothScroll != null) {
+                                            scrollPane.setVvalue(0);
+                                            smoothScroll.resetAccumulatedVValue();
+                                        }
                                         updateVisibleGridItems(scrollPane);
                                         paginationButtons.setVisible(true);
-                                        if (!(smoothScroll == null))
-                                            smoothScroll.resetAccumulatedVValue();
                                     });
+                                    pause.play();
+
 
                                     stop();
                                 }

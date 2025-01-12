@@ -6,6 +6,7 @@ import com.github.badbadbadbadbad.tsundoku.external.SmoothScroll;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
@@ -88,12 +89,15 @@ public class AnimePopupView {
         final double screenWidth = Screen.getPrimary().getVisualBounds().getWidth();
         final double screenHeight = Screen.getPrimary().getVisualBounds().getHeight();
 
+        double scaledScreenWidth = screenWidth * 0.35;
+        double scaledScreenHeight = screenHeight * 0.5;
+
         // Full popup container
         popupBox.getStyleClass().add("grid-media-popup");
-        popupBox.setMinWidth(screenWidth * 0.35);
-        popupBox.setMaxWidth(screenWidth * 0.35);
-        popupBox.setMinHeight(screenHeight * 0.5);
-        popupBox.setMaxHeight(screenHeight * 0.5);
+        popupBox.setMinWidth(Math.max(scaledScreenWidth, 700));
+        popupBox.setMaxWidth(Math.max(scaledScreenWidth, 700));
+        popupBox.setMinHeight(Math.max(scaledScreenHeight, 700 * 0.8));
+        popupBox.setMaxHeight(Math.max(scaledScreenHeight, 700 * 0.8));
 
         // Title
         Label title = createPopupTitle();
@@ -315,6 +319,7 @@ public class AnimePopupView {
 
 
         status.setOnAction(e -> anime.setOwnStatus(status.getValue()));
+
 
         return status;
     }
