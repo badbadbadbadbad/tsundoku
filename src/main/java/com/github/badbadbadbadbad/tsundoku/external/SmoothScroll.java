@@ -71,8 +71,12 @@ public class SmoothScroll {
 
                 // JavaFX uses vValue for the scrollpane, hence binding scroll size to scrollPane content size by default.
                 // Override this behaviour by normalizing for scrollPane height.
-                double pixelScrollChange = baseChange * BASE_MODIFIER;
+                double viewportHeight = scrollPane.getViewportBounds().getHeight();
                 double totalContentHeight = scrollPane.getContent().getBoundsInLocal().getHeight();
+
+                double speedupModifier = Math.min(5, Math.max(1, 5 * viewportHeight / totalContentHeight));
+
+                double pixelScrollChange = baseChange * BASE_MODIFIER * speedupModifier;
                 double vvalueChange = -pixelScrollChange / totalContentHeight;
 
                 // Fuse interrupted scroll into new scroll
