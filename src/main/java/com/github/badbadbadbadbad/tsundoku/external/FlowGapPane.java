@@ -114,15 +114,17 @@ public class FlowGapPane extends GridPane
     public void setWrapperPane(ScrollPane scrollPane) {
         this.scrollPane = scrollPane;
         scrollPane.widthProperty().addListener((obs, oldValue, newValue) -> {
-            Insets insets = scrollPane.getInsets();
 
             // The extra "15" is because JavaFX ScrollPanes seem to calculate width a little oddly?
             // I assume the width of the content area, scroll bar area etc. don't work like I expect.
             // Still, this arbitrary value makes it look okay, so it's probably fine.
-            this.setMinWidth(newValue.doubleValue() - insets.getRight() - insets.getLeft() - 15);
-            this.setMaxWidth(newValue.doubleValue() - insets.getRight() - insets.getLeft() - 15);
+            Insets insets = scrollPane.getInsets();
+            double availableWidth = newValue.doubleValue() - insets.getRight() - insets.getLeft() - 15;
 
+            this.setMinWidth(availableWidth);
+            this.setMaxWidth(availableWidth);
             reflowAll();
+
         });
     }
 
@@ -138,7 +140,14 @@ public class FlowGapPane extends GridPane
      */
     public void reflowAll() {
 
+        // Sanity check. JavaFX layout sizing is a little wacky while layout calculation is still running.
+        // This wouldn't be an issue, but these values can turn zero or negative, which is absolutely a problem
+        // when I do calculations based on the width here.
+        // We just skip the reflow if the width is currently in such an intermediate flow state.
         double paneWidth = this.getMaxWidth();
+        if (paneWidth < 250) {
+            return;
+        }
 
         int childAmount = getChildren().size();
         int columnAmount = (int) ((paneWidth + minHGap) / (fixedTileWidth + minHGap));
@@ -150,9 +159,10 @@ public class FlowGapPane extends GridPane
         this.setHgap(hgap);
 
         ObservableList<Node> children = getChildren();
-        for (Node child : children ) {
-            int offs = children.indexOf(child);
-            GridPane.setConstraints(child, offsetToCol(offs), offsetToRow(offs) );
+
+        for (int offs = 0; offs < children.size(); offs++) {
+            Node child = children.get(offs);
+            GridPane.setConstraints(child, offsetToCol(offs), offsetToRow(offs));
         }
     }
 }

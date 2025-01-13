@@ -20,7 +20,7 @@ import java.util.List;
  */
 public class SidebarView {
 
-    private static final double SIDEBAR_WIDTH = 0.12; // Percent of screen width, not scaling with window size (for now?)
+    private static final double SIDEBAR_WIDTH = 0.11; // Percent of screen width, not scaling with window size (for now?)
 
     private SidebarListener sidebarListener;
 

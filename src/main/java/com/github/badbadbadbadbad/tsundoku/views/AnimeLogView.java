@@ -1,6 +1,7 @@
 package com.github.badbadbadbadbad.tsundoku.views;
 
 import com.github.badbadbadbadbad.tsundoku.controllers.DatabaseRequestListener;
+import com.github.badbadbadbadbad.tsundoku.external.FlowGapPane;
 import com.github.badbadbadbadbad.tsundoku.external.FlowGridPane;
 import com.github.badbadbadbadbad.tsundoku.external.SmoothScroll;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
@@ -19,6 +20,7 @@ import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.shape.Rectangle;
+import javafx.stage.Screen;
 import javafx.util.Duration;
 import javafx.util.Pair;
 
@@ -45,7 +47,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
     private List<List<VBox>> unfilteredAnimeLists;
     private List<ObservableList<VBox>> filteredAnimeLists;    // ObservableList so grid headers can watch for these being empty
-    private List<FlowGridPane> filteredGrids;                 // The actual grids used for UI
+    private List<FlowGapPane> filteredGrids;                 // The actual grids used for UI
 
 
     private ScrollPane scrollPane;
@@ -115,7 +117,6 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
         // Loading the actual content - both the full collection, and then the filtered collection into UI grids
         loadDatabaseIntoGridsAsync();
-
 
 
         // ScrollPane listener to give controls a bottom border when scrolling
@@ -534,11 +535,12 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
      * Does not actually create the child elements themselves, that is done seperately to work with the filtering.
      * @return The finished component
      */
-    private FlowGridPane createGrid() {
-        FlowGridPane animeGrid = new FlowGridPane(3, 1);
-        animeGrid.setHgap(20);
-        animeGrid.setVgap(20);
-        animeGrid.setMaxWidth(Double.MAX_VALUE);
+    private FlowGapPane createGrid() {
+        Screen screen = Screen.getPrimary();
+        double screenWidth = screen.getBounds().getWidth();
+
+        FlowGapPane animeGrid = new FlowGapPane(screenWidth / 9, screenWidth / 9 * RATIO, 20);
+        // animeGrid.setMaxWidth(Double.MAX_VALUE);
         animeGrid.setPadding(new Insets(0, 0, 30, 0));
 
         return animeGrid;
@@ -1054,7 +1056,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
             for (int i = 0; i < filteredGrids.size(); i++) {
 
-                FlowGridPane filteredGrid = filteredGrids.get(i);
+                FlowGapPane filteredGrid = filteredGrids.get(i);
                 ObservableList<VBox> filteredList = filteredAnimeLists.get(i);
 
                 filteredGrid.getChildren().clear();
@@ -1070,10 +1072,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
                     filteredGrid.setPadding(new Insets(0, 0, 30, 0));
                 }
 
-                filteredGrid.setRowsCount((int) Math.ceil((double) filteredGrid.getChildren().size() / filteredGrid.getColsCount()));
             }
-
-
 
 
             if (scrollPane != null) {
@@ -1097,8 +1096,6 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
             lazyLoader.setLastVisibleIndex(0);
 
             lazyLoader.updateVisibilityFull();
-
-
         });
     }
 
@@ -1158,7 +1155,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
         // Content wrapper
         VBox wrapper = new VBox(0);
-        wrapper.setMaxWidth(Double.MAX_VALUE);
+        // wrapper.setMaxWidth(Double.MAX_VALUE);
 
         for (int i = 0; i < headers.size(); i++) {
             wrapper.getChildren().add(headers.get(i));
@@ -1169,6 +1166,10 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         scrollPane.getStyleClass().add("grid-scroll-pane");
         VBox.setVgrow(scrollPane, Priority.ALWAYS);
 
+
+        for (FlowGapPane filteredGrid : filteredGrids) {
+            filteredGrid.setWrapperPane(scrollPane);
+        }
 
         // Call LazyLoader when window is shrunk or expanded
         scrollPane.vvalueProperty().addListener((obs, oldValue, newValue) -> {
@@ -1185,9 +1186,21 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
                 });
 
             }
-    });
+        });
 
         this.smoothScroll = new SmoothScroll(scrollPane, wrapper);
+
+
+        // Another instance of having to reset the SmoothScroll accumulator on pane changes
+        // Needs to be on a small delay, else it doesn't always work.
+        // Not quite sure why, probably due to _when_ exactly rendering of pane size happens in the render pipeline etc.
+        PauseTransition pause = new PauseTransition(Duration.seconds(0.3));
+        scrollPane.widthProperty().addListener((obs, oldValue, newValue) -> {
+            pause.setOnFinished(e -> {
+                smoothScroll.adjustAccumulatedVValue();
+            });
+            pause.playFromStart();
+        });
 
         return scrollPane;
     }

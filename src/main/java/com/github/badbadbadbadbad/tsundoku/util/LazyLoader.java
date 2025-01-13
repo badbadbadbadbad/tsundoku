@@ -1,6 +1,6 @@
 package com.github.badbadbadbadbad.tsundoku.util;
 
-import com.github.badbadbadbadbad.tsundoku.external.FlowGridPane;
+import com.github.badbadbadbadbad.tsundoku.external.FlowGapPane;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import javafx.animation.FadeTransition;
 import javafx.animation.PauseTransition;
@@ -37,7 +37,7 @@ public class LazyLoader {
 
     private final PaneFinder paneFinder;
     private final ScrollPane scrollPane;
-    private final List<FlowGridPane> flowPanes;
+    private final List<FlowGapPane> flowPanes;
     private int firstVisibleIndex;
     private int lastVisibleIndex;
 
@@ -48,7 +48,7 @@ public class LazyLoader {
     private final PauseTransition loaderPause = new PauseTransition(Duration.seconds(0.1));
     private final PauseTransition imagePause = new PauseTransition(Duration.seconds(0.1));
 
-    public LazyLoader(ScrollPane scrollPane, List<FlowGridPane> flowPanes) {
+    public LazyLoader(ScrollPane scrollPane, List<FlowGapPane> flowPanes) {
         this.scrollPane = scrollPane;
         this.flowPanes = flowPanes;
         this.paneFinder = new PaneFinder(flowPanes);
@@ -58,7 +58,7 @@ public class LazyLoader {
 
         startBatchImageUpdater();
 
-        Pair<FlowGridPane, Integer> first = paneFinder.findPaneAndChildIndex(0);
+        Pair<FlowGapPane, Integer> first = paneFinder.findPaneAndChildIndex(0);
 
         // We only initialize stuff if the log actually contains items.
         // If the log contains no items, then it's impossible to add any without switching to Browse view first.
@@ -107,7 +107,7 @@ public class LazyLoader {
      * JavaFX and item heights in our Log grids are janky, hence we enforce them according to our wanted aspect ratio.
      */
     private void adjustGridItemHeights() {
-        for (FlowGridPane pane: flowPanes) {
+        for (FlowGapPane pane: flowPanes) {
             for (Node node : pane.getChildren()) {
                 if (node instanceof VBox animeBox) {
                     double width = animeBox.getWidth();
@@ -137,7 +137,7 @@ public class LazyLoader {
 
 
         while (firstVisibleIndex <= lastVisibleIndex) {
-            Pair<FlowGridPane, Integer> firstNodePair = paneFinder.findPaneAndChildIndex(firstVisibleIndex);
+            Pair<FlowGapPane, Integer> firstNodePair = paneFinder.findPaneAndChildIndex(firstVisibleIndex);
 
             if (firstNodePair == null) {
                 return;
@@ -180,7 +180,7 @@ public class LazyLoader {
 
         // Currently visible items: Downwards from start
         while (firstVisibleIndex <= lastVisibleIndex) {
-            Pair<FlowGridPane, Integer> firstNodePair = paneFinder.findPaneAndChildIndex(firstVisibleIndex);
+            Pair<FlowGapPane, Integer> firstNodePair = paneFinder.findPaneAndChildIndex(firstVisibleIndex);
 
             if (firstNodePair == null) {
                 return;
@@ -199,7 +199,7 @@ public class LazyLoader {
 
         // Currently visible items: Upwards from end
         while (lastVisibleIndex >= firstVisibleIndex) {
-            Pair<FlowGridPane, Integer> lastNodePair = paneFinder.findPaneAndChildIndex(lastVisibleIndex);
+            Pair<FlowGapPane, Integer> lastNodePair = paneFinder.findPaneAndChildIndex(lastVisibleIndex);
             Node lastNode = lastNodePair.getKey().getChildren().get(lastNodePair.getValue());
 
 
@@ -224,7 +224,7 @@ public class LazyLoader {
         int index = firstVisibleIndex - 1;
         while (index >= 0) {
             
-            Pair<FlowGridPane, Integer> nodePair = paneFinder.findPaneAndChildIndex(index);
+            Pair<FlowGapPane, Integer> nodePair = paneFinder.findPaneAndChildIndex(index);
             if (nodePair == null) {
                 break;
             }
@@ -244,7 +244,7 @@ public class LazyLoader {
         // Check downwards for new visible items
         index = lastVisibleIndex + 1;
         while (index < paneFinder.getTotalItemCount()) {
-            Pair<FlowGridPane, Integer> nodePair = paneFinder.findPaneAndChildIndex(index);
+            Pair<FlowGapPane, Integer> nodePair = paneFinder.findPaneAndChildIndex(index);
             if (nodePair == null) {
                 break;
             }
@@ -278,7 +278,7 @@ public class LazyLoader {
         while (low <= high) {
             int mid = (low + high) / 2;
 
-            Pair<FlowGridPane, Integer> nodePair = paneFinder.findPaneAndChildIndex(mid);
+            Pair<FlowGapPane, Integer> nodePair = paneFinder.findPaneAndChildIndex(mid);
             Node node = nodePair.getKey().getChildren().get(nodePair.getValue());
 
             boolean inViewport = isItemInViewport(node, paneBounds);
@@ -315,7 +315,7 @@ public class LazyLoader {
      */
     private void loadVisibleImages() {
         for (int i = firstVisibleIndex; i <= lastVisibleIndex; i++) {
-            Pair<FlowGridPane, Integer> nodePair = paneFinder.findPaneAndChildIndex(i);
+            Pair<FlowGapPane, Integer> nodePair = paneFinder.findPaneAndChildIndex(i);
 
             if (nodePair == null) {
                 return;
