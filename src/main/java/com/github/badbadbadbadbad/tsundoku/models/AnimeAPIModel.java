@@ -39,7 +39,7 @@ public class AnimeAPIModel {
 
 
     private String programName = "tsundoku";
-    private String programVersion = "0.0-beta";
+    private String programVersion = "0.1-beta";
     private String os = System.getProperty("os.name");
     private String osVersion = System.getProperty("os.version");
     private String javaVersion = "21.0.4";                          // Statically bundled version of the program

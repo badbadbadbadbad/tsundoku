@@ -145,12 +145,13 @@ public class SettingsView {
         // Language preference
         VBox languagePreferenceSetting = makeSingleInputComboboxSetting(
                 "Title Language",
-                "The language used for titles of anime and manga, if provided. \"Default\" will generally mean the Japanese title in Roumaji, though this may vary.",
+                "The language used for titles of anime and manga. Falls back to \"Default\" if data source has not provided alternative versions." +
+                        "\n\"Default\" will generally mean the Japanese title in Roumaji, though this may vary.",
                 List.of("Default", "Japanese", "English"),
                 (String) this.settings.get("weebLanguagePreference")
         );
 
-        ComboBox<String> comboBox = (ComboBox<String>) ((HBox) languagePreferenceSetting.getChildren().get(1)).getChildren().get(1);
+        ComboBox<String> comboBox = (ComboBox<String>) ((HBox) languagePreferenceSetting.getChildren().get(1)).getChildren().get(2);
         comboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
             this.settings.put("weebLanguagePreference", newValue);
             this.saveButton.setDisable(false);
@@ -160,7 +161,9 @@ public class SettingsView {
         // Anime rating filters
         VBox animeRatingFilterSetting = makeMultiInputComboboxSetting(
                 "Anime: Age Ratings",
-                "Only anime with the chosen age ratings (using the MyAnimeList system) will be displayed. This setting activates exclusively on the Browse view.",
+                "Only anime with the chosen age ratings will be displayed. " +
+                        "\ntsundoku uses the MyAnimeList anime age rating system as they are the original data source." +
+                        "\nThis setting activates exclusively on the Browse view.",
                 "animeRatingFilters",
                 Arrays.asList("G", "PG", "PG13", "R17+", "R+", "Rx", "Not yet provided")
         );
@@ -169,7 +172,9 @@ public class SettingsView {
         // Anime type filters
         VBox animeTypeFilterSetting = makeMultiInputComboboxSetting(
                 "Anime: Types",
-                "Only anime of the chosen types (using the MyAnimeList system) will be displayed. This setting activates exclusively on the Browse view.",
+                "Only anime of the chosen types will be displayed." +
+                        "\ntsundoku uses the MyAnimeList anime type system as they are the original data source." +
+                        "\nThis setting activates exclusively on the Browse view.",
                 "animeTypeFilters",
                 Arrays.asList("TV", "Movie", "OVA", "ONA", "Special", "TV Special", "PV", "CM", "Music", "Not yet provided")
         );
@@ -223,6 +228,7 @@ public class SettingsView {
         // Settings item content wrapper
         HBox subWrapper = new HBox(20);
         subWrapper.setMaxWidth(Double.MAX_VALUE);
+        subWrapper.setAlignment(Pos.TOP_RIGHT);
 
         // Settings item content, left: Description
         Label descriptionLabel = new Label(descriptionText);
@@ -236,8 +242,12 @@ public class SettingsView {
         comboBox.setValue(defaultSelectedItem);
 
 
+        // Spacer to push ComboBox to the right
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        subWrapper.getChildren().addAll(descriptionLabel, comboBox);
+
+        subWrapper.getChildren().addAll(descriptionLabel, spacer, comboBox);
 
 
         wrapper.getChildren().addAll(headerLabel, subWrapper);
@@ -280,6 +290,7 @@ public class SettingsView {
         // Settings item content wrapper
         HBox subWrapper = new HBox(20);
         subWrapper.setMaxWidth(Double.MAX_VALUE);
+        subWrapper.setAlignment(Pos.TOP_RIGHT);
 
         // Settings item content, left: Description
         Label descriptionLabel = new Label(descriptionText);
@@ -329,7 +340,11 @@ public class SettingsView {
             }
         });
 
-        subWrapper.getChildren().addAll(descriptionLabel, selectionLabel);
+        // Spacer to push ComboBox to the right
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        subWrapper.getChildren().addAll(descriptionLabel, spacer, selectionLabel);
         wrapper.getChildren().addAll(headerLabel, subWrapper);
 
         this.firstSettingsItemCreated = true;
