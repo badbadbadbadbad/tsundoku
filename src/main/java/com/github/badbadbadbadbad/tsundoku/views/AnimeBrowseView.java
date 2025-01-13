@@ -183,11 +183,17 @@ public class AnimeBrowseView implements PopupMakerView {
 
         // Regex to allow only english alphanumeric, JP / CN / KR characters, and spaces
         searchBar.textProperty().addListener((observable, oldValue, newValue) -> {
+
+            searchString = newValue;
+
+            /*
             if (newValue.matches("[\\p{IsHan}\\p{IsHiragana}\\p{IsKatakana}\\p{IsHangul}\\p{Alnum} ]*")) {
                 searchString = newValue;
             } else {
                 searchBar.setText(oldValue);
             }
+
+             */
         });
 
         // Search should trigger on enter press (but not when search empty to avoid unnecessary API calls)

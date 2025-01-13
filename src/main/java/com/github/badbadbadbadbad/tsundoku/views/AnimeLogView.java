@@ -175,8 +175,22 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
 
         searchBar.textProperty().addListener((observable, oldValue, newValue) -> {
-            // Regex to allow only english alphanumeric, JP / CN / KR characters, and spaces
-            if (newValue.matches("[\\p{IsHan}\\p{IsHiragana}\\p{IsKatakana}\\p{Alnum} ]*")) {
+
+            this.searchString = newValue;
+
+            scrollPane.setVvalue(0);
+            smoothScroll.resetAccumulatedVValue();
+
+            if (lazyLoader != null) {
+                lazyLoader.unloadVisible();
+            }
+
+            onFiltersChanged();
+
+            /*
+            // Regex to allow only english alphanumeric, JP / CN / KR characters, and spaces,
+            // as well as some special characters for JP / CN / KR languages.
+            if (newValue.matches("[\\p{IsHan}\\p{IsHiragana}\\p{IsKatakana}\\p{Alnum} \\u30FB\\u30FC\\u301C\\u3001\\u3002\\u2014\\u2013\\u300A\\u300B\\u00B7\\uFF01\\uFF1F]*")) {
                 this.searchString = newValue;
 
                 // Refresh content according to search bar text
@@ -191,6 +205,8 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
             } else {
                 searchBar.setText(oldValue);
             }
+
+             */
         });
 
 
