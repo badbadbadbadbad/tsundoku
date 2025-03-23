@@ -39,9 +39,12 @@ public class TsundokuApplication extends Application {
         this.viewsController = new ViewsController(stage, apiController, configController, configModel, databaseController);
 
         // Window top left icon(s)
-        stage.getIcons().add(
-                new Image(getClass().getResourceAsStream("/assets/linux/32_crop.png"))
-        );
+        String os = System.getProperty("os.name").toLowerCase();
+        if (os.contains("win")) {
+            stage.getIcons().add(new Image(getClass().getResourceAsStream("/assets/windows/tsundoku.ico")));
+        } else {
+            stage.getIcons().add(new Image(getClass().getResourceAsStream("/assets/linux/32_crop.png")));
+        }
 
         // Window top bar name
         stage.setTitle("tsundoku.");
