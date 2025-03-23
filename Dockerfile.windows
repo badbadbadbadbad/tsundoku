@@ -1,0 +1,30 @@
+# Dockerfile for Windows build
+# This requires Windows containers, so it should only run on a Windows host
+FROM mcr.microsoft.com/windows/servercore:ltsc2022
+
+WORKDIR C:\app
+
+# Install dependencies
+SHELL ["cmd", "/S", "/C"]
+RUN powershell -Command "\
+    Invoke-WebRequest -Uri https://aka.ms/download-jdk/microsoft-jdk-21.0.4-windows-x64.zip -OutFile jdk.zip; \
+    Expand-Archive -Path jdk.zip -DestinationPath C:\jdk; \
+    Remove-Item jdk.zip"
+
+# Set environment variables
+ENV JAVA_HOME=C:\jdk
+ENV PATH="%JAVA_HOME%\bin;%PATH%"
+
+# Copy project files
+COPY . .
+
+# Build Windows version
+RUN mvn package -DjdkPath=%JAVA_HOME% -Djavafx.platform=win
+
+# Cleanup unnecessary files while keeping only the final Windows build
+RUN powershell -Command "\
+    $winBuild = Get-ChildItem -Path target\*.zip | Select-Object -ExpandProperty FullName; \
+    New-Item -ItemType Directory -Path final_build; \
+    Move-Item -Path $winBuild -Destination final_build\; \
+    Remove-Item -Recurse -Force target\*; \
+    Move-Item -Path final_build\* -Destination target\"

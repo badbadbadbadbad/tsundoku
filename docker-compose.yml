@@ -1,0 +1,19 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  linux-build:
+    build:
+      context: .
+      dockerfile: Dockerfile.linux
+    volumes:
+      - ./output:/app/target
+    depends_on: []
+
+  windows-build:
+    build:
+      context: .
+      dockerfile: Dockerfile.windows
+    volumes:
+      - ./output:/app/target
+    depends_on: []

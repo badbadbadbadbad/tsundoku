@@ -6,7 +6,7 @@
 
     <groupId>com.github.badbadbadbadbad</groupId>
     <artifactId>tsundoku</artifactId>
-    <version>0.1-BETA</version>
+    <version>0.2-BETA</version>
     <name>tsundoku</name>
 
     <properties>
@@ -140,7 +140,7 @@
                                 <vmArg>--module-path=libs</vmArg>
                                 <vmArg>--add-modules=javafx.controls,javafx.fxml</vmArg>
                             </vmArgs>
-                            <jdkPath>/home/bad/Desktop/jdk-21.0.4-linux</jdkPath>
+                            <!-- <jdkPath>/home/bad/Desktop/jdk-21.0.4-linux</jdkPath> -->
                             <assetsDir>src/main/resources/assets</assetsDir>
                             <platform>linux</platform>
                             <linuxConfig>
@@ -167,7 +167,7 @@
                                 <vmArg>--module-path=libs</vmArg>
                                 <vmArg>--add-modules=javafx.controls,javafx.fxml</vmArg>
                             </vmArgs>
-                            <jdkPath>/home/bad/Desktop/jdk-21.0.4-windows</jdkPath>
+                            <!-- <jdkPath>/home/bad/Desktop/jdk-21.0.4-windows</jdkPath> -->
                             <assetsDir>src/main/resources/assets</assetsDir>
                             <platform>windows</platform>
                             <winConfig>
