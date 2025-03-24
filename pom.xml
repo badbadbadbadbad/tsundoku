@@ -167,7 +167,6 @@
                                 <vmArg>--module-path=libs</vmArg>
                                 <vmArg>--add-modules=javafx.controls,javafx.fxml</vmArg>
                             </vmArgs>
-                            <!-- <jdkPath>/home/bad/Desktop/jdk-21.0.4-windows</jdkPath> -->
                             <assetsDir>src/main/resources/assets</assetsDir>
                             <platform>windows</platform>
                             <winConfig>
