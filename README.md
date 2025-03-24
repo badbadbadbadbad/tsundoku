@@ -30,13 +30,16 @@ Delete the folder you downloaded. To remove your config file and local database 
 * Linux: Delete `~/.local/share/tsundoku`.
 
 ## Building
-**tsundoku** uses a default Java 21.0.4 JDK and is built with [JavaPackager](https://github.com/fvarrui/JavaPackager) and Maven. Note that tsundoku is packaged with Java and all dependencies included, and you will have to provide the proper JDKs to build it. In `pom.xml` in the project's root folder, you may adjust the JavaPackager configuration to adjust the JDK locations used.
+**tsundoku** is built using Maven and JavaPackager. To lessen the annoyance of tinkering with JavaPackager, 
+automatic build scripts for both Windows and Linux are provided.
+These scripts automatically download the required JDK and Maven versions, 
+builds the platform-specific version into the project root, 
+then removes the temporary files used for the build process.
+* Windows: In the project root, run `powershell -ExecutionPolicy Bypass -File build-windows.ps1`.
+* Linux: In the project root, run `chmod +x build-linux.sh` to make the script executable, then run `./build-linux.sh`.
 
-Download the source code, extract it, and navigate to the project's root folder. Then,
-* Windows: From cmd, run `mvn package -Djavafx.platform=win`.
-* Linux: From Terminal, run `mvn package`.
 
-The tsundoku-\<version\>-\<operating system\> archives are the ones provided in the `releases` section of this repository.
+The tsundoku-\<version\>-\<operating system\> archives in the `releases` section of this repository are built the same way.
 
 ## Acknowledgements
 **tsundoku** serves as a combined front end for different APIs and data sources and could not work without them.
