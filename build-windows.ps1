@@ -3,7 +3,7 @@ $mavenVersion = "3.9.9"
 $jdkDir = "$PSScriptRoot\jdk"
 $mavenDir = "$PSScriptRoot\maven"
 
-# Java 21.0.4 install (This download specifically is 21.0.4+7)
+# Java 21.0.4 install (This download is specifically 21.0.4+7)
 Write-Host "Downloading Java $jdkVersion..."
 Invoke-WebRequest -Uri "https://aka.ms/download-jdk/microsoft-jdk-$jdkVersion-windows-x64.zip" -OutFile "$PSScriptRoot\jdk.zip"
 Expand-Archive -Path "$PSScriptRoot\jdk.zip" -DestinationPath $jdkDir
