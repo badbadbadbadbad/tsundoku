@@ -5,6 +5,8 @@ package com.github.badbadbadbadbad.tsundoku.external;
 
 import javafx.animation.Animation;
 import javafx.animation.Interpolator;
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.event.EventHandler;
 import javafx.scene.Node;
 import javafx.scene.control.ScrollBar;
@@ -18,7 +20,9 @@ public class SmoothScroll {
     private final ScrollPane scrollPane;
 
     private final static double BASE_MODIFIER = 1;
+
     private double accumulatedTargetVValue = 0;
+    public DoubleProperty accumulatedTargetVValueProp = new SimpleDoubleProperty();
 
     public SmoothScroll(final ScrollPane scrollPane, final Node node) {
         this(scrollPane, node, 160);
@@ -27,6 +31,8 @@ public class SmoothScroll {
     public SmoothScroll(final ScrollPane scrollPane, final Node node, final double baseChange) {
 
         this.scrollPane = scrollPane;
+
+        this.accumulatedTargetVValueProp.set(0.0);
 
         // When scrollBar is dragged, the accumulated target vvalue needs to be changed manually.
         // Unfortunately, JavaFX does not let us access the scrollBar directly for events.
@@ -43,11 +49,14 @@ public class SmoothScroll {
                     // Also need to handle the "scroll track click" event..
                     n.setOnMouseClicked(event -> {
                         accumulatedTargetVValue = scrollPane.getVvalue();
+                        this.accumulatedTargetVValueProp.set(accumulatedTargetVValue);
                     });
+
 
                     // Scroll bar drag event
                     n.setOnMouseReleased(event -> {
                         accumulatedTargetVValue = scrollPane.getVvalue();
+                        this.accumulatedTargetVValueProp.set(accumulatedTargetVValue);
                     });
                 }
             }
@@ -84,6 +93,7 @@ public class SmoothScroll {
                 // Fuse interrupted scroll into new scroll
                 accumulatedTargetVValue += vvalueChange * Math.signum(deltaYOrg);
                 accumulatedTargetVValue = Math.max(0, Math.min(accumulatedTargetVValue, 1));
+                accumulatedTargetVValueProp.set(accumulatedTargetVValue);
 
                 // Multiscrolls cause slowdown if scrolling into the upper or lower end of the scrollPane.
                 // Hence, we just skip multiscrolls if they keep crashing into a scrollPane end.
@@ -126,9 +136,15 @@ public class SmoothScroll {
 
     public void resetAccumulatedVValue() {
         accumulatedTargetVValue = 0;
+        accumulatedTargetVValueProp.set(accumulatedTargetVValue);
     }
 
     public void adjustAccumulatedVValue() {
         accumulatedTargetVValue = scrollPane.getVvalue();
+        accumulatedTargetVValueProp.set(accumulatedTargetVValue);
+    }
+
+    public double getAccumulatedVValue() {
+        return accumulatedTargetVValue;
     }
 }

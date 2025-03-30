@@ -129,33 +129,25 @@ public class AnimeBrowseView implements PopupMakerView {
         pause.play();
 
 
-        // ScrollPane listener to give controls a bottom border when scrolling
+        // Give controls a bottom border when scrolling around
         Region separator = new Region();
         separator.getStyleClass().add("separator");
         separator.setOpacity(0.0);
 
-        FadeTransition fadeIn = new FadeTransition(Duration.seconds(0.2), separator);
-        fadeIn.setFromValue(0.0);
-        fadeIn.setToValue(1.0);
+        FadeTransition fader = new FadeTransition(Duration.seconds(0.2), separator);
+        this.smoothScroll.accumulatedTargetVValueProp.addListener((obs, oldValue, newValue) -> {
 
-        FadeTransition fadeOut = new FadeTransition(Duration.seconds(0.2), separator);
-        fadeOut.setFromValue(1.0);
-        fadeOut.setToValue(0.0);
-
-        scrollPane.vvalueProperty().addListener((obs, oldValue, newValue) -> {
-
-            // This is so the controls-bottom-border can't start showing if the pane scroll bar is fully vertical (no scrolling possible)
             boolean canScroll = scrollPane.getContent().getBoundsInLocal().getHeight() > scrollPane.getViewportBounds().getHeight();
-            if (newValue.doubleValue() > 0.01 && canScroll) {
-                if (separator.getOpacity() == 0.0 || fadeOut.getStatus() == Animation.Status.RUNNING) {
-                    fadeOut.stop();
-                    fadeIn.playFromStart();
-                }
-            } else {
-                if (separator.getOpacity() == 1.0 || fadeIn.getStatus() == Animation.Status.RUNNING) {
-                    fadeIn.stop();
-                    fadeOut.playFromStart();
-                }
+
+            if (!canScroll) {
+                fader.setToValue(0.0);
+                fader.playFromStart();
+            } else if (oldValue.doubleValue() == 0.0 && newValue.doubleValue() > 0.00) {
+                fader.setToValue(1.0);
+                fader.playFromStart();
+            } else if (oldValue.doubleValue() > 0.00 && newValue.doubleValue() == 0.00) {
+                fader.setToValue(0.0);
+                fader.playFromStart();
             }
         });
 
