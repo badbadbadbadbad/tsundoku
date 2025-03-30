@@ -10,13 +10,12 @@ import javafx.scene.Node;
 import javafx.scene.control.ScrollBar;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.input.ScrollEvent;
-import javafx.scene.layout.StackPane;
 
 import java.util.Set;
 
 public class SmoothScroll {
 
-    private ScrollPane scrollPane;
+    private final ScrollPane scrollPane;
 
     private final static double BASE_MODIFIER = 1;
     private double accumulatedTargetVValue = 0;
@@ -69,11 +68,14 @@ public class SmoothScroll {
                     return;
                 }
 
+                double oldAcc = accumulatedTargetVValue;
+
                 // JavaFX uses vValue for the scrollpane, hence binding scroll size to scrollPane content size by default.
                 // Override this behaviour by normalizing for scrollPane height.
                 double viewportHeight = scrollPane.getViewportBounds().getHeight();
                 double totalContentHeight = scrollPane.getContent().getBoundsInLocal().getHeight();
 
+                // Speedup modifier for small scrollPanes so they aren't super slow.
                 double speedupModifier = Math.min(5, Math.max(1, 5 * viewportHeight / totalContentHeight));
 
                 double pixelScrollChange = baseChange * BASE_MODIFIER * speedupModifier;
@@ -83,12 +85,17 @@ public class SmoothScroll {
                 accumulatedTargetVValue += vvalueChange * Math.signum(deltaYOrg);
                 accumulatedTargetVValue = Math.max(0, Math.min(accumulatedTargetVValue, 1));
 
-                smoothTransition(scrollPane.getVvalue(), accumulatedTargetVValue, deltaYOrg);
+                // Multiscrolls cause slowdown if scrolling into the upper or lower end of the scrollPane.
+                // Hence, we just skip multiscrolls if they keep crashing into a scrollPane end.
+                if (oldAcc == accumulatedTargetVValue){
+                    return;
+                }
 
+                smoothTransition(scrollPane.getVvalue(), accumulatedTargetVValue, deltaYOrg, vvalueChange);
             }
 
             // Calling the interpolated animation
-            private void smoothTransition(double startingVValue, double finalVValue, double deltaY) {
+            private void smoothTransition(double startingVValue, double finalVValue, double deltaY, double vValueChange) {
                 Interpolator interp = Interpolator.LINEAR;
 
                 // Stop the previous transition if it's still running to prevent conflicts
@@ -97,7 +104,13 @@ public class SmoothScroll {
                     transition.stop();
                 }
 
-                transition = new SmoothishTransition(transition, deltaY) {
+                // Scrolls being interrupted by the scrollPane's upper or lower end have their animation time lowered
+                // In accordance with the lower distance they travel until being stopped.
+                double startEndDistance = Math.abs(finalVValue - startingVValue);
+                double animationDurationFactor = Math.min(1, startEndDistance / Math.abs(vValueChange));
+
+
+                transition = new SmoothishTransition(transition, deltaY, animationDurationFactor) {
                     @Override
                     protected void interpolate(double frac) {
                         scrollPane.setVvalue(

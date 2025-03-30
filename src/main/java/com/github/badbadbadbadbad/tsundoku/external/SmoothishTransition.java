@@ -16,12 +16,10 @@ public abstract class SmoothishTransition extends Transition {
 
     // TODO: Experiment more if we even need the mod / delta functionality. Could probably leave it out.
 
-    public SmoothishTransition(SmoothishTransition old, double delta) {
+    public SmoothishTransition(SmoothishTransition old, double delta, double animationLengthFactor) {
 
-        setCycleDuration(Duration.millis(TRANSITION_DURATION));
+        setCycleDuration(Duration.millis(TRANSITION_DURATION * animationLengthFactor));
         setCycleCount(1);
-
-        // System.out.println("Test");
 
         // if (old != null && sameSign(delta, old.delta)) {
         if (old != null) {
