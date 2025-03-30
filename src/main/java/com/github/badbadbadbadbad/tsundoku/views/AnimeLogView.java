@@ -500,7 +500,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
 
         // Middle label
-        Label label = new Label(labelText);
+        Label label = new Label(labelText + "(0)");
         label.getStyleClass().add("log-grid-header-text");
 
 
@@ -518,7 +518,8 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         animeList.addListener((ListChangeListener<VBox>) change -> {
 
             boolean hasItems = animeList.size() > 0;
-            boolean shouldDisplay = personalStatusFilter.equals("Any") || personalStatusFilter.equals(labelText);
+            boolean shouldDisplay = personalStatusFilter.equals("Any") ||
+                    personalStatusFilter.substring(0, 2).equals(labelText.substring(0, 2));
 
             if (hasItems) {
                 headerBox.setMinHeight(40);
@@ -530,6 +531,8 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
             headerBox.setManaged(hasItems && shouldDisplay);
             headerBox.setVisible(hasItems && shouldDisplay);
+
+            label.setText(labelText + " (" + animeList.size() +")");
         });
 
         return headerBox;
