@@ -242,7 +242,7 @@ public class AnimeBrowseView implements PopupMakerView {
                 "Rating: Highest", "Rating: Lowest",
                 "Popular: Most", "Popular: Least"}, "Default");
 
-        VBox statusFilter = createDropdownFilter("Status",
+        VBox statusFilter = createDropdownFilter("Release status",
                 new String[]{"Any", "Complete", "Airing", "Upcoming"}, "Any");
 
         VBox startYearFilter = createNumberFilter("Start year ≥");
@@ -307,7 +307,7 @@ public class AnimeBrowseView implements PopupMakerView {
             comboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
                 gridFilterListener.onAnimeOrderByChanged(newVal);
             });
-        } else if (labelText.equals("Status")) {
+        } else if (labelText.equals("Release status")) {
             comboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
                 gridFilterListener.onAnimeStatusChanged(newVal);
             });

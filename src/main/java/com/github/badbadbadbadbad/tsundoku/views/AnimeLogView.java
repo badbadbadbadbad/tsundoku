@@ -24,10 +24,9 @@ import javafx.stage.Screen;
 import javafx.util.Duration;
 import javafx.util.Pair;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 /**
  * The full view component displayed in the main content pane for browse mode "Log" and media mode "Anime".
@@ -56,11 +55,19 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
     private ListFinder listFinder;
     private SmoothScroll smoothScroll;
 
+
+    private final Map<String, Consumer<String>> filterUpdaters = new HashMap<>();
     private String searchString = "";
     private String personalStatusFilter = "Any";
+    private String personalRatingFilter = "Any";
     private String releaseStatusFilter = "Any";
+    private String ageRatingFilter = "Any";
+    private String minEpisodeFilter = "";
+    private String maxEpisodeFilter = "";
     private String startYearFilter = "";
     private String endYearFilter = "";
+    private String sourceFilter = "Any";
+    private String typeFilter = "Any";
 
     private final BooleanProperty filtersHidden = new SimpleBooleanProperty(true);
     private String languagePreference;
@@ -79,6 +86,18 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
                 FXCollections.observableArrayList(), FXCollections.observableArrayList(),
                 FXCollections.observableArrayList()
         ));
+
+        // Settings comboboxes must know which internal variable to update with the chosen setting
+        this.filterUpdaters.put("Personal status", newValue -> this.personalStatusFilter = newValue);
+        this.filterUpdaters.put("Personal rating", newValue -> this.personalRatingFilter = newValue);
+        this.filterUpdaters.put("Release status", newValue -> this.releaseStatusFilter = newValue);
+        this.filterUpdaters.put("Age rating", newValue -> this.ageRatingFilter = newValue);
+        this.filterUpdaters.put("Episodes ≥", newValue -> this.minEpisodeFilter = newValue);
+        this.filterUpdaters.put("Episodes ≤", newValue -> this.maxEpisodeFilter = newValue);
+        this.filterUpdaters.put("Start year ≥", newValue -> this.startYearFilter = newValue);
+        this.filterUpdaters.put("End year ≤", newValue -> this.endYearFilter = newValue);
+        this.filterUpdaters.put("Source", newValue -> this.sourceFilter = newValue);
+        this.filterUpdaters.put("Type", newValue -> this.typeFilter = newValue);
     }
 
 
@@ -227,7 +246,8 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
      * @return The finished component
      */
     private FlowGridPane createFilters() {
-        FlowGridPane filtersGrid = new FlowGridPane(2, 2);
+        // FlowGridPane filtersGrid = new FlowGridPane(2, 3);
+        FlowGridPane filtersGrid = new FlowGridPane(3, 1);
         filtersGrid.setHgap(10);
         filtersGrid.setVgap(10);
         filtersGrid.setMaxWidth(Double.MAX_VALUE);
@@ -245,14 +265,23 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
                 "Completed", "Paused",
                 "Dropped"}, "Any");
 
-        VBox statusFilter = createDropdownFilter("Status",
+        VBox releaseStatusFilter = createDropdownFilter("Release status",
                 new String[]{"Any", "Complete", "Airing", "Upcoming"}, "Any");
 
-        VBox startYearFilter = createNumberFilter("Start year ≥");
-        VBox endYearFilter = createNumberFilter("End year ≤");
+        VBox personalRatingFilter = createDropdownFilter("Personal rating", new String[]{
+                "Any",
+                "Unscored", "Favourites",
+                "Liked", "Disliked",
+                }, "Any");
 
 
-        filtersGrid.getChildren().addAll(personalStatusFilter, statusFilter, startYearFilter, endYearFilter);
+        // VBox startYearFilter = createNumberFilter("Start year ≥");
+        // VBox endYearFilter = createNumberFilter("End year ≤");
+
+        HBox yearFilter = createDoubleNumberFilter("Start year ≥", "End year ≤");
+
+        filtersGrid.getChildren().addAll(personalStatusFilter, releaseStatusFilter, yearFilter);
+        // filtersGrid.getChildren().addAll(personalStatusFilter, releaseStatusFilter, startYearFilter, endYearFilter);
 
 
         if (!filtersHidden.get()) {
@@ -282,23 +311,10 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         comboBox.setMaxWidth(Double.MAX_VALUE);
         VBox.setVgrow(comboBox, Priority.ALWAYS);
 
-        // Filter change listeners
-        if (labelText.equals("Personal status")) {
+        // Filter change listener
+        if (this.filterUpdaters.containsKey(labelText)) {
             comboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
-                personalStatusFilter = newVal;
-
-                scrollPane.setVvalue(0);
-                smoothScroll.resetAccumulatedVValue();
-
-                if (lazyLoader != null) {
-                    lazyLoader.unloadVisible();
-                }
-
-                onFiltersChanged();
-            });
-        } else if (labelText.equals("Status")) {
-            comboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
-                releaseStatusFilter = newVal;
+                filterUpdaters.get(labelText).accept(newVal);
 
                 scrollPane.setVvalue(0);
                 smoothScroll.resetAccumulatedVValue();
@@ -310,6 +326,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
                 onFiltersChanged();
             });
         }
+
 
         // Even when filters are hidden, mouse cursor changes to text field cursor when hovering
         // where the number filters would be.
@@ -338,6 +355,27 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
 
         // Numeric input and at most four digits regex filter
+        Consumer<String> updater = filterUpdaters.get(labelText);
+        if (updater != null) {
+            textField.textProperty().addListener((obs, oldValue, newValue) -> {
+                if (newValue.matches("\\d{0,4}")) {
+                    updater.accept(newValue);
+
+                    scrollPane.setVvalue(0);
+                    smoothScroll.resetAccumulatedVValue();
+
+                    if (lazyLoader != null) {
+                        lazyLoader.unloadVisible();
+                    }
+
+                    onFiltersChanged();
+                } else {
+                    textField.setText(oldValue);
+                }
+            });
+        }
+
+        /*
         textField.textProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue.matches("\\d{0,4}")) {
                 // textField.setText(oldValue);
@@ -361,6 +399,8 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
             }
         });
 
+         */
+
 
         // Even when filters are hidden, mouse cursor changes to text field cursor when hovering
         // where the number filters would be.
@@ -373,6 +413,14 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         // Listener to fire searches on enter press.
         // Feels more natural when it fires not only when in the search bar, but also these year fields.
         return new VBox(5, label, textField);
+    }
+
+
+    private HBox createDoubleNumberFilter(String labelText1, String labelText2) {
+        VBox filter1 = createNumberFilter(labelText1);
+        VBox filter2 = createNumberFilter(labelText2);
+
+        return new HBox(10, filter1, filter2);
     }
 
 
