@@ -30,8 +30,11 @@ import javafx.util.Duration;
 
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 
 /**
@@ -61,6 +64,9 @@ public class AnimeBrowseView implements PopupMakerView {
     private SmoothScroll smoothScroll;
 
 
+    private final Map<String, Consumer<String>> filterUpdaters = new HashMap<>();
+
+
     private String searchMode = "SEASON";  // Changes between SEASON, TOP, and SEARCH depending on last mode selected (so pagination calls "current mode")
     private String searchString = "";
 
@@ -78,6 +84,12 @@ public class AnimeBrowseView implements PopupMakerView {
         this.gridFilterListener = gridFilterListener;
         this.databaseRequestListener = databaseRequestListener;
         this.languagePreference = languagePreference;
+
+        // Filters must know which internal variable to update with the chosen setting
+        this.filterUpdaters.put("Order by", gridFilterListener::onAnimeOrderByChanged);
+        this.filterUpdaters.put("Release status", gridFilterListener::onAnimeStatusChanged);
+        this.filterUpdaters.put("Year ≥", gridFilterListener::onAnimeStartYearChanged);
+        this.filterUpdaters.put("Year ≤", gridFilterListener::onAnimeEndYearChanged);
     }
 
 
@@ -225,7 +237,7 @@ public class AnimeBrowseView implements PopupMakerView {
      * @return The finished component
      */
     private FlowGridPane createFilters() {
-        FlowGridPane filtersGrid = new FlowGridPane(2, 3);
+        FlowGridPane filtersGrid = new FlowGridPane(3, 1);
         filtersGrid.setHgap(10);
         filtersGrid.setVgap(10);
         filtersGrid.setMaxWidth(Double.MAX_VALUE);
@@ -245,13 +257,13 @@ public class AnimeBrowseView implements PopupMakerView {
         VBox statusFilter = createDropdownFilter("Release status",
                 new String[]{"Any", "Complete", "Airing", "Upcoming"}, "Any");
 
-        VBox startYearFilter = createNumberFilter("Start year ≥");
-        VBox endYearFilter = createNumberFilter("End year ≤");
+        HBox yearFilter = createDoubleNumberFilter("Year ≥", "Year ≤");
+
+        filtersGrid.getChildren().addAll(orderByFilter, statusFilter, yearFilter);
 
 
-        filtersGrid.getChildren().addAll(orderByFilter, statusFilter, startYearFilter, endYearFilter);
-
-
+        // Dynamic resizing not needed with current filter amount
+        /*
         // Dynamically adjust column amount based on window size
         Screen screen = Screen.getPrimary();
         double screenWidth = screen.getBounds().getWidth();
@@ -279,6 +291,8 @@ public class AnimeBrowseView implements PopupMakerView {
         stage.widthProperty().addListener(filtersWidthListener);
         filtersWidthListener.changed(stage.widthProperty(), stage.getWidth(), stage.getWidth()); // Activate once immediately
 
+         */
+
 
         return filtersGrid;
     }
@@ -303,13 +317,9 @@ public class AnimeBrowseView implements PopupMakerView {
         VBox.setVgrow(comboBox, Priority.ALWAYS);
 
         // Filter change listeners
-        if (labelText.equals("Order by")) {
+        if (this.filterUpdaters.containsKey(labelText)) {
             comboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
-                gridFilterListener.onAnimeOrderByChanged(newVal);
-            });
-        } else if (labelText.equals("Release status")) {
-            comboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
-                gridFilterListener.onAnimeStatusChanged(newVal);
+                filterUpdaters.get(labelText).accept(newVal);
             });
         }
 
@@ -338,21 +348,17 @@ public class AnimeBrowseView implements PopupMakerView {
         textField.setMaxWidth(Double.MAX_VALUE);
         VBox.setVgrow(textField, Priority.ALWAYS);
 
-        // Numeric input and at most four digits regex filter
-        textField.textProperty().addListener((observable, oldValue, newValue) -> {
-            if (!newValue.matches("\\d{0,4}")) {
-                textField.setText(oldValue);
-            }
-        });
 
         // Filter change listeners
-        if (labelText.equals("Start year ≥")) {
-            textField.textProperty().addListener((obs, oldVal, newVal) -> {
-                gridFilterListener.onAnimeStartYearChanged(newVal);
-            });
-        } else if (labelText.equals("End year ≤")) {
-            textField.textProperty().addListener((obs, oldVal, newVal) -> {
-                gridFilterListener.onAnimeEndYearChanged(newVal);
+        Consumer<String> updater = filterUpdaters.get(labelText);
+        if (updater != null) {
+            textField.textProperty().addListener((obs, oldValue, newValue) -> {
+                if (newValue.matches("\\d{0,4}")) {
+                    updater.accept(newValue);
+
+                } else {
+                    textField.setText(oldValue);
+                }
             });
         }
 
@@ -375,7 +381,26 @@ public class AnimeBrowseView implements PopupMakerView {
             }
         });
 
-        return new VBox(5, label, textField);
+
+        VBox container = new VBox(5, label, textField);
+        HBox.setHgrow(container, Priority.ALWAYS);
+        return container;
+    }
+
+
+    /**
+     * Creates two number filters as one filter box of two half-widths as our number filters come in natural pairs.
+     * @param labelText1 String to be used for label above first number filter
+     * @param labelText2 String to be used for label above second number filter
+     * @return The finished component
+     */
+    private HBox createDoubleNumberFilter(String labelText1, String labelText2) {
+        VBox filter1 = createNumberFilter(labelText1);
+        VBox filter2 = createNumberFilter(labelText2);
+
+        HBox container = new HBox(10, filter1, filter2);
+        container.setPrefWidth(200); // NECESSARY SO HBOX GETS SCALED BY FLOWGRIDPANE CORRECTLY
+        return container;
     }
 
 

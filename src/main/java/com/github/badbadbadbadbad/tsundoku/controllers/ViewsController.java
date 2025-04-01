@@ -193,7 +193,7 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
                     firstTimeStartup = false;
 
                 } else {
-                    AnimeLogView animeLogView = new AnimeLogView(databaseController, languagePreference);
+                    AnimeLogView animeLogView = new AnimeLogView(stage, databaseController, languagePreference);
                     Region gridView = animeLogView.createGridView();
                     currentLazyLoaderView = animeLogView;
 
@@ -239,7 +239,7 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
                     firstTimeStartup = false;
 
                 } else {
-                    AnimeLogView animeLogView = new AnimeLogView(databaseController, languagePreference);
+                    AnimeLogView animeLogView = new AnimeLogView(stage, databaseController, languagePreference);
                     Region gridView = animeLogView.createGridView();
                     currentLazyLoaderView = animeLogView;
 
@@ -286,7 +286,7 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
                     firstTimeStartup = false;
 
                 } else {
-                    AnimeLogView animeLogView = new AnimeLogView(databaseController, languagePreference);
+                    AnimeLogView animeLogView = new AnimeLogView(stage, databaseController, languagePreference);
                     Region gridView = animeLogView.createGridView();
                     currentLazyLoaderView = animeLogView;
 

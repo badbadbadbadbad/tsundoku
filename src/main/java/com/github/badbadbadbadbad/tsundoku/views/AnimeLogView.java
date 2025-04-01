@@ -21,6 +21,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.Screen;
+import javafx.stage.Stage;
 import javafx.util.Duration;
 import javafx.util.Pair;
 
@@ -42,6 +43,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
      */
     private final double RATIO = 318.0 / 225.0;
 
+    private final Stage stage;
     private final DatabaseRequestListener databaseRequestListener;
 
     private List<List<VBox>> unfilteredAnimeLists;
@@ -66,13 +68,14 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
     private String maxEpisodeFilter = "";
     private String startYearFilter = "";
     private String endYearFilter = "";
-    private String sourceFilter = "Any";
+    private String seasonFilter = "Any";
     private String typeFilter = "Any";
 
     private final BooleanProperty filtersHidden = new SimpleBooleanProperty(true);
     private String languagePreference;
 
-    public AnimeLogView(DatabaseRequestListener databaseRequestListener, String languagePreference) {
+    public AnimeLogView(Stage stage, DatabaseRequestListener databaseRequestListener, String languagePreference) {
+        this.stage = stage;
         this.databaseRequestListener = databaseRequestListener;
         this.languagePreference = languagePreference;
 
@@ -87,16 +90,16 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
                 FXCollections.observableArrayList()
         ));
 
-        // Settings comboboxes must know which internal variable to update with the chosen setting
+        // Filters must know which internal variable to update with the chosen setting
         this.filterUpdaters.put("Personal status", newValue -> this.personalStatusFilter = newValue);
         this.filterUpdaters.put("Personal rating", newValue -> this.personalRatingFilter = newValue);
         this.filterUpdaters.put("Release status", newValue -> this.releaseStatusFilter = newValue);
         this.filterUpdaters.put("Age rating", newValue -> this.ageRatingFilter = newValue);
         this.filterUpdaters.put("Episodes ≥", newValue -> this.minEpisodeFilter = newValue);
         this.filterUpdaters.put("Episodes ≤", newValue -> this.maxEpisodeFilter = newValue);
-        this.filterUpdaters.put("Start year ≥", newValue -> this.startYearFilter = newValue);
-        this.filterUpdaters.put("End year ≤", newValue -> this.endYearFilter = newValue);
-        this.filterUpdaters.put("Source", newValue -> this.sourceFilter = newValue);
+        this.filterUpdaters.put("Year ≥", newValue -> this.startYearFilter = newValue);
+        this.filterUpdaters.put("Year ≤", newValue -> this.endYearFilter = newValue);
+        this.filterUpdaters.put("Season", newValue -> this.seasonFilter = newValue);
         this.filterUpdaters.put("Type", newValue -> this.typeFilter = newValue);
     }
 
@@ -247,7 +250,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
      */
     private FlowGridPane createFilters() {
         // FlowGridPane filtersGrid = new FlowGridPane(2, 3);
-        FlowGridPane filtersGrid = new FlowGridPane(3, 1);
+        FlowGridPane filtersGrid = new FlowGridPane(4, 2);
         filtersGrid.setHgap(10);
         filtersGrid.setVgap(10);
         filtersGrid.setMaxWidth(Double.MAX_VALUE);
@@ -265,28 +268,58 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
                 "Completed", "Paused",
                 "Dropped"}, "Any");
 
+        VBox personalRatingFilter = createDropdownFilter("Personal rating", new String[]{
+                "Any", "Favourite", "Liked", "Disliked", "Unscored"}, "Any");
+
         VBox releaseStatusFilter = createDropdownFilter("Release status",
                 new String[]{"Any", "Complete", "Airing", "Upcoming"}, "Any");
 
-        VBox personalRatingFilter = createDropdownFilter("Personal rating", new String[]{
-                "Any",
-                "Unscored", "Favourites",
-                "Liked", "Disliked",
-                }, "Any");
+        VBox ageRatingFilter = createDropdownFilter("Age rating",
+                new String[]{"Any", "G", "PG", "PG13", "R17+", "R+", "Rx"}, "Any");
+
+        VBox releaseSeasonFilter = createDropdownFilter("Season",
+                new String[]{"Any", "Winter", "Spring", "Summer", "Fall"}, "Any");
+
+        HBox yearFilter = createDoubleNumberFilter("Year ≥", "Year ≤");
+        HBox episodeFilter = createDoubleNumberFilter("Episodes ≥", "Episodes ≤");
+
+        VBox typeFilter = createDropdownFilter("Type",
+                new String[]{"Any", "TV", "Movie", "OVA", "Special", "ONA", "Music", "CM", "PV", "TV Special"}, "Any");
 
 
-        // VBox startYearFilter = createNumberFilter("Start year ≥");
-        // VBox endYearFilter = createNumberFilter("End year ≤");
+        filtersGrid.getChildren().addAll(personalStatusFilter, personalRatingFilter, releaseStatusFilter, ageRatingFilter,
+                releaseSeasonFilter, yearFilter, episodeFilter, typeFilter);
 
-        HBox yearFilter = createDoubleNumberFilter("Start year ≥", "End year ≤");
-
-        filtersGrid.getChildren().addAll(personalStatusFilter, releaseStatusFilter, yearFilter);
-        // filtersGrid.getChildren().addAll(personalStatusFilter, releaseStatusFilter, startYearFilter, endYearFilter);
 
 
         if (!filtersHidden.get()) {
             filtersGrid.setMaxHeight(filtersGrid.prefHeight(filtersGrid.getWidth()));
         }
+
+
+        // Scale filter columns to window width
+        Screen screen = Screen.getPrimary();
+        double screenWidth = screen.getBounds().getWidth();
+        int filtersAmount = filtersGrid.getChildren().size();
+        stage.widthProperty().addListener((obs, oldWidth, newWidth) -> {
+            double windowWidth = newWidth.doubleValue();
+            int cols, rows;
+
+            if (windowWidth < screenWidth * 0.66)
+                cols = 2;
+            else
+                cols = 4;
+
+            rows = (int) Math.ceil((double) filtersAmount / cols); // Need an int value, but need float division, hence ugly casting..
+
+            filtersGrid.setColsCount(cols);
+            filtersGrid.setRowsCount(rows);
+
+            // Necessary for the fade animation to work
+            if (!filtersHidden.get()) {
+                filtersGrid.setMaxHeight(filtersGrid.prefHeight(filtersGrid.getWidth()));
+            }
+        });
 
 
         return filtersGrid;
@@ -335,13 +368,14 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         });
         comboBox.setDisable(filtersHidden.get()); // Since filters are hidden on startup
 
+
         return new VBox(5, label, comboBox);
     }
 
 
     /**
      * Creates a single "number input" type filter to be used in the createFilters function.
-     * @param labelText String to be used for label above the dropdown filter
+     * @param labelText String to be used for label above the number filter
      * @return The finished component
      */
     private VBox createNumberFilter(String labelText) {
@@ -375,32 +409,6 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
             });
         }
 
-        /*
-        textField.textProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue.matches("\\d{0,4}")) {
-                // textField.setText(oldValue);
-                if (labelText.equals("Start year ≥")) {
-                    this.startYearFilter = newValue;
-                } else if (labelText.equals("End year ≤")) {
-                    this.endYearFilter = newValue;
-                }
-
-                scrollPane.setVvalue(0);
-                smoothScroll.resetAccumulatedVValue();
-
-                if (lazyLoader != null) {
-                    lazyLoader.unloadVisible();
-                }
-
-                onFiltersChanged();
-
-            } else {
-                textField.setText(oldValue);
-            }
-        });
-
-         */
-
 
         // Even when filters are hidden, mouse cursor changes to text field cursor when hovering
         // where the number filters would be.
@@ -410,17 +418,25 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         textField.setDisable(filtersHidden.get()); // Since filters are hidden on startup
 
 
-        // Listener to fire searches on enter press.
-        // Feels more natural when it fires not only when in the search bar, but also these year fields.
-        return new VBox(5, label, textField);
+        VBox container = new VBox(5, label, textField);
+        HBox.setHgrow(container, Priority.ALWAYS);
+        return container;
     }
 
 
+    /**
+     * Creates two number filters as one filter box of two half-widths as our number filters come in natural pairs.
+     * @param labelText1 String to be used for label above first number filter
+     * @param labelText2 String to be used for label above second number filter
+     * @return The finished component
+     */
     private HBox createDoubleNumberFilter(String labelText1, String labelText2) {
         VBox filter1 = createNumberFilter(labelText1);
         VBox filter2 = createNumberFilter(labelText2);
 
-        return new HBox(10, filter1, filter2);
+        HBox container = new HBox(10, filter1, filter2);
+        container.setPrefWidth(200); // NECESSARY SO HBOX GETS SCALED BY FLOWGRIDPANE CORRECTLY
+        return container;
     }
 
 
