@@ -269,7 +269,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
                 "Dropped"}, "Any");
 
         VBox personalRatingFilter = createDropdownFilter("Personal rating", new String[]{
-                "Any", "Favourite", "Liked", "Disliked", "Unscored"}, "Any");
+                "Any", "Heart", "Liked", "Disliked", "Unscored"}, "Any");
 
         VBox releaseStatusFilter = createDropdownFilter("Release status",
                 new String[]{"Any", "Complete", "Airing", "Upcoming"}, "Any");
@@ -1054,69 +1054,113 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
                     if (animeInfo == null) continue;
 
 
-
-                    boolean matches = true;
-
-                    // 1. Apply searchString filter
+                    // Search string filter
                     if (searchString != null && !searchString.isEmpty()) {
                         String lowerSearchString = searchString.toLowerCase();
-                        String title = animeInfo.getTitle() != null ? animeInfo.getTitle().toLowerCase() : null;
-                        String titleJapanese = animeInfo.getTitleJapanese() != null ? animeInfo.getTitleJapanese().toLowerCase() : null;
-                        String titleEnglish = animeInfo.getTitleEnglish() != null ? animeInfo.getTitleEnglish().toLowerCase() : null;
+                        String title = animeInfo.getTitle() != null ? animeInfo.getTitle().toLowerCase() : "";
+                        String titleJapanese = animeInfo.getTitleJapanese() != null ? animeInfo.getTitleJapanese().toLowerCase() : "";
+                        String titleEnglish = animeInfo.getTitleEnglish() != null ? animeInfo.getTitleEnglish().toLowerCase() : "";
 
-                        matches = (title != null && title.contains(lowerSearchString)) ||
-                                (titleJapanese != null && titleJapanese.contains(lowerSearchString)) ||
-                                (titleEnglish != null && titleEnglish.contains(lowerSearchString));
+                        if (!(title.contains(lowerSearchString) ||
+                                titleJapanese.contains(lowerSearchString) ||
+                                titleEnglish.contains(lowerSearchString))) {
+                            continue;
+                        }
                     }
 
-                    // 2. Apply personalStatusFilter
-                    if (matches && !"Any".equals(personalStatusFilter)) {
-                        String ownStatus = animeInfo.getOwnStatus();
-                        matches = personalStatusFilter.equals(ownStatus);
+                    // Personal status filter
+                    if (!"Any".equals(personalStatusFilter) && !personalStatusFilter.equals(animeInfo.getOwnStatus())) {
+                        continue;
                     }
 
-                    // 3. Apply releaseStatusFilter
-                    if (matches && !"Any".equals(releaseStatusFilter)) {
-                        String publicationStatus = animeInfo.getPublicationStatus();
-                        matches = releaseStatusFilter.equals(publicationStatus);
+                    // Personal rating filter
+                    if (!"Any".equals(personalRatingFilter) && !personalRatingFilter.equals(animeInfo.getOwnRating())) {
+                        continue;
                     }
 
-                    // 4. Apply startYearFilter
-                    if (matches && startYearFilter != null && !startYearFilter.isEmpty()) {
+                    // Release status filter
+                    if (!"Any".equals(releaseStatusFilter) && !releaseStatusFilter.equals(animeInfo.getPublicationStatus())) {
+                        continue;
+                    }
+
+                    // Age rating filter
+                    if (!"Any".equals(ageRatingFilter) && !ageRatingFilter.equals(animeInfo.getAgeRating())) {
+                        continue;
+                    }
+
+                    // Episode filters
+                    if (minEpisodeFilter != null && !minEpisodeFilter.isEmpty()) {
+                        try {
+                            int minEpisodes = Integer.parseInt(minEpisodeFilter);
+                            if (animeInfo.getEpisodesTotal() < minEpisodes) {
+                                continue;
+                            }
+                        } catch (NumberFormatException e) {
+                        }
+                    }
+
+                    if (maxEpisodeFilter != null && !maxEpisodeFilter.isEmpty()) {
+                        try {
+                            int maxEpisodes = Integer.parseInt(maxEpisodeFilter);
+                            if (animeInfo.getEpisodesTotal() > maxEpisodes) {
+                                continue;
+                            }
+                        } catch (NumberFormatException e) {
+                        }
+                    }
+
+                    // Release year filters
+                    if (startYearFilter != null && !startYearFilter.isEmpty()) {
                         String release = animeInfo.getRelease();
                         if (!"Not yet provided".equals(release)) {
                             try {
                                 int startYear = Integer.parseInt(startYearFilter);
                                 int releaseYear = Integer.parseInt(release.substring(release.length() - 4));
-                                matches = releaseYear >= startYear;
+                                if (releaseYear < startYear) continue;
                             } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
-                                matches = false; // Filter out if invalid release year
+                                continue;
                             }
                         } else {
-                            matches = false; // Filter out if release year is not provided
+                            continue;
                         }
                     }
 
-                    // 5. Apply endYearFilter
-                    if (matches && endYearFilter != null && !endYearFilter.isEmpty()) {
+                    if (endYearFilter != null && !endYearFilter.isEmpty()) {
                         String release = animeInfo.getRelease();
                         if (!"Not yet provided".equals(release)) {
                             try {
                                 int endYear = Integer.parseInt(endYearFilter);
                                 int releaseYear = Integer.parseInt(release.substring(release.length() - 4));
-                                matches = releaseYear <= endYear;
+                                if (releaseYear > endYear) continue;
                             } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
-                                matches = false; // Filter out if invalid release year
+                                continue;
                             }
                         } else {
-                            matches = false; // Filter out if release year is not provided
+                            continue;
                         }
                     }
 
-                    // If the item matches all active filters, add it to the filtered list
-                    if (matches) {
-                        filteredList.add(animeBox);
+                    // Release season filter
+                    if (!"Any".equals(seasonFilter)) {
+                        String release = animeInfo.getRelease();
+                        if (!"Not yet provided".equals(release)) {
+                            String season = release.substring(0, release.length() - 5); // Trim spacebar and four-digit release year
+                            if (!seasonFilter.equals(season)) {
+                                continue;
+                            }
+                        } else {
+                            continue;
+                        }
                     }
+
+                    // Type filter
+                    if (!"Any".equals(typeFilter) && !typeFilter.equals(animeInfo.getType())) {
+                        continue;
+                    }
+
+
+                    // If all filters passed, add to filtered list
+                    filteredList.add(animeBox);
                 }
             }
         }
