@@ -18,6 +18,7 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -64,6 +65,7 @@ public class AnimeAPIModel {
                 .build();
 
         return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .orTimeout(5, TimeUnit.SECONDS)
                 .thenApply(response -> {
                     if (response.statusCode() != 200) {
                         throw new RuntimeException("getCurrentSeason(): HTTP Error Code " + response.statusCode());
@@ -74,13 +76,13 @@ public class AnimeAPIModel {
                         JsonNode rootNode = mapper.readTree(response.body());
                         return parseAnimeData(rootNode);
                     } catch (IOException e) {
-                        System.out.println("Parsing error: " + e.getMessage());
-                        return null;
+                        System.out.println("AnimeAPIModel getCurrentSeason() response parsing error: " + e.getMessage());
+                        return new AnimeListInfo(Collections.emptyList(), 1);
                     }
                 })
                 .exceptionally(e -> {
                     System.out.println("AnimeAPIModel getCurrentSeason() error: " + e);
-                    return null;
+                    return new AnimeListInfo(Collections.emptyList(), 1);
                 });
     }
 
@@ -103,6 +105,7 @@ public class AnimeAPIModel {
                 .build();
 
         return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .orTimeout(5, TimeUnit.SECONDS)
                 .thenApply(response -> {
                     if (response.statusCode() != 200) {
                         throw new RuntimeException("getUpcoming(): HTTP Error Code " + response.statusCode());
@@ -113,13 +116,13 @@ public class AnimeAPIModel {
                         JsonNode rootNode = mapper.readTree(response.body());
                         return parseAnimeData(rootNode);
                     } catch (IOException e) {
-                        System.out.println("Parsing error: " + e.getMessage());
-                        return null;
+                        System.out.println("AnimeAPIModel getUpcoming() response parsing error: " + e.getMessage());
+                        return new AnimeListInfo(Collections.emptyList(), 1);
                     }
                 })
                 .exceptionally(e -> {
                     System.out.println("AnimeAPIModel getUpcoming() error: " + e);
-                    return null;
+                    return new AnimeListInfo(Collections.emptyList(), 1);
                 });
     }
 
@@ -143,6 +146,7 @@ public class AnimeAPIModel {
 
 
         return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .orTimeout(5, TimeUnit.SECONDS)
                 .thenApply(response -> {
                     if (response.statusCode() != 200) {
                         throw new RuntimeException("getTop: HTTP Error Code " + response.statusCode());
@@ -152,13 +156,13 @@ public class AnimeAPIModel {
                         JsonNode rootNode = mapper.readTree(response.body());
                         return parseAnimeData(rootNode);
                     } catch (IOException e) {
-                        System.out.println("Parsing error: " + e.getMessage());
-                        return null;
+                        System.out.println("AnimeAPIModel getTop() response parsing error: " + e.getMessage());
+                        return new AnimeListInfo(Collections.emptyList(), 1);
                     }
                 })
                 .exceptionally(e -> {
                     System.out.println("AnimeAPIModel getTop() error: " + e);
-                    return null;
+                    return new AnimeListInfo(Collections.emptyList(), 1);
                 });
     }
 
@@ -186,6 +190,7 @@ public class AnimeAPIModel {
 
 
         return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .orTimeout(5, TimeUnit.SECONDS)
                 .thenApply(response -> {
                     if (response.statusCode() != 200) {
                         throw new RuntimeException("getSearchByName: HTTP Error Code " + response.statusCode());
@@ -196,13 +201,13 @@ public class AnimeAPIModel {
                         JsonNode rootNode = mapper.readTree(response.body());
                         return parseAnimeData(rootNode);
                     } catch (IOException e) {
-                        System.out.println("Parsing error: " + e.getMessage());
-                        return null;
+                        System.out.println("AnimeAPIModel getSearchByName() response parsing error: " + e.getMessage());
+                        return new AnimeListInfo(Collections.emptyList(), 1);
                     }
                 })
                 .exceptionally(e -> {
                     System.out.println("AnimeAPIModel getSearchByName() error: " + e);
-                    return null;
+                    return new AnimeListInfo(Collections.emptyList(), 1);
                 });
     }
 
@@ -211,7 +216,7 @@ public class AnimeAPIModel {
      * API request for a specific anime depending on its MyAnimeList ID.
      * <p><a href="https://docs.api.jikan.moe/#tag/anime/operation/getAnimeById">Link to documentation</a></p>
      * @param id The ID to be used for the request. As Jikan.Moe uses MyAnimeList data, they also use their ID system.
-     * @return Result of API call, processed with parseSingleAnimeData function.
+     * @return Result of API call, processed with parseSingleAnimeData function. Returns null on a bad API call.
      */
     public CompletableFuture<AnimeInfo> getAnimeByID(int id) {
         String urlString = BASE_URL + "/anime/" + id;
@@ -226,6 +231,7 @@ public class AnimeAPIModel {
 
 
         return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .orTimeout(5, TimeUnit.SECONDS)
                 .thenApply(response -> {
                     if (response.statusCode() != 200) {
                         throw new RuntimeException("getAnimeByID: HTTP Error Code " + response.statusCode());
@@ -235,7 +241,7 @@ public class AnimeAPIModel {
                         JsonNode rootNode = mapper.readTree(response.body());
                         return parseSingleAnimeData(rootNode);
                     } catch (IOException e) {
-                        System.out.println("Parsing error: " + e.getMessage());
+                        System.out.println("AnimeAPIModel getAnimeByID() response parsing error: " + e.getMessage());
                         return null;
                     }
                 })

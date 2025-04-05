@@ -256,6 +256,7 @@ public class DatabaseModel {
     /**
      * The actual "update this database entry with updated information" function for the background updater service.
      * Forwards the request for current data on some anime to the API communication service, then invokes a database update with the returned data.
+     * If the API call returns a null (API issues, internet timeout..), we just skip that iteration.
      * @param animeList The full list of anime to be updated.
      * @param index Current index of the list to update. Updates when the update is finished and a timeout has passed.
      */
@@ -272,19 +273,18 @@ public class DatabaseModel {
 
         apiRequestListener.getAnimeByID(animeId).thenAccept(newAnimeInfo -> {
 
-            // Testing if it works
-            /*
-            System.out.println("Updated anime " + newAnimeInfo.getTitle() +
-                    ", was last updated " + animeInfo.getLastUpdated() +
-                    ", new date is " + newAnimeInfo.getLastUpdated());
-
-             */
+            if (newAnimeInfo == null) {
+                System.out.println("Skipping anime ID in database update cycle " + animeId + " due to bad API call.");
+                // Still continue to next
+                CompletableFuture.delayedExecutor(REQUEST_COOLDOWN_MS, TimeUnit.MILLISECONDS)
+                        .execute(() -> processNextAnime(animeList, index + 1));
+                return;
+            }
 
             // We only update the static info, the user's info needs to be kept
             newAnimeInfo.setOwnRating(animeInfo.getOwnRating());
             newAnimeInfo.setOwnStatus(animeInfo.getOwnStatus());
             newAnimeInfo.setEpisodesProgress(animeInfo.getEpisodesProgress());
-
 
             updateAnimeDatabaseWithEntry(newAnimeInfo);
 
