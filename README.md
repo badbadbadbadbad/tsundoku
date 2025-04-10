@@ -54,8 +54,8 @@ Simply delete the folder you downloaded. To remove the configuration file and lo
 
 ## Building
 tsundoku is built using Maven and JavaPackager. Build scripts for both Windows and Linux are provided to remove the hassle of configuring JavaPackager for your environment.
-* Windows: In the project root, run `powershell -ExecutionPolicy Bypass -File build-windows.ps1`
-* Linux: In the project root, run `chmod +x build-linux.sh` to make the script executable, then execute `./build-linux.sh`
+* Windows: Run `powershell -ExecutionPolicy Bypass -File build-windows.ps1`
+* Linux: Run `chmod +x build-linux.sh` to make the script executable, then `./build-linux.sh`
 
 The tsundoku-\<version\>-\<operating system\> archives in the `releases` section of this repository are built the same way.
 
