@@ -1,12 +1,10 @@
 package com.github.badbadbadbadbad.tsundoku.views;
 
 import com.github.badbadbadbadbad.tsundoku.controllers.DatabaseRequestListener;
-import com.github.badbadbadbadbad.tsundoku.external.FlowGridPane;
 import com.github.badbadbadbadbad.tsundoku.external.SmoothScroll;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
@@ -39,7 +37,7 @@ public class AnimePopupView {
 
     private final DatabaseRequestListener databaseRequestListener;
 
-    private final VBox parentBox;
+    private final AnimeBox parentBox;
     private final PopupMakerView parentView;
     private final AnimeInfo anime;                  // The anime data of the grid item that was clicked to create this popup
     private final AnimeInfo databaseAnime;          // The anime data of the matching anime, received from the local database, if it exists.
@@ -51,7 +49,7 @@ public class AnimePopupView {
     private String activeRatingButton = "none";
     private final List<Button> ratingButtons = new ArrayList<>();
 
-    public AnimePopupView(VBox parentBox, PopupMakerView parentView, DatabaseRequestListener databaseRequestListener,
+    public AnimePopupView(AnimeBox parentBox, PopupMakerView parentView, DatabaseRequestListener databaseRequestListener,
                           VBox darkBackground, String languagePreference) {
         this.popupBox = new VBox();
         this.databaseRequestListener = databaseRequestListener;

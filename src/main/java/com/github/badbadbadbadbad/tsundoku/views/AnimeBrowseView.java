@@ -23,7 +23,6 @@ import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.layout.Region;
-import javafx.scene.shape.Rectangle;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -59,7 +58,7 @@ public class AnimeBrowseView implements PopupMakerView {
 
     private ScrollPane scrollPane;
     private FlowGapPane animeGrid;
-    private HBox paginationButtons;
+    private Pagination pagination;
     private StackPane stackPane;
     private SmoothScroll smoothScroll;
 
@@ -189,15 +188,6 @@ public class AnimeBrowseView implements PopupMakerView {
         searchBar.textProperty().addListener((observable, oldValue, newValue) -> {
 
             searchString = newValue;
-
-            /*
-            if (newValue.matches("[\\p{IsHan}\\p{IsHiragana}\\p{IsKatakana}\\p{IsHangul}\\p{Alnum} ]*")) {
-                searchString = newValue;
-            } else {
-                searchBar.setText(oldValue);
-            }
-
-             */
         });
 
         // Search should trigger on enter press (but not when search empty to avoid unnecessary API calls)
@@ -573,53 +563,15 @@ public class AnimeBrowseView implements PopupMakerView {
      */
     private ScrollPane createBrowseGrid(AnimeListInfo animeListInfo) {
 
-        /*
-        animeGrid = new FlowGridPane(2, 3);  // Default values here shouldn't matter but are needed, so..
-        animeGrid.setHgap(20);
-        animeGrid.setVgap(20);
-        animeGrid.setMaxWidth(Double.MAX_VALUE);
-         */
-
-
         Screen screen = Screen.getPrimary();
         double screenWidth = screen.getBounds().getWidth();
         animeGrid = new FlowGapPane(screenWidth / 9, screenWidth / 9 * RATIO, 20);
-        // VBox.setVgrow(animeGrid, Priority.ALWAYS);
-        // animeGrid.setMaxWidth(Double.MAX_VALUE);
 
         // Load anime grid with grid items
         reloadAnimeGridAsync(animeListInfo.getAnimeList()).join();
 
-        /*
-        ChangeListener<Number> widthListener = (obs, oldWidth, newWidth) -> {
-            double windowWidth = newWidth.doubleValue();
-            int animesAmount = animeGrid.getChildren().size();
-
-            int cols, rows;
-
-            if (windowWidth < screenWidth * 0.6) {
-                cols = 3;
-            } else if (windowWidth < screenWidth * 0.7) {
-                cols = 4;
-            } else if (windowWidth < screenWidth * 0.8) {
-                cols = 5;
-            } else if (windowWidth < screenWidth * 0.9) {
-                cols = 6;
-            } else {
-                cols = 7;
-            }
-
-            rows = (int) Math.ceil((double) animesAmount / cols);
-
-        };
-        stage.widthProperty().addListener(widthListener);
-        widthListener.changed(stage.widthProperty(), stage.getWidth(), stage.getWidth());
-         */
-
-
         // Pagination element
-        HBox pagination = createPagination(animeListInfo.getLastPage());
-
+        this.pagination = new Pagination(animeListInfo.getLastPage(), this::handlePageSelection);
 
         // Wrapper around anime grid and pagination
         VBox wrapper = new VBox(10, animeGrid, pagination);
@@ -709,73 +661,12 @@ public class AnimeBrowseView implements PopupMakerView {
         });
     }
 
-
-    /**
-     * Pagination component below the FlowPane of anime.
-     * @param pages Total amount of pages
-     * @return The finished component
-     */
-    private HBox createPagination(int pages) {
-
-        // Wrapper (full width HBox)
-        HBox pagination = new HBox();
-        pagination.getStyleClass().add("pagination-wrapper");
-        pagination.setMaxWidth(Double.MAX_VALUE);
-        HBox.setHgrow(pagination, Priority.ALWAYS);
-
-        // Wrapper (only the button box)
-        paginationButtons = new HBox(10);
-        paginationButtons.getStyleClass().add("pagination-buttons");
-        pagination.getChildren().add(paginationButtons);
-
-        // Make the actual buttons
-        updatePaginationButtons(1, pages);
-
-        return pagination;
-    }
-
-
-    /**
-     * Refreshes the pagination buttons of the pagination component.
-     * Runs on pagination component creating and after any API call.
-     * @param selectedPage The clicked page of the API call (set to 1 on component creation and on API call of a new type
-     *                     e.g. switching from Browse - Season to Browse - Top)
-     * @param pages Total amount of pages
-     */
-    private void updatePaginationButtons(int selectedPage, int pages) {
-        paginationButtons.getChildren().clear();
-
-        // Only need "first page" button if it's not already the selected one
-        if (selectedPage > 2) {
-            paginationButtons.getChildren().add(createPageButton(1, selectedPage));
-        }
-
-        // Low numbers ellipsis button
-        if (selectedPage > 3) {
-            paginationButtons.getChildren().add(createEllipsisButton(paginationButtons, pages));
-        }
-
-        // Selected page as well as its prev and next
-        for (int i = Math.max(1, selectedPage - 1); i <= Math.min(pages, selectedPage + 1); i++) {
-            Button butt = createPageButton(i, selectedPage);
-            if (i == selectedPage) {
-                butt.getStyleClass().add("pagination-button-active");
-            }
-            paginationButtons.getChildren().add(butt);
-
-        }
-
-        // High numbers ellipsis button
-        if (selectedPage < pages - 2) {
-            paginationButtons.getChildren().add(createEllipsisButton(paginationButtons, pages));
-        }
-
-        // Only need "last page" button if it's not already the selected one
-        if (selectedPage < pages - 1) {
-            paginationButtons.getChildren().add(createPageButton(pages, selectedPage));
+    private void handlePageSelection(int page) {
+        if (!apiLock) {
+            apiLock = true;
+            invokeAnimatedAPICall(page);
         }
     }
-
 
     /**
      * Called on API button ("Season", "Top"..) or pagination button click.
@@ -801,7 +692,7 @@ public class AnimeBrowseView implements PopupMakerView {
             reloadAnimeGridAsync(info.getAnimeList());
 
             Platform.runLater(() -> {
-                updatePaginationButtons(page, info.getLastPage());
+                pagination.updatePaginationButtons(page, info.getLastPage());
 
                 // Inner runLater for animation end after everything is loaded
                 Platform.runLater(() -> {
@@ -828,15 +719,13 @@ public class AnimeBrowseView implements PopupMakerView {
 
 
     private CompletableFuture<AnimeListInfo> getPageForCurrentQuery(int page) {
-        if (searchMode.equals("SEASON")) {
-            return apiRequestListener.getCurrentAnimeSeason(page);
-        } else if (searchMode.equals("UPCOMING")) {
-            return apiRequestListener.getUpcomingAnime(page);
-        } else if (searchMode.equals("TOP")) {
-            return apiRequestListener.getTopAnime(page);
-        } else { // Default mode: SEARCH
-            return apiRequestListener.getAnimeSearch(searchString, page);
-        }
+        return switch (searchMode) {
+            case "SEASON" -> apiRequestListener.getCurrentAnimeSeason(page);
+            case "UPCOMING" -> apiRequestListener.getUpcomingAnime(page);
+            case "TOP" -> apiRequestListener.getTopAnime(page);
+            default ->  // Default mode: SEARCH
+                    apiRequestListener.getAnimeSearch(searchString, page);
+        };
     }
 
 
@@ -850,7 +739,7 @@ public class AnimeBrowseView implements PopupMakerView {
                 .thenAccept(animeBoxes -> {
                     Platform.runLater(() -> {
                         animeGrid.getChildren().clear();
-                        paginationButtons.setVisible(false);
+                        pagination.setPaginationButtonVisibility(false);
                         animeGrid.getChildren().addAll(animeBoxes);
 
                         new AnimationTimer() {
@@ -870,7 +759,7 @@ public class AnimeBrowseView implements PopupMakerView {
                                             smoothScroll.resetAccumulatedVValue();
                                         }
                                         updateVisibleGridItems(scrollPane);
-                                        paginationButtons.setVisible(true);
+                                        pagination.setPaginationButtonVisibility(true);
                                     });
                                     pause.play();
 
@@ -887,7 +776,12 @@ public class AnimeBrowseView implements PopupMakerView {
     private List<VBox> createAnimeGridItems(List<AnimeInfo> animeList) {
         List<VBox> animeBoxes = new ArrayList<>();
         for (AnimeInfo anime : animeList) {
-            VBox animeBox = createAnimeBox(anime);
+            AnimeInfo databaseAnime = databaseRequestListener.requestAnimeFromDatabase(anime.getId());
+
+            AnimeBox animeBox = new AnimeBox(anime, languagePreference);
+            animeBox.setOnMouseClick(this::createPopupScreen);
+            animeBox.setRatingBorder(databaseAnime, true);
+
             animeBoxes.add(animeBox);
         }
         return animeBoxes;
@@ -910,288 +804,11 @@ public class AnimeBrowseView implements PopupMakerView {
         }
     }
 
-
-    /**
-     * Creates a numbered page button for the pagination component.
-     * @param ownPage The number set as the String for this button's text
-     * @param selectedPage The selected page number that triggered the pagination component's refresh
-     *                     (so this button knows if it's already the clicked button or not)
-     * @return The finished Button
-     */
-    private Button createPageButton(int ownPage, int selectedPage) {
-        Button pageButton =  new Button(String.valueOf(ownPage));
-        pageButton.getStyleClass().add("pagination-button");
-
-        if (!(ownPage == selectedPage)) {
-            pageButton.setOnAction(event -> {
-                if(!apiLock) {
-                    apiLock = true;
-                    invokeAnimatedAPICall(ownPage);
-                }
-            });
-        }
-
-        return pageButton;
-    }
-
-
-    /**
-     * Creates an ellipsis page button for the pagination component (that's a "...").
-     * Ellipsis buttons bridge gaps between large amount of pages (so the pagination only shows the first, current, and last pages).
-     * They can also be clicked to change into a "page search" number input field.
-     * @param paginationButtons The pagination component
-     * @param pages Amount of max pages of the pagination component
-     * @return The finished Button
-     */
-    private Button createEllipsisButton(HBox paginationButtons, int pages) {
-        Button ellipsisButton =  new Button("...");
-        ellipsisButton.getStyleClass().add("pagination-button");
-
-        // On click, turn the ellipsis button into a number input to get to specific pages
-        ellipsisButton.setOnAction(event -> {
-            TextField pageInputField = createPageInputField(paginationButtons, pages);
-            int index = paginationButtons.getChildren().indexOf(ellipsisButton);
-            paginationButtons.getChildren().set(index, pageInputField);
-            pageInputField.requestFocus();
-        });
-
-        return ellipsisButton;
-    }
-
-
-    /**
-     * Creates a number input text field, used to replace an ellipsis button of the pagination component when it's clicked.
-     * On focus loss, replaces itself with an ellipsis button again.
-     * @param paginationButtons The pagination component
-     * @param pages Amount of max pages of the pagination component
-     * @return The finished number input field
-     */
-    private TextField createPageInputField(HBox paginationButtons, int pages) {
-        TextField pageInputField = new TextField();
-        pageInputField.getStyleClass().add("pagination-input-field");
-
-        // Numbers only regex for page input (as pages are always numbers..)
-        pageInputField.textProperty().addListener((observable, oldValue, newValue) -> {
-            if (!newValue.matches("\\d*")) {
-                pageInputField.setText(newValue.replaceAll("\\D", ""));
-            }
-        });
-
-        // Handle focus loss just like enter press, invoke the page being called
-        pageInputField.focusedProperty().addListener((observable, oldValue, newValue) -> {
-            if (!newValue) {
-                handlePageInput(paginationButtons, pageInputField, pages);
-            }
-        });
-
-        // Enter pressed (default value for setOnAction for textFields)
-        pageInputField.setOnAction(event -> handlePageInput(paginationButtons, pageInputField, pages));
-
-        return pageInputField;
-    }
-
-
-    /**
-     * Triggers when a number input text field (the replacement for an activated ellipsis pagination button) is activated.
-     * Invokes an API call for reasonable input.
-     * @param paginationButtons The pagination component
-     * @param pageInputField The number input field whose input is considered
-     * @param pages Amount of max pages of the pagination component
-     */
-    private void handlePageInput(HBox paginationButtons, TextField pageInputField, int pages) {
-        String input = pageInputField.getText();
-        int index = paginationButtons.getChildren().indexOf(pageInputField);
-
-
-        if (input.isEmpty()) { // If no input, just turn input field back to ellipsis button
-            paginationButtons.getChildren().set(index, createEllipsisButton(paginationButtons, pages));
-        } else {
-            try {
-                // Clamp input to [first page, last page] and handle it instead of throwing the input away
-                int clampedPage = Math.clamp(Integer.parseInt(input), 1, pages);
-
-                if(!apiLock) {
-                    apiLock = true;
-                    invokeAnimatedAPICall(clampedPage);
-                }
-
-            } catch (NumberFormatException e) {
-                // Number formatting issues _shouldn't_ exist to my knowledge, but provide failsafe anyway
-                paginationButtons.getChildren().set(index, createEllipsisButton(paginationButtons, pages));
-            }
-
-        }
-    }
-
-
-    /**
-     * Makes a VBox component to be used as a child for the full FlowPane of anime.
-     * @param anime The information on the corresponding anime.
-     * @return The finished component.
-     */
-    private VBox createAnimeBox(AnimeInfo anime) {
-
-        // Make image into VBox background, CSS cover sizing to look okay
-        // Yes, JavaFX has an Image class, but I could not get it to work properly
-        VBox animeBox = new VBox();
-        animeBox.setAlignment(Pos.CENTER);
-        animeBox.getStyleClass().add("grid-media-box");
-        animeBox.setUserData(anime);
-
-
-        setRatingBorder(animeBox);
-
-
-        // Clipping rectangle because JavaFX doesn't have any kind of background image clipping. WHY??
-        Rectangle clip = new Rectangle();
-        clip.widthProperty().bind(animeBox.widthProperty());
-        clip.heightProperty().bind(animeBox.heightProperty());
-
-        // Needs to be set here, it doesn't work if set in CSS. Thanks, JavaFX.
-        clip.setArcHeight(40);
-        clip.setArcWidth(40);
-
-        animeBox.setClip(clip);
-
-
-        Label testLabel = new Label();
-
-        // Label with anime name to be shown on animeBox hover
-        // Change title depending on language preference
-        String title = anime.getTitle();
-        if (languagePreference.equals("Japanese") && !anime.getTitleJapanese().equals("Not yet provided")) {
-            title = anime.getTitleJapanese();
-            testLabel.getStyleClass().add("grid-media-box-text-jp");
-        } else if (languagePreference.equals("English") && !anime.getTitleEnglish().equals("Not yet provided")) {
-            title = anime.getTitleEnglish();
-            testLabel.getStyleClass().add("grid-media-box-text-en");
-        } else {
-            testLabel.getStyleClass().add("grid-media-box-text-en");
-        }
-
-
-        testLabel.setText(title);
-
-        // Label testLabel = new Label(title);
-        testLabel.setAlignment(Pos.CENTER);
-        testLabel.getStyleClass().add("grid-media-box-text");
-        testLabel.setOpacity(0.0); // Seperate out to allow for fade animation
-
-
-        // AnchorPane wrapper to hold the label because JavaFX freaks out with animeBox sizing otherwise
-        AnchorPane ap = new AnchorPane();
-        ap.setMaxHeight(Double.MAX_VALUE);
-        ap.setMaxWidth(Double.MAX_VALUE);
-        VBox.setVgrow(ap, Priority.ALWAYS);
-        HBox.setHgrow(ap, Priority.ALWAYS);
-        ap.getStyleClass().add("grid-media-box-anchor");
-
-
-        // We set the anchors to grow two pixels outwards because the animeBox borders look a little aliased otherwise.
-        AnchorPane.setBottomAnchor(testLabel, -2.0);
-        AnchorPane.setTopAnchor(testLabel, -2.0);
-        AnchorPane.setLeftAnchor(testLabel, -2.0);
-        AnchorPane.setRightAnchor(testLabel, -2.0);
-
-
-        ap.getChildren().add(testLabel);
-        animeBox.getChildren().add(ap);
-
-
-        // This fixes the different label sizes causing different animeBox sizes.
-        // I don't know why..
-        testLabel.setMaxWidth(0.0);
-
-
-        // Fade events for the label popup
-        FadeTransition fadeIn = new FadeTransition(Duration.seconds(0.2), testLabel);
-        fadeIn.setToValue(1.0);
-        FadeTransition fadeOut = new FadeTransition(Duration.seconds(0.2), testLabel);
-        fadeOut.setToValue(0.0);
-        animeBox.setOnMouseEntered(event -> fadeIn.playFromStart());
-        animeBox.setOnMouseExited(event -> fadeOut.playFromStart());
-
-
-        animeBox.widthProperty().addListener((obs, oldWidth, newWidth) -> {
-            // Platform.runLater needed to trigger layout update post-resizing
-            // Has a chance to get a bit wonky on window snaps otherwise
-            Platform.runLater(() -> {
-                double newHeight = newWidth.doubleValue() * RATIO;
-                animeBox.setMinHeight(newHeight);
-                animeBox.setPrefHeight(newHeight);
-                animeBox.setMaxHeight(newHeight);
-            });
-        });
-
-        // Popup when the box is clicked
-        animeBox.setOnMouseClicked(event -> {
-            createPopupScreen(animeBox);
-        });
-
-
-        // Initialize as non-visible so the scrollpane image loading listener updates it correctly
-        animeBox.setVisible(false);
-
-        return animeBox;
-    }
-
-
-    /**
-     * Changes the border of an anime in the FlowPane based on its status in the Log and its rating.
-     * <ul>
-     *     <li>Grey: Default</li>
-     *     <li>Blue: In Log, unrated</li>
-     *     <li>Gold: In Log, rated with Heart</li>
-     *     <li>Green: In Log, rated with Liked</li>
-     *     <li>Red: In Log, rated with Disliked</li>
-     * </ul>
-     * This is done by altering CSS classes of the anime's VBox component in the FlowPane.
-     * @param animeBox The box to change the border for
-     */
-    private void setRatingBorder(VBox animeBox) {
-        AnimeInfo anime = (AnimeInfo) animeBox.getUserData();
-        AnimeInfo databaseAnime = databaseRequestListener.requestAnimeFromDatabase(anime.getId());
-
-        animeBox.getStyleClass().removeAll(
-                "grid-media-box-gold",
-                "grid-media-box-green",
-                "grid-media-box-red",
-                "grid-media-box-blue",
-                "grid-media-box-grey"
-        );
-
-        if (databaseAnime == null) {
-            animeBox.getStyleClass().add("grid-media-box-grey");
-            return;
-        }
-
-        String rating =  databaseAnime.getOwnRating();
-        String ownStatus = databaseAnime.getOwnStatus();
-
-        if (rating.equals("Heart")) {
-            animeBox.getStyleClass().add("grid-media-box-gold");
-        } else if (rating.equals("Liked")) {
-            animeBox.getStyleClass().add("grid-media-box-green");
-        } else if (rating.equals("Disliked")) {
-            animeBox.getStyleClass().add("grid-media-box-red");
-        }
-
-        else if (!ownStatus.equals("Untracked")) {
-            animeBox.getStyleClass().add("grid-media-box-blue");
-        }
-
-        else {
-            animeBox.getStyleClass().add("grid-media-box-blue");
-            // animeBox.getStyleClass().add("grid-media-box-grey");
-        }
-    }
-
-
     /**
      * Creates a PopupView for an anime (and a window darkener effect) when its VBox in the FlowPane is clicked.
      * @param parentBox The anime box that was clicked
      */
-    private void createPopupScreen(VBox parentBox) {
+    private void createPopupScreen(AnimeBox parentBox) {
         // Fake darkener effect
         VBox darkBackground = new VBox();
         darkBackground.getStyleClass().add("grid-media-popup-background");
@@ -1241,9 +858,10 @@ public class AnimeBrowseView implements PopupMakerView {
 
 
     @Override
-    public void onPopupClosed(VBox popupParent) {
-        // Just need to update the border for the BrowseView. No deleting.
-        setRatingBorder(popupParent);
+    public void onPopupClosed(AnimeBox popupParent) {
+        AnimeInfo anime = (AnimeInfo) popupParent.getUserData();
+        AnimeInfo databaseAnime = databaseRequestListener.requestAnimeFromDatabase(anime.getId());
+        popupParent.setRatingBorder(databaseAnime, true);
     }
 
 

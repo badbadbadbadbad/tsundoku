@@ -19,7 +19,6 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-import javafx.scene.shape.Rectangle;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -613,7 +612,6 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         double screenWidth = screen.getBounds().getWidth();
 
         FlowGapPane animeGrid = new FlowGapPane(screenWidth / 9, screenWidth / 9 * RATIO, 20);
-        // animeGrid.setMaxWidth(Double.MAX_VALUE);
         animeGrid.setPadding(new Insets(0, 0, 30, 0));
 
         return animeGrid;
@@ -732,132 +730,22 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
     private List<VBox> createAnimeGridItems(List<AnimeInfo> animeList) {
         List<VBox> animeBoxes = new ArrayList<>();
         for (AnimeInfo anime : animeList) {
-            VBox animeBox = createAnimeBox(anime);
+            AnimeBox animeBox = new AnimeBox(anime, languagePreference);
+            animeBox.setOnMouseClick(this::createPopupScreen);
+
+            AnimeInfo databaseAnime = databaseRequestListener.requestAnimeFromDatabase(anime.getId());
+            animeBox.setRatingBorder(databaseAnime, false);
+
             animeBoxes.add(animeBox);
         }
         return animeBoxes;
     }
 
-
-    /**
-     * Makes a VBox component to be used in the anime grids.
-     * @param anime The information on the corresponding anime.
-     * @return The finished component.
-     */
-    private VBox createAnimeBox(AnimeInfo anime) {
-
-        // Make image into VBox background, CSS cover sizing to look okay
-        // Yes, JavaFX has an Image class, but I could not get it to work properly
-        VBox animeBox = new VBox();
-        animeBox.setAlignment(Pos.CENTER);
-        animeBox.getStyleClass().add("grid-media-box");
-        animeBox.setUserData(anime);
-
-        setRatingBorder(animeBox);
-
-
-        // Clipping rectangle because JavaFX doesn't have any kind of background image clipping. WHY??
-        Rectangle clip = new Rectangle();
-        clip.widthProperty().bind(animeBox.widthProperty());
-        clip.heightProperty().bind(animeBox.heightProperty());
-
-        // Needs to be set here, it doesn't work if set in CSS. Thanks, JavaFX.
-        clip.setArcHeight(40);
-        clip.setArcWidth(40);
-
-        animeBox.setClip(clip);
-
-
-
-
-        Label testLabel = new Label();
-
-        // Label with anime name to be shown on animeBox hover
-        // Change title depending on language preference
-        String title = anime.getTitle();
-        if (languagePreference.equals("Japanese") && !anime.getTitleJapanese().equals("Not yet provided")) {
-            title = anime.getTitleJapanese();
-            testLabel.getStyleClass().add("grid-media-box-text-jp");
-        } else if (languagePreference.equals("English") && !anime.getTitleEnglish().equals("Not yet provided")) {
-            title = anime.getTitleEnglish();
-            testLabel.getStyleClass().add("grid-media-box-text-en");
-        } else {
-            testLabel.getStyleClass().add("grid-media-box-text-en");
-        }
-
-
-        testLabel.setText(title);
-
-        // Label with anime name to be shown on animeBox hover
-        // Label testLabel = new Label(anime.getTitle());
-        testLabel.setAlignment(Pos.CENTER);
-        testLabel.getStyleClass().add("grid-media-box-text");
-        testLabel.setOpacity(0.0); // Seperate out to allow for fade animation
-
-
-        // AnchorPane wrapper to hold the label because JavaFX freaks out with animeBox sizing otherwise
-        AnchorPane ap = new AnchorPane();
-        ap.setMaxHeight(Double.MAX_VALUE);
-        ap.setMaxWidth(Double.MAX_VALUE);
-        VBox.setVgrow(ap, Priority.ALWAYS);
-        HBox.setHgrow(ap, Priority.ALWAYS);
-        ap.getStyleClass().add("grid-media-box-anchor");
-
-
-        // We set the anchors to grow two pixels outwards because the animeBox borders look a little aliased otherwise.
-        AnchorPane.setBottomAnchor(testLabel, -2.0);
-        AnchorPane.setTopAnchor(testLabel, -2.0);
-        AnchorPane.setLeftAnchor(testLabel, -2.0);
-        AnchorPane.setRightAnchor(testLabel, -2.0);
-
-
-        ap.getChildren().add(testLabel);
-        animeBox.getChildren().add(ap);
-
-
-        // This fixes the different label sizes causing different animeBox sizes.
-        // I don't know why..
-        testLabel.setMaxWidth(0.0);
-
-
-        // Fade events for the label popup
-        FadeTransition fadeIn = new FadeTransition(Duration.seconds(0.2), testLabel);
-        fadeIn.setToValue(1.0);
-        FadeTransition fadeOut = new FadeTransition(Duration.seconds(0.2), testLabel);
-        fadeOut.setToValue(0.0);
-        animeBox.setOnMouseEntered(event -> fadeIn.playFromStart());
-        animeBox.setOnMouseExited(event -> fadeOut.playFromStart());
-
-
-        animeBox.widthProperty().addListener((obs, oldWidth, newWidth) -> {
-            // Platform.runLater needed to trigger layout update post-resizing
-            // Has a chance to get a bit wonky on window snaps otherwise
-            Platform.runLater(() -> {
-                double newHeight = newWidth.doubleValue() * RATIO;
-                animeBox.setMinHeight(newHeight);
-                animeBox.setPrefHeight(newHeight);
-                animeBox.setMaxHeight(newHeight);
-            });
-        });
-
-        // Popup when the box is clicked
-        animeBox.setOnMouseClicked(event -> {
-            createPopupScreen(animeBox);
-        });
-
-
-        // Initialize as non-visible so the scrollpane image loading listener updates it correctly
-        animeBox.setVisible(false);
-
-        return animeBox;
-    }
-
-
     /**
      * Creates a PopupView for an anime (and a window darkener effect) when its VBox in the FlowPane is clicked.
      * @param parentBox The anime box that was clicked
      */
-    private void createPopupScreen(VBox parentBox) {
+    private void createPopupScreen(AnimeBox parentBox) {
         // Fake darkener effect
         VBox darkBackground = new VBox();
         darkBackground.getStyleClass().add("grid-media-popup-background");
@@ -913,7 +801,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
      * @param popupParent The parent PopupView whose closing invoked this function call
      */
     @Override
-    public void onPopupClosed(VBox popupParent) {
+    public void onPopupClosed(AnimeBox popupParent) {
         // Old info of popup spawner
         AnimeInfo animeOld = (AnimeInfo) popupParent.getUserData();
 
@@ -937,7 +825,10 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         // This includes the case of the anime not changing status / rating, but we'll just be lazy here
         else {
 
-            VBox newAnimeBox = createAnimeBox(animeNew);
+            AnimeBox newAnimeBox = new AnimeBox(animeNew, languagePreference);
+            newAnimeBox.setOnMouseClick(this::createPopupScreen);
+            newAnimeBox.setRatingBorder(animeNew, false);
+
             AnimeInfo newAnimeInfo = (AnimeInfo) newAnimeBox.getUserData();
 
             // Get correct grid to insert in
@@ -1215,37 +1106,6 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
             lazyLoader.updateVisibilityFull();
         });
     }
-
-
-    /**
-     * Changes the border of an anime in a FlowPane based on its rating.
-     * <ul>
-     *     <li>Grey: Default</li>
-     *     <li>Gold: Rated with Heart</li>
-     *     <li>Green: Rated with Liked</li>
-     *     <li>Red: Rated with Disliked</li>
-     * </ul>
-     * This is done by altering CSS classes of the anime's VBox component in the FlowPane.
-     * @param animeBox The box to change the border for
-     */
-    private void setRatingBorder(VBox animeBox) {
-        AnimeInfo anime = (AnimeInfo) animeBox.getUserData();
-
-        animeBox.getStyleClass().removeAll(
-                "grid-media-box-gold",
-                "grid-media-box-green",
-                "grid-media-box-red",
-                "grid-media-box-grey"
-        );
-
-        switch (anime.getOwnRating()) {
-            case "Heart" -> animeBox.getStyleClass().add("grid-media-box-gold");
-            case "Liked" -> animeBox.getStyleClass().add("grid-media-box-green");
-            case "Disliked" -> animeBox.getStyleClass().add("grid-media-box-red");
-            default -> animeBox.getStyleClass().add("grid-media-box-grey");
-        }
-    }
-
 
     /**
      * Creates the wrapping scrollPane for the different grids used (so they all become one long scrollable content view),
