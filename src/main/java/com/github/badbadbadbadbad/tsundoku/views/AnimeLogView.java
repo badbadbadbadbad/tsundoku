@@ -2,16 +2,20 @@ package com.github.badbadbadbadbad.tsundoku.views;
 
 import com.github.badbadbadbadbad.tsundoku.controllers.DatabaseRequestListener;
 import com.github.badbadbadbadbad.tsundoku.external.FlowGapPane;
-import com.github.badbadbadbadbad.tsundoku.external.FlowGridPane;
 import com.github.badbadbadbadbad.tsundoku.external.SmoothScroll;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeListInfo;
+import com.github.badbadbadbadbad.tsundoku.util.AspectRatio;
 import com.github.badbadbadbadbad.tsundoku.util.LazyLoader;
 import com.github.badbadbadbadbad.tsundoku.util.ListFinder;
+import com.github.badbadbadbadbad.tsundoku.views.ControlsPane.ControlsPane;
+import com.github.badbadbadbadbad.tsundoku.views.ControlsPane.FilterConfig;
 import javafx.animation.*;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -26,6 +30,7 @@ import javafx.util.Pair;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 /**
@@ -36,17 +41,11 @@ import java.util.function.Consumer;
  */
 public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
-    /**
-     * Aspect ratio we use for anime images.
-     * This matches most of them well enough (there's no perfect standard used for anime covers).
-     */
-    private final double RATIO = 318.0 / 225.0;
-
     private final Stage stage;
     private final DatabaseRequestListener databaseRequestListener;
 
-    private List<List<VBox>> unfilteredAnimeLists;
-    private List<ObservableList<VBox>> filteredAnimeLists;    // ObservableList so grid headers can watch for these being empty
+    private final List<List<VBox>> unfilteredAnimeLists;
+    private final List<ObservableList<VBox>> filteredAnimeLists;    // ObservableList so grid headers can watch for these being empty
     private List<FlowGapPane> filteredGrids;                 // The actual grids used for UI
 
 
@@ -58,20 +57,20 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
 
     private final Map<String, Consumer<String>> filterUpdaters = new HashMap<>();
-    private String searchString = "";
-    private String personalStatusFilter = "Any";
-    private String personalRatingFilter = "Any";
-    private String releaseStatusFilter = "Any";
-    private String ageRatingFilter = "Any";
-    private String minEpisodeFilter = "";
-    private String maxEpisodeFilter = "";
-    private String startYearFilter = "";
-    private String endYearFilter = "";
-    private String seasonFilter = "Any";
-    private String typeFilter = "Any";
+    public final StringProperty personalStatus = new SimpleStringProperty("Any");
+    public final StringProperty personalRating = new SimpleStringProperty("Any");
+    public final StringProperty releaseStatus = new SimpleStringProperty("Any");
+    public final StringProperty ageRating = new SimpleStringProperty("Any");
+    public final StringProperty season = new SimpleStringProperty("Any");
+    public final StringProperty type = new SimpleStringProperty("Any");
+    public final StringProperty minEpisodes = new SimpleStringProperty("");
+    public final StringProperty maxEpisodes = new SimpleStringProperty("");
+    public final StringProperty startYear = new SimpleStringProperty("");
+    public final StringProperty endYear = new SimpleStringProperty("");
 
     private final BooleanProperty filtersHidden = new SimpleBooleanProperty(true);
-    private String languagePreference;
+    private final StringProperty searchStringProperty = new SimpleStringProperty("");
+    private final String languagePreference;
 
     public AnimeLogView(Stage stage, DatabaseRequestListener databaseRequestListener, String languagePreference) {
         this.stage = stage;
@@ -90,16 +89,16 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         ));
 
         // Filters must know which internal variable to update with the chosen setting
-        this.filterUpdaters.put("Personal status", newValue -> this.personalStatusFilter = newValue);
-        this.filterUpdaters.put("Personal rating", newValue -> this.personalRatingFilter = newValue);
-        this.filterUpdaters.put("Release status", newValue -> this.releaseStatusFilter = newValue);
-        this.filterUpdaters.put("Age rating", newValue -> this.ageRatingFilter = newValue);
-        this.filterUpdaters.put("Episodes ≥", newValue -> this.minEpisodeFilter = newValue);
-        this.filterUpdaters.put("Episodes ≤", newValue -> this.maxEpisodeFilter = newValue);
-        this.filterUpdaters.put("Year ≥", newValue -> this.startYearFilter = newValue);
-        this.filterUpdaters.put("Year ≤", newValue -> this.endYearFilter = newValue);
-        this.filterUpdaters.put("Season", newValue -> this.seasonFilter = newValue);
-        this.filterUpdaters.put("Type", newValue -> this.typeFilter = newValue);
+        this.filterUpdaters.put("Personal status", personalStatus::set);
+        this.filterUpdaters.put("Personal rating", personalRating::set);
+        this.filterUpdaters.put("Release status", releaseStatus::set);
+        this.filterUpdaters.put("Age rating", ageRating::set);
+        this.filterUpdaters.put("Episodes ≥", minEpisodes::set);
+        this.filterUpdaters.put("Episodes ≤", maxEpisodes::set);
+        this.filterUpdaters.put("Year ≥", startYear::set);
+        this.filterUpdaters.put("Year ≤", endYear::set);
+        this.filterUpdaters.put("Season", season::set);
+        this.filterUpdaters.put("Type", type::set);
     }
 
 
@@ -121,15 +120,70 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         stackPane.getChildren().add(root);
 
 
-        // Controls above the grid
-        FlowGridPane filters = createFilters();
-        HBox searchAndFilterToggleBox = createSearchAndFilterToggle(filters);
+        List<FilterConfig> filterConfigs = List.of(
+                new FilterConfig(FilterConfig.Type.DROPDOWN, "Personal status",
+                        List.of("Any", "In progress", "Backlog", "Completed", "Paused", "Dropped"),
+                        List.of(personalStatus::set, s -> onFiltersChangedRunnable().run()), null),
 
-        VBox controls = new VBox();
-        controls.getStyleClass().add("log-grid-content-pane-controls");
-        controls.setMinHeight(Control.USE_PREF_SIZE);
+                new FilterConfig(FilterConfig.Type.DROPDOWN, "Personal rating",
+                        List.of("Any", "Heart", "Liked", "Disliked", "Unscored"),
+                        List.of(personalRating::set, s -> onFiltersChangedRunnable().run()), null),
 
-        controls.getChildren().addAll(searchAndFilterToggleBox, filters);
+                new FilterConfig(FilterConfig.Type.DROPDOWN, "Release status",
+                        List.of("Any", "Complete", "Airing", "Upcoming"),
+                        List.of(releaseStatus::set, s -> onFiltersChangedRunnable().run()), null),
+
+                new FilterConfig(FilterConfig.Type.DROPDOWN, "Age rating",
+                        List.of("Any", "G", "PG", "PG13", "R17+", "R+", "Rx"),
+                        List.of(ageRating::set, s -> onFiltersChangedRunnable().run()), null),
+
+                new FilterConfig(FilterConfig.Type.DROPDOWN, "Season",
+                        List.of("Any", "Winter", "Spring", "Summer", "Fall"),
+                        List.of(season::set, s -> onFiltersChangedRunnable().run()), null),
+
+                new FilterConfig(FilterConfig.Type.DOUBLE_NUMBER, "Year ≥", "Year ≤", null,
+                        List.of(startYear::set, s -> onFiltersChangedRunnable().run()),
+                        List.of(endYear::set, s -> onFiltersChangedRunnable().run()), null),
+
+                new FilterConfig(FilterConfig.Type.DOUBLE_NUMBER, "Episodes ≥", "Episodes ≤", null,
+                        List.of(minEpisodes::set, s -> onFiltersChangedRunnable().run()),
+                        List.of(maxEpisodes::set, s -> onFiltersChangedRunnable().run()), null),
+
+                new FilterConfig(FilterConfig.Type.DROPDOWN, "Type",
+                        List.of("Any", "TV", "Movie", "OVA", "Special", "ONA", "Music", "CM", "PV", "TV Special"),
+                        List.of(type::set, s -> onFiltersChangedRunnable().run()), null)
+        );
+
+
+        BiFunction<Double, Integer, Pair<Integer, Integer>> layoutStrategy = (windowWidth, filterCount) -> {
+            Screen screen = Screen.getPrimary();
+            double screenWidth = screen.getBounds().getWidth();
+
+            int cols = (windowWidth < screenWidth * 0.66) ? 2 : 4;
+            int rows = (int) Math.ceil((double) filterCount / cols);
+            return new Pair<>(cols, rows);
+        };
+
+        ControlsPane controls = new ControlsPane(
+                filterConfigs,
+                List.of(),
+                null,
+                () -> lazyLoader.updateVisibilityFull(),
+                stage.widthProperty(),
+                layoutStrategy
+        );
+
+        searchStringProperty.bind(controls.getSearchStringProperty());
+        searchStringProperty.addListener((observable, oldValue, newValue) -> {
+            scrollPane.setVvalue(0);
+            smoothScroll.resetAccumulatedVValue();
+
+            if (lazyLoader != null) {
+                lazyLoader.unloadVisible();
+            }
+
+            onFiltersChanged();
+        });
 
 
         // ScrollPane and the headers / grids it contains
@@ -165,374 +219,6 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
         root.getChildren().addAll(controls, separator, scrollPane);
         return stackPane;
-    }
-
-
-    /**
-     * First part of the controls component above the grid, the search bar and filters toggle button.
-     * @param filters The FlowPane of the filters to be shown / hidden on toggle button click
-     * @return The finished component
-     */
-    private HBox createSearchAndFilterToggle(FlowGridPane filters) {
-        // Wrapper
-        HBox searchAndModeBox = new HBox();
-        searchAndModeBox.getStyleClass().add("search-bar-and-filter-toggle");
-
-        // Search bar
-        TextField searchBar = new TextField();
-        searchBar.setId("search-bar");
-        searchBar.setPromptText("Enter anime title..");
-        HBox.setHgrow(searchBar, Priority.ALWAYS);
-
-
-        searchBar.textProperty().addListener((observable, oldValue, newValue) -> {
-
-            this.searchString = newValue;
-
-            scrollPane.setVvalue(0);
-            smoothScroll.resetAccumulatedVValue();
-
-            if (lazyLoader != null) {
-                lazyLoader.unloadVisible();
-            }
-
-            onFiltersChanged();
-
-            /*
-            // Regex to allow only english alphanumeric, JP / CN / KR characters, and spaces,
-            // as well as some special characters for JP / CN / KR languages.
-            if (newValue.matches("[\\p{IsHan}\\p{IsHiragana}\\p{IsKatakana}\\p{Alnum} \\u30FB\\u30FC\\u301C\\u3001\\u3002\\u2014\\u2013\\u300A\\u300B\\u00B7\\uFF01\\uFF1F]*")) {
-                this.searchString = newValue;
-
-                // Refresh content according to search bar text
-                scrollPane.setVvalue(0);
-                smoothScroll.resetAccumulatedVValue();
-
-                if (lazyLoader != null) {
-                    lazyLoader.unloadVisible();
-                }
-
-                onFiltersChanged();
-            } else {
-                searchBar.setText(oldValue);
-            }
-
-             */
-        });
-
-
-        // Filter toggle button
-        ToggleButton toggleFiltersButton = new ToggleButton("Show filters");
-        toggleFiltersButton.getStyleClass().add("controls-button");
-
-        // Filter toggle logic
-        toggleFiltersButton.setOnAction(e -> {
-            toggleFiltersButton.setDisable(true);
-
-            if (!toggleFiltersButton.isSelected()) {
-                toggleFiltersButton.setText("Show filters");
-                hideFilters(filters, toggleFiltersButton);
-            } else {
-                toggleFiltersButton.setText("Hide filters");
-                showFilters(filters, toggleFiltersButton);
-            }
-        });
-
-        searchAndModeBox.getChildren().addAll(searchBar, toggleFiltersButton);
-        return searchAndModeBox;
-    }
-
-
-    /**
-     * The filter FlowPane of the controls component above the grid.
-     * @return The finished component
-     */
-    private FlowGridPane createFilters() {
-        // FlowGridPane filtersGrid = new FlowGridPane(2, 3);
-        FlowGridPane filtersGrid = new FlowGridPane(4, 2);
-        filtersGrid.setHgap(10);
-        filtersGrid.setVgap(10);
-        filtersGrid.setMaxWidth(Double.MAX_VALUE);
-        filtersGrid.setMinHeight(0); // Necessary for fade animation
-
-        // We initialize with filters hidden
-        filtersGrid.setMaxHeight(0);
-        filtersGrid.setOpacity(0.0);
-
-
-        // Filters
-        VBox personalStatusFilter = createDropdownFilter("Personal status", new String[]{
-                "Any",
-                "In progress", "Backlog",
-                "Completed", "Paused",
-                "Dropped"}, "Any");
-
-        VBox personalRatingFilter = createDropdownFilter("Personal rating", new String[]{
-                "Any", "Heart", "Liked", "Disliked", "Unscored"}, "Any");
-
-        VBox releaseStatusFilter = createDropdownFilter("Release status",
-                new String[]{"Any", "Complete", "Airing", "Upcoming"}, "Any");
-
-        VBox ageRatingFilter = createDropdownFilter("Age rating",
-                new String[]{"Any", "G", "PG", "PG13", "R17+", "R+", "Rx"}, "Any");
-
-        VBox releaseSeasonFilter = createDropdownFilter("Season",
-                new String[]{"Any", "Winter", "Spring", "Summer", "Fall"}, "Any");
-
-        HBox yearFilter = createDoubleNumberFilter("Year ≥", "Year ≤");
-        HBox episodeFilter = createDoubleNumberFilter("Episodes ≥", "Episodes ≤");
-
-        VBox typeFilter = createDropdownFilter("Type",
-                new String[]{"Any", "TV", "Movie", "OVA", "Special", "ONA", "Music", "CM", "PV", "TV Special"}, "Any");
-
-
-        filtersGrid.getChildren().addAll(personalStatusFilter, personalRatingFilter, releaseStatusFilter, ageRatingFilter,
-                releaseSeasonFilter, yearFilter, episodeFilter, typeFilter);
-
-
-
-        if (!filtersHidden.get()) {
-            filtersGrid.setMaxHeight(filtersGrid.prefHeight(filtersGrid.getWidth()));
-        }
-
-
-        // Scale filter columns to window width
-        Screen screen = Screen.getPrimary();
-        double screenWidth = screen.getBounds().getWidth();
-        int filtersAmount = filtersGrid.getChildren().size();
-        stage.widthProperty().addListener((obs, oldWidth, newWidth) -> {
-            double windowWidth = newWidth.doubleValue();
-            int cols, rows;
-
-            if (windowWidth < screenWidth * 0.66)
-                cols = 2;
-            else
-                cols = 4;
-
-            rows = (int) Math.ceil((double) filtersAmount / cols); // Need an int value, but need float division, hence ugly casting..
-
-            filtersGrid.setColsCount(cols);
-            filtersGrid.setRowsCount(rows);
-
-            // Necessary for the fade animation to work
-            if (!filtersHidden.get()) {
-                filtersGrid.setMaxHeight(filtersGrid.prefHeight(filtersGrid.getWidth()));
-            }
-        });
-
-
-        return filtersGrid;
-    }
-
-
-    /**
-     * Creates a single "dropdown" type filter to be used in the createFilters function.
-     * @param labelText String to be used for label above the dropdown filter
-     * @param options Array of Strings to be used for the dropdown options
-     * @param defaultValue String to be selected as the default choice
-     * @return The finished component
-     */
-    private VBox createDropdownFilter(String labelText, String[] options, String defaultValue) {
-        Label label = new Label(labelText);
-        label.getStyleClass().add("filter-label");
-
-        ComboBox<String> comboBox = new ComboBox<>();
-        comboBox.getItems().addAll(options);
-        comboBox.setValue(defaultValue);
-        comboBox.getStyleClass().add("filter-combo-box");
-        comboBox.setMaxWidth(Double.MAX_VALUE);
-        VBox.setVgrow(comboBox, Priority.ALWAYS);
-
-        // Filter change listener
-        if (this.filterUpdaters.containsKey(labelText)) {
-            comboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
-                filterUpdaters.get(labelText).accept(newVal);
-
-                scrollPane.setVvalue(0);
-                smoothScroll.resetAccumulatedVValue();
-
-                if (lazyLoader != null) {
-                    lazyLoader.unloadVisible();
-                }
-
-                onFiltersChanged();
-            });
-        }
-
-
-        // Even when filters are hidden, mouse cursor changes to text field cursor when hovering
-        // where the number filters would be.
-        filtersHidden.addListener((obs, oldValue, newValue) -> {
-            comboBox.setDisable(newValue);
-        });
-        comboBox.setDisable(filtersHidden.get()); // Since filters are hidden on startup
-
-
-        return new VBox(5, label, comboBox);
-    }
-
-
-    /**
-     * Creates a single "number input" type filter to be used in the createFilters function.
-     * @param labelText String to be used for label above the number filter
-     * @return The finished component
-     */
-    private VBox createNumberFilter(String labelText) {
-        Label label = new Label(labelText);
-        label.getStyleClass().add("filter-label");
-
-        TextField textField = new TextField("");
-        textField.getStyleClass().add("filter-text-box");
-        textField.setMaxWidth(Double.MAX_VALUE);
-        VBox.setVgrow(textField, Priority.ALWAYS);
-
-
-        // Numeric input and at most four digits regex filter
-        Consumer<String> updater = filterUpdaters.get(labelText);
-        if (updater != null) {
-            textField.textProperty().addListener((obs, oldValue, newValue) -> {
-                if (newValue.matches("\\d{0,4}")) {
-                    updater.accept(newValue);
-
-                    scrollPane.setVvalue(0);
-                    smoothScroll.resetAccumulatedVValue();
-
-                    if (lazyLoader != null) {
-                        lazyLoader.unloadVisible();
-                    }
-
-                    onFiltersChanged();
-                } else {
-                    textField.setText(oldValue);
-                }
-            });
-        }
-
-
-        // Even when filters are hidden, mouse cursor changes to text field cursor when hovering
-        // where the number filters would be.
-        filtersHidden.addListener((obs, oldValue, newValue) -> {
-            textField.setDisable(newValue);
-        });
-        textField.setDisable(filtersHidden.get()); // Since filters are hidden on startup
-
-
-        VBox container = new VBox(5, label, textField);
-        HBox.setHgrow(container, Priority.ALWAYS);
-        return container;
-    }
-
-
-    /**
-     * Creates two number filters as one filter box of two half-widths as our number filters come in natural pairs.
-     * @param labelText1 String to be used for label above first number filter
-     * @param labelText2 String to be used for label above second number filter
-     * @return The finished component
-     */
-    private HBox createDoubleNumberFilter(String labelText1, String labelText2) {
-        VBox filter1 = createNumberFilter(labelText1);
-        VBox filter2 = createNumberFilter(labelText2);
-
-        HBox container = new HBox(10, filter1, filter2);
-        container.setPrefWidth(200); // NECESSARY SO HBOX GETS SCALED BY FLOWGRIDPANE CORRECTLY
-        return container;
-    }
-
-
-    /**
-     * Run when the filter toggle button is set to hide filters.
-     * Animates the filters out of existence.
-     * @param filters The FlowPane of the filters to be hidden
-     * @param button The filter toggle button (included here so it can be disabled during the animation)
-     */
-    private void hideFilters(FlowGridPane filters, ToggleButton button) {
-
-        filtersHidden.set(true);
-
-        // Fade animation
-        FadeTransition fade = new FadeTransition(Duration.millis(150), filters);
-        fade.setFromValue(1.0);
-        fade.setToValue(0.0);
-
-        // Move animation
-        KeyFrame visible = new KeyFrame(Duration.ZERO, new KeyValue(filters.maxHeightProperty(), filters.getHeight()));
-        KeyFrame hidden = new KeyFrame(Duration.millis(100), new KeyValue(filters.maxHeightProperty(), 0));
-        Timeline move = new Timeline(visible, hidden);
-
-        // Filters bottom padding
-        KeyFrame paddingVisible = new KeyFrame(Duration.ZERO, new KeyValue(filters.paddingProperty(), new Insets(0, 0, 15, 0)));
-        KeyFrame paddingHidden = new KeyFrame(Duration.millis(100), new KeyValue(filters.paddingProperty(), new Insets(0, 0, 0, 0)));
-        Timeline movePadding = new Timeline(paddingVisible, paddingHidden);
-
-        // Cooldown
-        PauseTransition cooldown = new PauseTransition(Duration.millis(200));
-        cooldown.setOnFinished(event -> button.setDisable(false));
-
-        // Gather animations
-        ParallelTransition test = new ParallelTransition(move, movePadding);
-        SequentialTransition st = new SequentialTransition(fade, test);
-        ParallelTransition pt = new ParallelTransition(cooldown, st);
-
-
-        // TODO Is this right here?
-        pt.setOnFinished(e -> {
-            if (lazyLoader != null) {
-                lazyLoader.updateVisibilityFull();
-            }
-
-        });
-
-        pt.play();
-    }
-
-
-    /**
-     * Run when the filter toggle button is set to show filters.
-     * Animates the filters into existence.
-     * @param filters The FlowPane of the filters to be shown
-     * @param button The filter toggle button (included here so it can be disabled during the animation)
-     */
-    private void showFilters(FlowGridPane filters, ToggleButton button) {
-
-        filtersHidden.set(false);
-
-        // Fade animation
-        FadeTransition fade = new FadeTransition(Duration.millis(150), filters);
-        fade.setFromValue(0.0);
-        fade.setToValue(1.0);
-
-        // Move animation
-        KeyFrame hidden = new KeyFrame(Duration.ZERO, new KeyValue(filters.maxHeightProperty(), 0));
-        KeyFrame visible = new KeyFrame(Duration.millis(100), new KeyValue(filters.maxHeightProperty(), filters.prefHeight(filters.getWidth())));
-        Timeline move = new Timeline(hidden, visible);
-
-        // Filters bottom padding
-        KeyFrame paddingHidden = new KeyFrame(Duration.ZERO, new KeyValue(filters.paddingProperty(), new Insets(0, 0, 0, 0)));
-        KeyFrame paddingVisible = new KeyFrame(Duration.millis(100), new KeyValue(filters.paddingProperty(), new Insets(0, 0, 15, 0)));
-        Timeline movePadding = new Timeline(paddingHidden, paddingVisible);
-
-        // Cooldown
-        PauseTransition cooldown = new PauseTransition(Duration.millis(200));
-        cooldown.setOnFinished(event -> button.setDisable(false));
-
-        // Gather animations
-        ParallelTransition test = new ParallelTransition(move, movePadding);
-        SequentialTransition st = new SequentialTransition(test, fade);
-        ParallelTransition pt = new ParallelTransition(cooldown, st);
-
-        // TODO Is this right here?
-        pt.setOnFinished(e -> {
-            if (lazyLoader != null) {
-                lazyLoader.updateVisibilityFull();
-            }
-        });
-
-        // Filters are a bit squished after clicking "show filters" button until a resize if this is not done
-        test.setOnFinished(e -> {
-            filters.setMaxHeight(filters.prefHeight(filters.getWidth()));
-        });
-
-        pt.play();
     }
 
 
@@ -580,9 +266,9 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         // Show / hide depending on if the corresponding filtered grid has items
         animeList.addListener((ListChangeListener<VBox>) change -> {
 
-            boolean hasItems = animeList.size() > 0;
-            boolean shouldDisplay = personalStatusFilter.equals("Any") ||
-                    personalStatusFilter.substring(0, 2).equals(labelText.substring(0, 2));
+            boolean hasItems = !animeList.isEmpty();
+            boolean shouldDisplay = personalStatus.get().equals("Any") ||
+                    personalStatus.get().substring(0, 2).equals(labelText.substring(0, 2));
 
             if (hasItems) {
                 headerBox.setMinHeight(40);
@@ -611,7 +297,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         Screen screen = Screen.getPrimary();
         double screenWidth = screen.getBounds().getWidth();
 
-        FlowGapPane animeGrid = new FlowGapPane(screenWidth / 9, screenWidth / 9 * RATIO, 20);
+        FlowGapPane animeGrid = new FlowGapPane(screenWidth / 9, screenWidth / 9 * AspectRatio.ANIME.getRatio(), 20);
         animeGrid.setPadding(new Insets(0, 0, 30, 0));
 
         return animeGrid;
@@ -629,7 +315,6 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         // The full database
         AnimeListInfo fullDatabase = databaseRequestListener.requestFullAnimeDatabase();
 
-        // ownRating sort
         Comparator<AnimeInfo> byRating = Comparator.comparingInt(anime -> switch (anime.getOwnRating()) {
             case "Heart" -> 1;
             case "Liked" -> 2;
@@ -946,8 +631,8 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
 
                     // Search string filter
-                    if (searchString != null && !searchString.isEmpty()) {
-                        String lowerSearchString = searchString.toLowerCase();
+                    if (!searchStringProperty.get().isEmpty()) {
+                        String lowerSearchString = searchStringProperty.get().toLowerCase();
                         String title = animeInfo.getTitle() != null ? animeInfo.getTitle().toLowerCase() : "";
                         String titleJapanese = animeInfo.getTitleJapanese() != null ? animeInfo.getTitleJapanese().toLowerCase() : "";
                         String titleEnglish = animeInfo.getTitleEnglish() != null ? animeInfo.getTitleEnglish().toLowerCase() : "";
@@ -960,40 +645,40 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
                     }
 
                     // Personal status filter
-                    if (!"Any".equals(personalStatusFilter) && !personalStatusFilter.equals(animeInfo.getOwnStatus())) {
+                    if (!"Any".equals(personalStatus.get()) && !personalStatus.get().equals(animeInfo.getOwnStatus())) {
                         continue;
                     }
 
                     // Personal rating filter
-                    if (!"Any".equals(personalRatingFilter) && !personalRatingFilter.equals(animeInfo.getOwnRating())) {
+                    if (!"Any".equals(personalRating.get()) && !personalRating.get().equals(animeInfo.getOwnRating())) {
                         continue;
                     }
 
                     // Release status filter
-                    if (!"Any".equals(releaseStatusFilter) && !releaseStatusFilter.equals(animeInfo.getPublicationStatus())) {
+                    if (!"Any".equals(releaseStatus.get()) && !releaseStatus.get().equals(animeInfo.getPublicationStatus())) {
                         continue;
                     }
 
                     // Age rating filter
-                    if (!"Any".equals(ageRatingFilter) && !ageRatingFilter.equals(animeInfo.getAgeRating())) {
+                    if (!"Any".equals(ageRating.get()) && !ageRating.get().equals(animeInfo.getAgeRating())) {
                         continue;
                     }
 
                     // Episode filters
-                    if (minEpisodeFilter != null && !minEpisodeFilter.isEmpty()) {
+                    if (minEpisodes.get() != null && !minEpisodes.get().isEmpty()) {
                         try {
-                            int minEpisodes = Integer.parseInt(minEpisodeFilter);
-                            if (animeInfo.getEpisodesTotal() < minEpisodes) {
+                            int minEpisodesInt = Integer.parseInt(minEpisodes.get());
+                            if (animeInfo.getEpisodesTotal() < minEpisodesInt) {
                                 continue;
                             }
                         } catch (NumberFormatException e) {
                         }
                     }
 
-                    if (maxEpisodeFilter != null && !maxEpisodeFilter.isEmpty()) {
+                    if (maxEpisodes.get() != null && !maxEpisodes.get().isEmpty()) {
                         try {
-                            int maxEpisodes = Integer.parseInt(maxEpisodeFilter);
-                            if (animeInfo.getEpisodesTotal() > maxEpisodes) {
+                            int maxEpisodesInt = Integer.parseInt(maxEpisodes.get());
+                            if (animeInfo.getEpisodesTotal() > maxEpisodesInt) {
                                 continue;
                             }
                         } catch (NumberFormatException e) {
@@ -1001,13 +686,13 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
                     }
 
                     // Release year filters
-                    if (startYearFilter != null && !startYearFilter.isEmpty()) {
+                    if (startYear.get() != null && !startYear.get().isEmpty()) {
                         String release = animeInfo.getRelease();
                         if (!"Not yet provided".equals(release)) {
                             try {
-                                int startYear = Integer.parseInt(startYearFilter);
-                                int releaseYear = Integer.parseInt(release.substring(release.length() - 4));
-                                if (releaseYear < startYear) continue;
+                                int startYearInt = Integer.parseInt(startYear.get());
+                                int releaseYearInt = Integer.parseInt(release.substring(release.length() - 4));
+                                if (releaseYearInt < startYearInt) continue;
                             } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
                                 continue;
                             }
@@ -1016,13 +701,13 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
                         }
                     }
 
-                    if (endYearFilter != null && !endYearFilter.isEmpty()) {
+                    if (endYear.get() != null && !endYear.get().isEmpty()) {
                         String release = animeInfo.getRelease();
                         if (!"Not yet provided".equals(release)) {
                             try {
-                                int endYear = Integer.parseInt(endYearFilter);
-                                int releaseYear = Integer.parseInt(release.substring(release.length() - 4));
-                                if (releaseYear > endYear) continue;
+                                int endYearInt = Integer.parseInt(endYear.get());
+                                int releaseYearInt = Integer.parseInt(release.substring(release.length() - 4));
+                                if (releaseYearInt > endYearInt) continue;
                             } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
                                 continue;
                             }
@@ -1032,11 +717,11 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
                     }
 
                     // Release season filter
-                    if (!"Any".equals(seasonFilter)) {
+                    if (!"Any".equals(season.get())) {
                         String release = animeInfo.getRelease();
                         if (!"Not yet provided".equals(release)) {
-                            String season = release.substring(0, release.length() - 5); // Trim spacebar and four-digit release year
-                            if (!seasonFilter.equals(season)) {
+                            String seasonStr = release.substring(0, release.length() - 5); // Trim spacebar and four-digit release year
+                            if (!season.get().equals(seasonStr)) {
                                 continue;
                             }
                         } else {
@@ -1045,7 +730,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
                     }
 
                     // Type filter
-                    if (!"Any".equals(typeFilter) && !typeFilter.equals(animeInfo.getType())) {
+                    if (!"Any".equals(type.get()) && !type.get().equals(animeInfo.getType())) {
                         continue;
                     }
 
@@ -1096,7 +781,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
             // For the startup call
             if (lazyLoader == null) {
-                lazyLoader = new LazyLoader(scrollPane, filteredGrids);
+                lazyLoader = new LazyLoader(scrollPane, filteredGrids, AspectRatio.ANIME);
             }
 
 
@@ -1187,5 +872,15 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         if (lazyLoader != null) {
             lazyLoader.shutdownImageLoaderExecutor();
         }
+    }
+
+
+    private Runnable onFiltersChangedRunnable() {
+        return () -> {
+            scrollPane.setVvalue(0);
+            smoothScroll.resetAccumulatedVValue();
+            if (lazyLoader != null) lazyLoader.unloadVisible();
+            onFiltersChanged();
+        };
     }
 }

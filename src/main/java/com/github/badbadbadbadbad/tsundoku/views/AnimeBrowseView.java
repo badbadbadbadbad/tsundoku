@@ -1,6 +1,5 @@
 package com.github.badbadbadbadbad.tsundoku.views;
 
-
 import com.github.badbadbadbadbad.tsundoku.controllers.APIRequestListener;
 import com.github.badbadbadbadbad.tsundoku.controllers.GridFilterListener;
 import com.github.badbadbadbadbad.tsundoku.controllers.LoadingBarListener;
@@ -8,16 +7,16 @@ import com.github.badbadbadbadbad.tsundoku.controllers.DatabaseRequestListener;
 import com.github.badbadbadbadbad.tsundoku.external.FlowGapPane;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeListInfo;
-import com.github.badbadbadbadbad.tsundoku.external.FlowGridPane;
 import com.github.badbadbadbadbad.tsundoku.external.SmoothScroll;
+import com.github.badbadbadbadbad.tsundoku.util.AspectRatio;
+import com.github.badbadbadbadbad.tsundoku.views.ControlsPane.ButtonConfig;
+import com.github.badbadbadbadbad.tsundoku.views.ControlsPane.ControlsPane;
+import com.github.badbadbadbadbad.tsundoku.views.ControlsPane.FilterConfig;
 import javafx.animation.*;
 import javafx.application.Platform;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.value.ChangeListener;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.geometry.Bounds;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
@@ -26,13 +25,14 @@ import javafx.scene.layout.Region;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-
+import javafx.util.Pair;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 
@@ -44,14 +44,7 @@ import java.util.function.Consumer;
  */
 public class AnimeBrowseView implements PopupMakerView {
 
-    /**
-     * Aspect ratio we use for anime images.
-     * This matches most of them well enough (there's no perfect standard used for anime covers).
-     */
-    private final double RATIO = 318.0 / 225.0;
-
     private final Stage stage;
-    private final GridFilterListener gridFilterListener;
     private final APIRequestListener apiRequestListener;
     private final LoadingBarListener loadingBarListener;
     private final DatabaseRequestListener databaseRequestListener;
@@ -62,25 +55,20 @@ public class AnimeBrowseView implements PopupMakerView {
     private StackPane stackPane;
     private SmoothScroll smoothScroll;
 
-
     private final Map<String, Consumer<String>> filterUpdaters = new HashMap<>();
 
-
+    private final StringProperty searchStringProperty = new SimpleStringProperty("");
     private String searchMode = "SEASON";  // Changes between SEASON, TOP, and SEARCH depending on last mode selected (so pagination calls "current mode")
-    private String searchString = "";
-
-    private ChangeListener<Number> filtersWidthListener;
-    private final BooleanProperty filtersHidden = new SimpleBooleanProperty(true);
     private boolean apiLock = false;
-    private String languagePreference;
+    private final String languagePreference;
 
 
     public AnimeBrowseView(Stage stage, LoadingBarListener loadingBarListener, APIRequestListener apiRequestListener,
                            GridFilterListener gridFilterListener, DatabaseRequestListener databaseRequestListener, String languagePreference) {
+
         this.stage = stage;
         this.loadingBarListener = loadingBarListener;
         this.apiRequestListener = apiRequestListener;
-        this.gridFilterListener = gridFilterListener;
         this.databaseRequestListener = databaseRequestListener;
         this.languagePreference = languagePreference;
 
@@ -89,6 +77,11 @@ public class AnimeBrowseView implements PopupMakerView {
         this.filterUpdaters.put("Release status", gridFilterListener::onAnimeStatusChanged);
         this.filterUpdaters.put("Year ≥", gridFilterListener::onAnimeStartYearChanged);
         this.filterUpdaters.put("Year ≤", gridFilterListener::onAnimeEndYearChanged);
+
+        // TODO The BrowseView filters remember the values in config file
+        // But those aren't set into the filter field when the BrowseView is loaded
+        // But still applied, even with fields empty. This is odd behaviour.
+        // Either don't memorize, or load them into filter fields on View creation.
     }
 
 
@@ -96,7 +89,7 @@ public class AnimeBrowseView implements PopupMakerView {
      * Called once by ViewsController, creates the whole View component
      * @return The finished view
      */
-    public Region createGridView() {
+    public Region createGridView() { // TODO Instead of this being Region, just make the class extend Region?
 
         VBox root = new VBox();
         VBox.setVgrow(root, Priority.ALWAYS);
@@ -110,16 +103,62 @@ public class AnimeBrowseView implements PopupMakerView {
         stackPane.getChildren().add(root);
 
 
-        // Controls above the grid
-        FlowGridPane filters = createFilters();
-        HBox buttonBox = createButtons();
-        HBox searchAndFilterToggleBox = createSearchAndFilterToggle(filters);
+        List<String> orderByOptions = List.of(
+                "Default",
+                "Title: Ascending", "Title: Descending",
+                "Rating: Highest", "Rating: Lowest",
+                "Popular: Most", "Popular: Least"
+        );
+        FilterConfig orderByFilter = new FilterConfig(
+                FilterConfig.Type.DROPDOWN,
+                "Order by", orderByOptions,
+                List.of(filterUpdaters.get("Order by")),
+                fireApiCall("SEARCH")
+        );
 
-        VBox controls = new VBox();
-        controls.getStyleClass().add("content-pane-controls");
-        controls.setMinHeight(Control.USE_PREF_SIZE);
+        List<String> releaseStatusOptions= List.of("Any", "Complete", "Airing", "Upcoming");
+        FilterConfig releaseStatusFilter = new FilterConfig(
+                FilterConfig.Type.DROPDOWN,
+                "Release status", releaseStatusOptions,
+                List.of(filterUpdaters.get("Release status")),
+                fireApiCall("SEARCH")
+        );
 
-        controls.getChildren().addAll(searchAndFilterToggleBox, filters, buttonBox);
+        FilterConfig yearFilter = new FilterConfig(
+                FilterConfig.Type.DOUBLE_NUMBER,
+                "Year ≥", "Year ≤",null,
+                List.of(filterUpdaters.get("Year ≥")),
+                List.of(filterUpdaters.get("Year ≤")),
+                fireApiCall("SEARCH")
+        );
+
+        List<FilterConfig> animeFilters = List.of(orderByFilter, releaseStatusFilter, yearFilter);
+
+
+        List<ButtonConfig> animeButtons = List.of(
+                new ButtonConfig("Season", fireApiCall("SEASON")),
+                new ButtonConfig("Upcoming", fireApiCall("UPCOMING")),
+                new ButtonConfig("Top", fireApiCall("TOP")),
+                new ButtonConfig("Search", fireApiCall("SEARCH")
+                )
+        );
+
+        BiFunction<Double, Integer, Pair<Integer, Integer>> layoutStrategy = (windowWidth, filterCount) -> {
+            int cols = 3;
+            int rows = (int) Math.ceil((double) filterCount / cols);
+            return new Pair<>(cols, rows);
+        };
+
+        ControlsPane controls = new ControlsPane(
+                animeFilters,
+                animeButtons,
+                fireApiCall("SEARCH"),
+                () -> updateVisibleGridItems(scrollPane),
+                stage.widthProperty(),
+                layoutStrategy
+        );
+
+        searchStringProperty.bind(controls.getSearchStringProperty());
 
 
         // Blocking call on CompletableFuture for first setup to ensure data is there for display
@@ -169,393 +208,6 @@ public class AnimeBrowseView implements PopupMakerView {
 
 
     /**
-     * First part of the controls component above the grid, the search bar and filters toggle button.
-     * @param filters The FlowPane of the filters to be shown / hidden on toggle button click
-     * @return The finished component
-     */
-    private HBox createSearchAndFilterToggle(FlowGridPane filters) {
-        // Wrapper
-        HBox searchAndModeBox = new HBox();
-        searchAndModeBox.getStyleClass().add("search-bar-and-filter-toggle");
-
-        // Search bar
-        TextField searchBar = new TextField();
-        searchBar.setId("search-bar");
-        searchBar.setPromptText("Enter anime title..");
-        HBox.setHgrow(searchBar, Priority.ALWAYS);
-
-        // Regex to allow only english alphanumeric, JP / CN / KR characters, and spaces
-        searchBar.textProperty().addListener((observable, oldValue, newValue) -> {
-
-            searchString = newValue;
-        });
-
-        // Search should trigger on enter press (but not when search empty to avoid unnecessary API calls)
-        searchBar.setOnAction(event -> {
-            if(!apiLock && !searchString.isEmpty()) {
-                searchMode = "SEARCH";
-                apiLock = true;
-
-                invokeAnimatedAPICall(1);
-            }
-        });
-
-        // Filter toggle button
-        ToggleButton toggleFiltersButton = new ToggleButton("Show filters");
-        toggleFiltersButton.getStyleClass().add("controls-button");
-
-        // Filter toggle logic
-        toggleFiltersButton.setOnAction(e -> {
-            toggleFiltersButton.setDisable(true);
-
-            if (!toggleFiltersButton.isSelected()) {
-                toggleFiltersButton.setText("Show filters");
-                hideFilters(filters, toggleFiltersButton);
-            } else {
-                toggleFiltersButton.setText("Hide filters");
-                showFilters(filters, toggleFiltersButton);
-            }
-        });
-
-        searchAndModeBox.getChildren().addAll(searchBar, toggleFiltersButton);
-        return searchAndModeBox;
-    }
-
-
-    /**
-     * The filter FlowPane of the controls component above the grid.
-     * @return The finished component
-     */
-    private FlowGridPane createFilters() {
-        FlowGridPane filtersGrid = new FlowGridPane(3, 1);
-        filtersGrid.setHgap(10);
-        filtersGrid.setVgap(10);
-        filtersGrid.setMaxWidth(Double.MAX_VALUE);
-        filtersGrid.setMinHeight(0); // Necessary for fade animation
-
-        // We initialize with filters hidden
-        filtersGrid.setMaxHeight(0);
-        filtersGrid.setOpacity(0.0);
-
-        // Filters
-        VBox orderByFilter = createDropdownFilter("Order by", new String[]{
-                "Default",
-                "Title: Ascending", "Title: Descending",
-                "Rating: Highest", "Rating: Lowest",
-                "Popular: Most", "Popular: Least"}, "Default");
-
-        VBox statusFilter = createDropdownFilter("Release status",
-                new String[]{"Any", "Complete", "Airing", "Upcoming"}, "Any");
-
-        HBox yearFilter = createDoubleNumberFilter("Year ≥", "Year ≤");
-
-        filtersGrid.getChildren().addAll(orderByFilter, statusFilter, yearFilter);
-
-
-        // Dynamic resizing not needed with current filter amount
-        /*
-        // Dynamically adjust column amount based on window size
-        Screen screen = Screen.getPrimary();
-        double screenWidth = screen.getBounds().getWidth();
-        int filtersAmount = filtersGrid.getChildren().size();
-
-        this.filtersWidthListener = (obs, oldWidth, newWidth) -> {
-            double windowWidth = newWidth.doubleValue();
-            int cols, rows;
-
-            if (windowWidth < screenWidth * 0.66)
-                cols = 2;
-            else
-                cols = 4;
-
-            rows = (int) Math.ceil((double) filtersAmount / cols); // Need an int value, but need float division, hence ugly casting..
-
-            filtersGrid.setColsCount(cols);
-            filtersGrid.setRowsCount(rows);
-
-            // Necessary for the fade animation to work
-            if (!filtersHidden.get()) {
-                filtersGrid.setMaxHeight(filtersGrid.prefHeight(filtersGrid.getWidth()));
-            }
-        };
-        stage.widthProperty().addListener(filtersWidthListener);
-        filtersWidthListener.changed(stage.widthProperty(), stage.getWidth(), stage.getWidth()); // Activate once immediately
-
-         */
-
-
-        return filtersGrid;
-    }
-
-
-    /**
-     * Creates a single "dropdown" type filter to be used in the createFilters function.
-     * @param labelText String to be used for label above the dropdown filter
-     * @param options Array of Strings to be used for the dropdown options
-     * @param defaultValue String to be selected as the default choice
-     * @return The finished component
-     */
-    private VBox createDropdownFilter(String labelText, String[] options, String defaultValue) {
-        Label label = new Label(labelText);
-        label.getStyleClass().add("filter-label");
-
-        ComboBox<String> comboBox = new ComboBox<>();
-        comboBox.getItems().addAll(options);
-        comboBox.setValue(defaultValue);
-        comboBox.getStyleClass().add("filter-combo-box");
-        comboBox.setMaxWidth(Double.MAX_VALUE);
-        VBox.setVgrow(comboBox, Priority.ALWAYS);
-
-        // Filter change listeners
-        if (this.filterUpdaters.containsKey(labelText)) {
-            comboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
-                filterUpdaters.get(labelText).accept(newVal);
-            });
-        }
-
-        // Even when filters are hidden, mouse cursor changes to text field cursor when hovering
-        // where the number filters would be.
-        filtersHidden.addListener((obs, oldValue, newValue) -> {
-            comboBox.setDisable(newValue);
-        });
-        comboBox.setDisable(filtersHidden.get()); // Since filters are hidden on startup
-
-        return new VBox(5, label, comboBox);
-    }
-
-
-    /**
-     * Creates a single "number input" type filter to be used in the createFilters function.
-     * @param labelText String to be used for label above the dropdown filter
-     * @return The finished component
-     */
-    private VBox createNumberFilter(String labelText) {
-        Label label = new Label(labelText);
-        label.getStyleClass().add("filter-label");
-
-        TextField textField = new TextField("");
-        textField.getStyleClass().add("filter-text-box");
-        textField.setMaxWidth(Double.MAX_VALUE);
-        VBox.setVgrow(textField, Priority.ALWAYS);
-
-
-        // Filter change listeners
-        Consumer<String> updater = filterUpdaters.get(labelText);
-        if (updater != null) {
-            textField.textProperty().addListener((obs, oldValue, newValue) -> {
-                if (newValue.matches("\\d{0,4}")) {
-                    updater.accept(newValue);
-
-                } else {
-                    textField.setText(oldValue);
-                }
-            });
-        }
-
-        // Even when filters are hidden, mouse cursor changes to text field cursor when hovering
-        // where the number filters would be.
-        filtersHidden.addListener((obs, oldValue, newValue) -> {
-            textField.setDisable(newValue);
-        });
-        textField.setDisable(filtersHidden.get()); // Since filters are hidden on startup
-
-
-        // Listener to fire searches on enter press.
-        // Feels more natural when it fires not only when in the search bar, but also these year fields.
-        textField.setOnAction(event -> {
-            if(!apiLock && !searchString.isEmpty()) {
-                searchMode = "SEARCH";
-                apiLock = true;
-
-                invokeAnimatedAPICall(1);
-            }
-        });
-
-
-        VBox container = new VBox(5, label, textField);
-        HBox.setHgrow(container, Priority.ALWAYS);
-        return container;
-    }
-
-
-    /**
-     * Creates two number filters as one filter box of two half-widths as our number filters come in natural pairs.
-     * @param labelText1 String to be used for label above first number filter
-     * @param labelText2 String to be used for label above second number filter
-     * @return The finished component
-     */
-    private HBox createDoubleNumberFilter(String labelText1, String labelText2) {
-        VBox filter1 = createNumberFilter(labelText1);
-        VBox filter2 = createNumberFilter(labelText2);
-
-        HBox container = new HBox(10, filter1, filter2);
-        container.setPrefWidth(200); // NECESSARY SO HBOX GETS SCALED BY FLOWGRIDPANE CORRECTLY
-        return container;
-    }
-
-
-    /**
-     * Run when the filter toggle button is set to hide filters.
-     * Animates the filters out of existence.
-     * @param filters The FlowPane of the filters to be hidden
-     * @param button The filter toggle button (included here so it can be disabled during the animation)
-     */
-    private void hideFilters(FlowGridPane filters, ToggleButton button) {
-
-        filtersHidden.set(true);
-
-        // Fade animation
-        FadeTransition fade = new FadeTransition(Duration.millis(150), filters);
-        fade.setFromValue(1.0);
-        fade.setToValue(0.0);
-
-        // Move animation
-        KeyFrame visible = new KeyFrame(Duration.ZERO, new KeyValue(filters.maxHeightProperty(), filters.getHeight()));
-        KeyFrame hidden = new KeyFrame(Duration.millis(100), new KeyValue(filters.maxHeightProperty(), 0));
-        Timeline move = new Timeline(visible, hidden);
-
-        // Filters bottom padding
-        KeyFrame paddingVisible = new KeyFrame(Duration.ZERO, new KeyValue(filters.paddingProperty(), new Insets(0, 0, 15, 0)));
-        KeyFrame paddingHidden = new KeyFrame(Duration.millis(100), new KeyValue(filters.paddingProperty(), new Insets(0, 0, 0, 0)));
-        Timeline movePadding = new Timeline(paddingVisible, paddingHidden);
-
-        // Cooldown
-        PauseTransition cooldown = new PauseTransition(Duration.millis(200));
-        cooldown.setOnFinished(event -> button.setDisable(false));
-
-        // Gather animations
-        ParallelTransition test = new ParallelTransition(move, movePadding);
-        SequentialTransition st = new SequentialTransition(fade, test);
-        ParallelTransition pt = new ParallelTransition(cooldown, st);
-
-
-
-        // TODO Is this right here?
-        pt.setOnFinished(e -> {
-            updateVisibleGridItems(scrollPane);
-        });
-
-        pt.play();
-    }
-
-
-    /**
-     * Run when the filter toggle button is set to show filters.
-     * Animates the filters into existence.
-     * @param filters The FlowPane of the filters to be shown
-     * @param button The filter toggle button (included here so it can be disabled during the animation)
-     */
-    private void showFilters(FlowGridPane filters, ToggleButton button) {
-
-        filtersHidden.set(false);
-
-        // Fade animation
-        FadeTransition fade = new FadeTransition(Duration.millis(150), filters);
-        fade.setFromValue(0.0);
-        fade.setToValue(1.0);
-
-        // Move animation
-        KeyFrame hidden = new KeyFrame(Duration.ZERO, new KeyValue(filters.maxHeightProperty(), 0));
-        KeyFrame visible = new KeyFrame(Duration.millis(100), new KeyValue(filters.maxHeightProperty(), filters.prefHeight(filters.getWidth())));
-        Timeline move = new Timeline(hidden, visible);
-
-        // Filters bottom padding
-        KeyFrame paddingHidden = new KeyFrame(Duration.ZERO, new KeyValue(filters.paddingProperty(), new Insets(0, 0, 0, 0)));
-        KeyFrame paddingVisible = new KeyFrame(Duration.millis(100), new KeyValue(filters.paddingProperty(), new Insets(0, 0, 15, 0)));
-        Timeline movePadding = new Timeline(paddingHidden, paddingVisible);
-
-        // Cooldown
-        PauseTransition cooldown = new PauseTransition(Duration.millis(200));
-        cooldown.setOnFinished(event -> button.setDisable(false));
-
-        // Gather animations
-        ParallelTransition test = new ParallelTransition(move, movePadding);
-        SequentialTransition st = new SequentialTransition(test, fade);
-        ParallelTransition pt = new ParallelTransition(cooldown, st);
-
-        // TODO Is this right here?
-        pt.setOnFinished(e -> {
-            updateVisibleGridItems(scrollPane);
-        });
-
-        // Filters are a bit squished after clicking "show filters" button until a resize if this is not done
-        test.setOnFinished(e -> {
-            filters.setMaxHeight(filters.prefHeight(filters.getWidth()));
-        });
-
-        pt.play();
-    }
-
-
-    /**
-     * First part of the controls component above the grid, the buttons invoking API calls.
-     * @return The finished component
-     */
-    private HBox createButtons() {
-        Button seasonButton = new Button("Season");
-        Button upcomingButton = new Button("Upcoming");
-        Button topButton = new Button("Top");
-        Button searchButton = new Button("Search");
-
-        seasonButton.getStyleClass().add("controls-button");
-        upcomingButton.getStyleClass().add("controls-button");
-        topButton.getStyleClass().add("controls-button");
-        searchButton.getStyleClass().add("controls-button");
-
-        // Listeners to call for content
-        seasonButton.setOnAction(event -> {
-            if(!apiLock) {
-                searchMode = "SEASON";
-                apiLock = true;
-
-                invokeAnimatedAPICall(1);
-            }
-        });
-
-        upcomingButton.setOnAction(event -> {
-            if(!apiLock) {
-                searchMode = "UPCOMING";
-                apiLock = true;
-
-                invokeAnimatedAPICall(1);
-            }
-        });
-
-        topButton.setOnAction(event -> {
-            if(!apiLock) {
-                searchMode = "TOP";
-                apiLock = true;
-
-                invokeAnimatedAPICall(1);
-            }
-        });
-
-        searchButton.setOnAction(event -> {
-            if(!apiLock && !searchString.isEmpty()) {
-                searchMode = "SEARCH";
-                apiLock = true;
-
-                invokeAnimatedAPICall(1);
-            }
-        });
-
-
-        HBox leftButtons = new HBox(10, seasonButton, upcomingButton, topButton);
-        HBox rightButtons = new HBox(searchButton);
-        HBox.setHgrow(leftButtons, Priority.ALWAYS);
-        HBox.setHgrow(rightButtons, Priority.ALWAYS);
-        leftButtons.setAlignment(Pos.CENTER_LEFT);
-        rightButtons.setAlignment(Pos.CENTER_RIGHT);
-
-        HBox buttonBox = new HBox(10, leftButtons, rightButtons);
-        HBox.setHgrow(buttonBox, Priority.ALWAYS);
-        buttonBox.setAlignment(Pos.CENTER);
-
-        return buttonBox;
-    }
-
-
-    /**
      * Creates the FlowPane of anime, wrapped by a scrollPane.
      * Does not actually create the child elements themselves, that is done in an async sub-function.
      * @param animeListInfo A List of AnimeInfo (to be passed to the async function filling the FlowPane on creation of this full View)
@@ -565,7 +217,7 @@ public class AnimeBrowseView implements PopupMakerView {
 
         Screen screen = Screen.getPrimary();
         double screenWidth = screen.getBounds().getWidth();
-        animeGrid = new FlowGapPane(screenWidth / 9, screenWidth / 9 * RATIO, 20);
+        animeGrid = new FlowGapPane(screenWidth / 9, screenWidth / 9 * AspectRatio.ANIME.getRatio(), 20);
 
         // Load anime grid with grid items
         reloadAnimeGridAsync(animeListInfo.getAnimeList()).join();
@@ -643,7 +295,6 @@ public class AnimeBrowseView implements PopupMakerView {
 
                     if (inViewport && !n.isVisible()) {
                         n.setStyle("-fx-background-image: url('" + anime.getImageUrl() + "');");
-                        // n.setStyle("-fx-background-image: url('" + anime.getSmallImageUrl() + "');");
                         n.setVisible(true);
 
                         // TODO This fade-animation can be removed later, it's for testing right now. Probably expensive. Unsure.
@@ -724,7 +375,7 @@ public class AnimeBrowseView implements PopupMakerView {
             case "UPCOMING" -> apiRequestListener.getUpcomingAnime(page);
             case "TOP" -> apiRequestListener.getTopAnime(page);
             default ->  // Default mode: SEARCH
-                    apiRequestListener.getAnimeSearch(searchString, page);
+                    apiRequestListener.getAnimeSearch(searchStringProperty.get(), page);
         };
     }
 
@@ -796,7 +447,7 @@ public class AnimeBrowseView implements PopupMakerView {
         for (Node node : animeGrid.getChildren()) {
             if (node instanceof VBox animeBox) {
                 double width = animeBox.getWidth();
-                double newHeight = width * RATIO;
+                double newHeight = width * AspectRatio.ANIME.getRatio();
                 animeBox.setMinHeight(newHeight);
                 animeBox.setPrefHeight(newHeight);
                 animeBox.setMaxHeight(newHeight);
@@ -896,4 +547,13 @@ public class AnimeBrowseView implements PopupMakerView {
         return fadeOut;
     }
 
+    private Runnable fireApiCall(String mode) {
+        return () -> {
+            if (!apiLock && (!mode.equals("SEARCH") || !searchStringProperty.get().isEmpty())) {
+                searchMode = mode;
+                apiLock = true;
+                invokeAnimatedAPICall(1);
+            }
+        };
+    }
 }

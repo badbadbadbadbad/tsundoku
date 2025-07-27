@@ -25,7 +25,6 @@ import javafx.animation.AnimationTimer;
  * Hence, we use a lazy loader background service to only keep images in view loaded.
  */
 public class LazyLoader {
-    private final double RATIO = 318.0 / 225.0;
 
     // Threads dedicated to image loading
     private final ExecutorService imageLoaderExecutor = Executors.newFixedThreadPool(3);
@@ -35,6 +34,7 @@ public class LazyLoader {
     private AnimationTimer batchImageUpdaterTimer;
     private final ConcurrentLinkedQueue<Pair<Node, String>> pendingImageUpdates = new ConcurrentLinkedQueue<>();
 
+    private final AspectRatio aspectRatio;
     private final PaneFinder paneFinder;
     private final ScrollPane scrollPane;
     private final List<FlowGapPane> flowPanes;
@@ -48,7 +48,8 @@ public class LazyLoader {
     private final PauseTransition loaderPause = new PauseTransition(Duration.seconds(0.1));
     private final PauseTransition imagePause = new PauseTransition(Duration.seconds(0.1));
 
-    public LazyLoader(ScrollPane scrollPane, List<FlowGapPane> flowPanes) {
+    public LazyLoader(ScrollPane scrollPane, List<FlowGapPane> flowPanes, AspectRatio aspectRatio) {
+        this.aspectRatio = aspectRatio;
         this.scrollPane = scrollPane;
         this.flowPanes = flowPanes;
         this.paneFinder = new PaneFinder(flowPanes);
@@ -111,7 +112,7 @@ public class LazyLoader {
             for (Node node : pane.getChildren()) {
                 if (node instanceof VBox animeBox) {
                     double width = animeBox.getWidth();
-                    double newHeight = width * RATIO;
+                    double newHeight = width * aspectRatio.getRatio();
                     animeBox.setMinHeight(newHeight);
                     animeBox.setPrefHeight(newHeight);
                     animeBox.setMaxHeight(newHeight);
