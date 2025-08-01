@@ -8,4 +8,8 @@ public interface GridFilterListener {
     void onAnimeStatusChanged(String newVal);
     void onAnimeStartYearChanged(String newVal);
     void onAnimeEndYearChanged(String newVal);
+    String getAnimeOrderByDefault();
+    String getAnimeStatusDefault();
+    String getAnimeStartYearDefault();
+    String getAnimeEndYearDefault();
 }

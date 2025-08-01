@@ -56,6 +56,7 @@ public class AnimeBrowseView implements PopupMakerView {
     private SmoothScroll smoothScroll;
 
     private final Map<String, Consumer<String>> filterUpdaters = new HashMap<>();
+    private final Map<String, String> filterDefaults = new HashMap<>();
 
     private final StringProperty searchStringProperty = new SimpleStringProperty("");
     private String searchMode = "SEASON";  // Changes between SEASON, TOP, and SEARCH depending on last mode selected (so pagination calls "current mode")
@@ -78,10 +79,10 @@ public class AnimeBrowseView implements PopupMakerView {
         this.filterUpdaters.put("Year ≥", gridFilterListener::onAnimeStartYearChanged);
         this.filterUpdaters.put("Year ≤", gridFilterListener::onAnimeEndYearChanged);
 
-        // TODO The BrowseView filters remember the values in config file
-        // But those aren't set into the filter field when the BrowseView is loaded
-        // But still applied, even with fields empty. This is odd behaviour.
-        // Either don't memorize, or load them into filter fields on View creation.
+        this.filterDefaults.put("Order by", gridFilterListener.getAnimeOrderByDefault());
+        this.filterDefaults.put("Release status", gridFilterListener.getAnimeStatusDefault());
+        this.filterDefaults.put("Year ≥", gridFilterListener.getAnimeStartYearDefault());
+        this.filterDefaults.put("Year ≤", gridFilterListener.getAnimeEndYearDefault());
     }
 
 
@@ -102,6 +103,7 @@ public class AnimeBrowseView implements PopupMakerView {
         HBox.setHgrow(stackPane, Priority.ALWAYS);
         stackPane.getChildren().add(root);
 
+        // TODO Put these naked strings into an enum?
 
         List<String> orderByOptions = List.of(
                 "Default",
@@ -109,27 +111,26 @@ public class AnimeBrowseView implements PopupMakerView {
                 "Rating: Highest", "Rating: Lowest",
                 "Popular: Most", "Popular: Least"
         );
-        FilterConfig orderByFilter = new FilterConfig(
-                FilterConfig.Type.DROPDOWN,
-                "Order by", orderByOptions,
+        FilterConfig orderByFilter = FilterConfig.dropdown(
+                "Order by",
+                orderByOptions,
                 List.of(filterUpdaters.get("Order by")),
-                fireApiCall("SEARCH")
+                filterDefaults.get("Order by")
         );
 
         List<String> releaseStatusOptions= List.of("Any", "Complete", "Airing", "Upcoming");
-        FilterConfig releaseStatusFilter = new FilterConfig(
-                FilterConfig.Type.DROPDOWN,
-                "Release status", releaseStatusOptions,
+        FilterConfig releaseStatusFilter = FilterConfig.dropdown(
+                "Release status",
+                releaseStatusOptions,
                 List.of(filterUpdaters.get("Release status")),
-                fireApiCall("SEARCH")
+                filterDefaults.get("Release status")
         );
 
-        FilterConfig yearFilter = new FilterConfig(
-                FilterConfig.Type.DOUBLE_NUMBER,
-                "Year ≥", "Year ≤",null,
-                List.of(filterUpdaters.get("Year ≥")),
-                List.of(filterUpdaters.get("Year ≤")),
-                fireApiCall("SEARCH")
+        FilterConfig yearFilter = FilterConfig.doubleNumber(
+                "Year ≥", "Year ≤",
+                List.of(filterUpdaters.get("Year ≥")), List.of(filterUpdaters.get("Year ≤")),
+                fireApiCall("SEARCH"),
+                filterDefaults.get("Year ≥"), filterDefaults.get("Year ≤")
         );
 
         List<FilterConfig> animeFilters = List.of(orderByFilter, releaseStatusFilter, yearFilter);

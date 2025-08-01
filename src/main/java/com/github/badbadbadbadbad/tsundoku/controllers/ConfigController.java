@@ -80,4 +80,24 @@ public class ConfigController implements GridFilterListener, SidebarListener, Se
     public void onAnimeEndYearChanged(String endYear) {
         configModel.setAnimeEndYear(endYear);
     }
+
+    @Override
+    public String getAnimeOrderByDefault() {
+        return configModel.getAnimeOrderBy();
+    }
+
+    @Override
+    public String getAnimeStatusDefault() {
+        return configModel.getAnimeStatus();
+    }
+
+    @Override
+    public String getAnimeStartYearDefault() {
+        return configModel.getAnimeStartYear();
+    }
+
+    @Override
+    public String getAnimeEndYearDefault() {
+        return configModel.getAnimeEndYear();
+    }
 }

@@ -185,9 +185,17 @@ public class ConfigModel {
         saveConfigFile();
     }
 
+    public String getAnimeOrderBy() {
+        return this.animeOrderBy;
+    }
+
     public void setAnimeStatus(String status) {
         this.animeStatus = status;
         notifyListenersAPIChange();
+    }
+
+    public String getAnimeStatus() {
+        return this.animeStatus;
     }
 
     public void setAnimeStartYear(String startYear) {
@@ -195,9 +203,17 @@ public class ConfigModel {
         notifyListenersAPIChange();
     }
 
+    public String getAnimeStartYear() {
+         return this.animeStartYear;
+    }
+
     public void setAnimeEndYear(String endYear) {
         this.animeEndYear = endYear;
         notifyListenersAPIChange();
+    }
+
+    public String getAnimeEndYear() {
+        return this.animeEndYear;
     }
 
     public void updateAnimeFilters(Map<String, Boolean> newTypeFilters, Map<String, Boolean> newRatingFilters) {

@@ -87,7 +87,7 @@ public class ControlsPane extends VBox {
         filterGrid.setOpacity(0.0);
 
         for (FilterConfig config : filters) {
-            switch (config.type) {
+            switch (config.type()) {
                 case DROPDOWN -> filterGrid.getChildren().add(createDropdownFilter(config));
                 case NUMBER -> filterGrid.getChildren().add(createNumberFilter(config));
                 case DOUBLE_NUMBER -> filterGrid.getChildren().add(createDoubleNumberFilter(config));
@@ -96,18 +96,18 @@ public class ControlsPane extends VBox {
     }
 
     private VBox createDropdownFilter(FilterConfig config) {
-        Label label = new Label(config.label);
+        Label label = new Label(config.label());
         label.getStyleClass().add("filter-label");
 
         ComboBox<String> combo = new ComboBox<>();
-        combo.getItems().addAll(config.options);
-        combo.setValue(config.options.getFirst());
+        combo.getItems().addAll(config.options());
+        combo.setValue(config.initialValue() != null ? config.initialValue() : config.options().getFirst());
         combo.getStyleClass().add("filter-combo-box");
         combo.setMaxWidth(Double.MAX_VALUE);
         VBox.setVgrow(combo, Priority.ALWAYS);
 
         combo.valueProperty().addListener((obs, oldVal, newVal) -> {
-            for (Consumer<String> consumer : config.onChange) {
+            for (Consumer<String> consumer : config.onChange()) {
                 consumer.accept(newVal);
             }
         });
@@ -119,7 +119,7 @@ public class ControlsPane extends VBox {
     }
 
     private VBox createNumberFilter(FilterConfig config) {
-        Label label = new Label(config.label);
+        Label label = new Label(config.label());
         label.getStyleClass().add("filter-label");
 
         TextField field = new TextField();
@@ -127,10 +127,14 @@ public class ControlsPane extends VBox {
         field.setMaxWidth(Double.MAX_VALUE);
         VBox.setVgrow(field, Priority.ALWAYS);
 
-        if (config.onChange != null && !config.onChange.isEmpty()) {
+        if (config.initialValue() != null) {
+            field.setText(config.initialValue());
+        }
+
+        if (config.onChange() != null && !config.onChange().isEmpty()) {
             field.textProperty().addListener((obs, oldVal, newVal) -> {
                 if (newVal.matches("\\d{0,4}")) {
-                    for (Consumer<String> consumer : config.onChange) {
+                    for (Consumer<String> consumer : config.onChange()) {
                         consumer.accept(newVal);
                     }
                 } else {
@@ -142,8 +146,8 @@ public class ControlsPane extends VBox {
         filtersHidden.addListener((obs, o, n) -> field.setDisable(n));
         field.setDisable(filtersHidden.get());
 
-        if (config.onEnter != null) {
-            field.setOnAction(e -> config.onEnter.run());
+        if (config.onEnter() != null) {
+            field.setOnAction(e -> config.onEnter().run());
         }
 
         VBox container = new VBox(5, label, field);
@@ -152,8 +156,8 @@ public class ControlsPane extends VBox {
     }
 
     private HBox createDoubleNumberFilter(FilterConfig config) {
-        VBox filter1 = createNumberFilter(new FilterConfig(FilterConfig.Type.NUMBER, config.label, null, config.onChange, config.onEnter));
-        VBox filter2 = createNumberFilter(new FilterConfig(FilterConfig.Type.NUMBER, config.label2, null, config.onChange2, config.onEnter));
+        VBox filter1 = createNumberFilter(FilterConfig.number(config.label(), config.onChange(), config.onEnter(), config.initialValue()));
+        VBox filter2 = createNumberFilter(FilterConfig.number(config.label2(), config.onChange2(), config.onEnter(), config.initialValue2()));
 
         HBox container = new HBox(10, filter1, filter2);
         container.setPrefWidth(200);

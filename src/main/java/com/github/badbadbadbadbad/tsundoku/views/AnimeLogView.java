@@ -121,35 +121,35 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
 
         List<FilterConfig> filterConfigs = List.of(
-                new FilterConfig(FilterConfig.Type.DROPDOWN, "Personal status",
+                FilterConfig.dropdown("Personal status",
                         List.of("Any", "In progress", "Backlog", "Completed", "Paused", "Dropped"),
                         List.of(personalStatus::set, s -> onFiltersChangedRunnable().run()), null),
 
-                new FilterConfig(FilterConfig.Type.DROPDOWN, "Personal rating",
+                FilterConfig.dropdown("Personal rating",
                         List.of("Any", "Heart", "Liked", "Disliked", "Unscored"),
                         List.of(personalRating::set, s -> onFiltersChangedRunnable().run()), null),
 
-                new FilterConfig(FilterConfig.Type.DROPDOWN, "Release status",
+                FilterConfig.dropdown("Release status",
                         List.of("Any", "Complete", "Airing", "Upcoming"),
                         List.of(releaseStatus::set, s -> onFiltersChangedRunnable().run()), null),
 
-                new FilterConfig(FilterConfig.Type.DROPDOWN, "Age rating",
+                FilterConfig.dropdown("Age rating",
                         List.of("Any", "G", "PG", "PG13", "R17+", "R+", "Rx"),
                         List.of(ageRating::set, s -> onFiltersChangedRunnable().run()), null),
 
-                new FilterConfig(FilterConfig.Type.DROPDOWN, "Season",
+                FilterConfig.dropdown("Season",
                         List.of("Any", "Winter", "Spring", "Summer", "Fall"),
                         List.of(season::set, s -> onFiltersChangedRunnable().run()), null),
 
-                new FilterConfig(FilterConfig.Type.DOUBLE_NUMBER, "Year ≥", "Year ≤", null,
+                FilterConfig.doubleNumber("Year ≥", "Year ≤",
                         List.of(startYear::set, s -> onFiltersChangedRunnable().run()),
-                        List.of(endYear::set, s -> onFiltersChangedRunnable().run()), null),
+                        List.of(endYear::set, s -> onFiltersChangedRunnable().run()), null, null, null),
 
-                new FilterConfig(FilterConfig.Type.DOUBLE_NUMBER, "Episodes ≥", "Episodes ≤", null,
+                FilterConfig.doubleNumber("Episodes ≥", "Episodes ≤",
                         List.of(minEpisodes::set, s -> onFiltersChangedRunnable().run()),
-                        List.of(maxEpisodes::set, s -> onFiltersChangedRunnable().run()), null),
+                        List.of(maxEpisodes::set, s -> onFiltersChangedRunnable().run()), null, null, null),
 
-                new FilterConfig(FilterConfig.Type.DROPDOWN, "Type",
+                FilterConfig.dropdown("Type",
                         List.of("Any", "TV", "Movie", "OVA", "Special", "ONA", "Music", "CM", "PV", "TV Special"),
                         List.of(type::set, s -> onFiltersChangedRunnable().run()), null)
         );
