@@ -1,7 +1,7 @@
 #! /bin/bash
 
 JDK_VERSION="21.0.4"
-MAVEN_VERSION="3.9.9"
+MAVEN_VERSION="3.8.9"
 JDK_DIR="$(pwd)/jdk"
 MAVEN_DIR="$(pwd)/maven"
 

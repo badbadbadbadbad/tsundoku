@@ -1,5 +1,5 @@
 $jdkVersion = "21.0.4"
-$mavenVersion = "3.9.9"
+$mavenVersion = "3.8.9"
 $jdkDir = "$PSScriptRoot\jdk"
 $mavenDir = "$PSScriptRoot\maven"
 
