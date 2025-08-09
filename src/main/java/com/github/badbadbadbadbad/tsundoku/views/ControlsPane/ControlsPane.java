@@ -256,9 +256,7 @@ public class ControlsPane extends VBox {
                                            BiFunction<Double, Integer, Pair<Integer, Integer>> layoutCalculator) {
         int filterCount = filterGrid.getChildren().size();
 
-        widthProperty.addListener((obs, oldVal, newVal) -> {
-            applyResponsiveLayout(newVal.doubleValue(), filterCount, layoutCalculator);
-        });
+        widthProperty.addListener((obs, oldVal, newVal) -> applyResponsiveLayout(newVal.doubleValue(), filterCount, layoutCalculator));
 
         applyResponsiveLayout(widthProperty.get(), filterCount, layoutCalculator);
     }

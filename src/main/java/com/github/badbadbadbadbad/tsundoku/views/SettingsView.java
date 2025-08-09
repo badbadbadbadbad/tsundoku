@@ -88,60 +88,6 @@ public class SettingsView extends VBox {
         this.getChildren().addAll(scrollPane, separator, saveButtonElement);
     }
 
-
-    /**
-     * Called once by ViewsController, creates the whole View component
-     *
-     * @return The finished view
-     */
-    public Region createSettingsView() {
-
-        VBox root = new VBox();
-        VBox.setVgrow(root, Priority.ALWAYS);
-        HBox.setHgrow(root, Priority.ALWAYS);
-
-
-        HBox saveButtonElement = createSaveButtonElement();
-
-        this.scrollPane = createScrollableSettings();
-
-
-        // ScrollPane listener to give controls a bottom border when scrolling
-        Region separator = new Region();
-        separator.getStyleClass().add("separator");
-        separator.setOpacity(0.0);
-
-        FadeTransition fadeIn = new FadeTransition(Duration.seconds(0.2), separator);
-        fadeIn.setFromValue(0.0);
-        fadeIn.setToValue(1.0);
-
-        FadeTransition fadeOut = new FadeTransition(Duration.seconds(0.2), separator);
-        fadeOut.setFromValue(1.0);
-        fadeOut.setToValue(0.0);
-
-        scrollPane.vvalueProperty().addListener((obs, oldValue, newValue) -> {
-
-            // This is so the controls-bottom-border can't start showing if the pane scroll bar is fully vertical (no scrolling possible)
-            boolean canScroll = scrollPane.getContent().getBoundsInLocal().getHeight() > scrollPane.getViewportBounds().getHeight();
-            if (newValue.doubleValue() < 0.99 && canScroll) {
-                if (separator.getOpacity() == 0.0 || fadeOut.getStatus() == Animation.Status.RUNNING) {
-                    fadeOut.stop();
-                    fadeIn.playFromStart();
-                }
-            } else {
-                if (separator.getOpacity() == 1.0 || fadeIn.getStatus() == Animation.Status.RUNNING) {
-                    fadeIn.stop();
-                    fadeOut.playFromStart();
-                }
-            }
-        });
-
-
-        root.getChildren().addAll(scrollPane, separator, saveButtonElement);
-        return root;
-    }
-
-
     /**
      * Save button component. When clicked, fires a settings update so other components of this program may be updated.
      *
@@ -199,6 +145,7 @@ public class SettingsView extends VBox {
                 (String) this.settings.get("weebLanguagePreference")
         );
 
+        // TODO WTF IS THIS
         ComboBox<String> comboBox = (ComboBox<String>) ((HBox) languagePreferenceSetting.getChildren().get(1)).getChildren().get(2);
         comboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
             this.settings.put("weebLanguagePreference", newValue);
@@ -209,9 +156,12 @@ public class SettingsView extends VBox {
         // Anime rating filters
         VBox animeRatingFilterSetting = makeMultiInputComboboxSetting(
                 "Anime: Age Ratings",
-                "Only anime with the chosen age ratings will be displayed. " +
-                        "\ntsundoku uses the MyAnimeList anime age rating system as they are the original data source." +
-                        "\nThis setting activates exclusively on the Browse view.",
+                """
+                        Only anime with the chosen age ratings will be displayed. \
+                        
+                        tsundoku uses the MyAnimeList anime age rating system as they are the original data source.\
+                        
+                        This setting activates exclusively on the Browse view.""",
                 "animeRatingFilters",
                 Arrays.asList("G", "PG", "PG13", "R17+", "R+", "Rx", "Not yet provided")
         );
@@ -220,9 +170,12 @@ public class SettingsView extends VBox {
         // Anime type filters
         VBox animeTypeFilterSetting = makeMultiInputComboboxSetting(
                 "Anime: Types",
-                "Only anime of the chosen types will be displayed." +
-                        "\ntsundoku uses the MyAnimeList anime type system as they are the original data source." +
-                        "\nThis setting activates exclusively on the Browse view.",
+                """
+                        Only anime of the chosen types will be displayed.\
+                        
+                        tsundoku uses the MyAnimeList anime type system as they are the original data source.\
+                        
+                        This setting activates exclusively on the Browse view.""",
                 "animeTypeFilters",
                 Arrays.asList("TV", "Movie", "OVA", "ONA", "Special", "TV Special", "PV", "CM", "Music", "Not yet provided")
         );
@@ -429,9 +382,7 @@ public class SettingsView extends VBox {
                 this.saveButton.setDisable(false);
             });
 
-            itemBox.setOnMouseClicked(event -> {
-                checkBox.setSelected(!checkBox.isSelected());
-            });
+            itemBox.setOnMouseClicked(event -> checkBox.setSelected(!checkBox.isSelected()));
 
             Label nameLabel = new Label(key);
             nameLabel.getStyleClass().add("settings-multi-combo-box-popup-cell-text");
