@@ -1,27 +1,28 @@
 package com.github.badbadbadbadbad.tsundoku.views;
 
 import com.github.badbadbadbadbad.tsundoku.controllers.APIRequestListener;
+import com.github.badbadbadbadbad.tsundoku.controllers.DatabaseRequestListener;
 import com.github.badbadbadbadbad.tsundoku.controllers.GridFilterListener;
 import com.github.badbadbadbadbad.tsundoku.controllers.LoadingBarListener;
-import com.github.badbadbadbadbad.tsundoku.controllers.DatabaseRequestListener;
 import com.github.badbadbadbadbad.tsundoku.external.FlowGapPane;
+import com.github.badbadbadbadbad.tsundoku.external.SmoothScroll;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeListInfo;
-import com.github.badbadbadbadbad.tsundoku.external.SmoothScroll;
 import com.github.badbadbadbadbad.tsundoku.util.AspectRatio;
 import com.github.badbadbadbadbad.tsundoku.views.ControlsPane.ButtonConfig;
 import com.github.badbadbadbadbad.tsundoku.views.ControlsPane.ControlsPane;
 import com.github.badbadbadbadbad.tsundoku.views.ControlsPane.FilterConfig;
-import javafx.animation.*;
+import javafx.animation.AnimationTimer;
+import javafx.animation.FadeTransition;
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.geometry.Bounds;
 import javafx.scene.Node;
 import javafx.scene.Parent;
-import javafx.scene.control.*;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.*;
-import javafx.scene.layout.Region;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -42,26 +43,22 @@ import java.util.function.Consumer;
  * <p>It would be far cleaner to have some BrowseView superclass with this inheriting, but I don't want to overcomplicate things
  * before I know what quirks the main content views for other media modes may involve (due to relying on data from external APIs).</p>
  */
-public class AnimeBrowseView implements PopupMakerView {
+public class AnimeBrowseView extends StackPane implements PopupMakerView {
 
     private final Stage stage;
     private final APIRequestListener apiRequestListener;
     private final LoadingBarListener loadingBarListener;
     private final DatabaseRequestListener databaseRequestListener;
-
+    private final Map<String, Consumer<String>> filterUpdaters = new HashMap<>();
+    private final Map<String, String> filterDefaults = new HashMap<>();
+    private final StringProperty searchStringProperty = new SimpleStringProperty("");
+    private final String languagePreference;
     private ScrollPane scrollPane;
     private FlowGapPane animeGrid;
     private Pagination pagination;
-    private StackPane stackPane;
     private SmoothScroll smoothScroll;
-
-    private final Map<String, Consumer<String>> filterUpdaters = new HashMap<>();
-    private final Map<String, String> filterDefaults = new HashMap<>();
-
-    private final StringProperty searchStringProperty = new SimpleStringProperty("");
     private String searchMode = "SEASON";  // Changes between SEASON, TOP, and SEARCH depending on last mode selected (so pagination calls "current mode")
     private boolean apiLock = false;
-    private final String languagePreference;
 
 
     public AnimeBrowseView(Stage stage, LoadingBarListener loadingBarListener, APIRequestListener apiRequestListener,
@@ -83,25 +80,18 @@ public class AnimeBrowseView implements PopupMakerView {
         this.filterDefaults.put("Release status", gridFilterListener.getAnimeStatusDefault());
         this.filterDefaults.put("Year ≥", gridFilterListener.getAnimeStartYearDefault());
         this.filterDefaults.put("Year ≤", gridFilterListener.getAnimeEndYearDefault());
+
+        initComponent();
     }
 
-
-    /**
-     * Called once by ViewsController, creates the whole View component
-     * @return The finished view
-     */
-    public Region createGridView() { // TODO Instead of this being Region, just make the class extend Region?
-
+    private void initComponent() {
         VBox root = new VBox();
         VBox.setVgrow(root, Priority.ALWAYS);
         HBox.setHgrow(root, Priority.ALWAYS);
 
-
-        // StackPane wrapper to allow for popup functionality when grid element is clicked
-        stackPane = new StackPane();
-        VBox.setVgrow(stackPane, Priority.ALWAYS);
-        HBox.setHgrow(stackPane, Priority.ALWAYS);
-        stackPane.getChildren().add(root);
+        VBox.setVgrow(this, Priority.ALWAYS);
+        HBox.setHgrow(this, Priority.ALWAYS);
+        this.getChildren().add(root);
 
         // TODO Put these naked strings into an enum?
 
@@ -118,7 +108,7 @@ public class AnimeBrowseView implements PopupMakerView {
                 filterDefaults.get("Order by")
         );
 
-        List<String> releaseStatusOptions= List.of("Any", "Complete", "Airing", "Upcoming");
+        List<String> releaseStatusOptions = List.of("Any", "Complete", "Airing", "Upcoming");
         FilterConfig releaseStatusFilter = FilterConfig.dropdown(
                 "Release status",
                 releaseStatusOptions,
@@ -204,13 +194,12 @@ public class AnimeBrowseView implements PopupMakerView {
 
 
         root.getChildren().addAll(controls, separator, scrollPane);
-        return stackPane;
     }
-
 
     /**
      * Creates the FlowPane of anime, wrapped by a scrollPane.
      * Does not actually create the child elements themselves, that is done in an async sub-function.
+     *
      * @param animeListInfo A List of AnimeInfo (to be passed to the async function filling the FlowPane on creation of this full View)
      * @return The finished component
      */
@@ -240,15 +229,13 @@ public class AnimeBrowseView implements PopupMakerView {
         animeGrid.setWrapperPane(scrollPane);
 
 
-        // Smooth scroll listener because JavaFX does not hav smooth scrolling..
+        // Smooth scroll listener because JavaFX does not have smooth scrolling.
         // in /util/, SmoothScroll
         this.smoothScroll = new SmoothScroll(scrollPane, wrapper);
 
 
         // New: Try to set non-visible grid items to not render to improve performance on large grids
-        scrollPane.vvalueProperty().addListener((obs, oldValue, newValue) -> {
-            updateVisibleGridItems(scrollPane);
-        });
+        scrollPane.vvalueProperty().addListener((obs, oldValue, newValue) -> updateVisibleGridItems(scrollPane));
 
 
         scrollPane.widthProperty().addListener(e -> updateVisibleGridItems(scrollPane));
@@ -260,9 +247,7 @@ public class AnimeBrowseView implements PopupMakerView {
         // Not quite sure why, probably due to _when_ exactly rendering of pane size happens in the render pipeline etc.
         PauseTransition pause = new PauseTransition(Duration.seconds(0.3));
         scrollPane.widthProperty().addListener((obs, oldValue, newValue) -> {
-            pause.setOnFinished(e -> {
-                smoothScroll.adjustAccumulatedVValue();
-            });
+            pause.setOnFinished(e -> smoothScroll.adjustAccumulatedVValue());
             pause.playFromStart();
         });
 
@@ -276,6 +261,7 @@ public class AnimeBrowseView implements PopupMakerView {
      * <p>This is a far less efficient approach than the LazyLoader implementation the Log views use,
      * but it still works fine exactly because of the small page size.</p>
      * <p><a href="https://stackoverflow.com/a/30780960">Idea from StackOverflow</a></p>
+     *
      * @param scrollPane The scrollPane wrapping the FlowPane of anime (where the lazy loading is run on)
      */
     private void updateVisibleGridItems(ScrollPane scrollPane) {
@@ -288,7 +274,6 @@ public class AnimeBrowseView implements PopupMakerView {
             if (scrollPane.getContent() instanceof Parent) {
                 for (Node n : animeGrid.getChildren()) {
                     Bounds nodeBounds = n.localToScene(n.getBoundsInLocal());
-
 
 
                     boolean inViewport = paneBounds.intersects(nodeBounds);
@@ -321,8 +306,9 @@ public class AnimeBrowseView implements PopupMakerView {
     }
 
     /**
-     * Called on API button ("Season", "Top"..) or pagination button click.
+     * Called on API button ("Season", "Top"...) or pagination button click.
      * Send the correct async API call to the API call listener, refreshes the grid, and invokes the loading bar animation.
+     *
      * @param page The called page of the API call (set to 1 on component creation and on API call of a new type
      *             e.g. switching from Browse - Season to Browse - Top)
      */
@@ -383,50 +369,49 @@ public class AnimeBrowseView implements PopupMakerView {
 
     /**
      * Reloads the FlowPane of anime with new information when the answer of an API call is received.
+     *
      * @param animeList The List of anime to load into the FlowPane.
      * @return A CompletableFuture so this can be used as a blocking function for the first API call on creation of the full View
      */
     private CompletableFuture<Void> reloadAnimeGridAsync(List<AnimeInfo> animeList) {
         return CompletableFuture.supplyAsync(() -> createAnimeGridItems(animeList))
-                .thenAccept(animeBoxes -> {
-                    Platform.runLater(() -> {
-                        animeGrid.getChildren().clear();
-                        pagination.setPaginationButtonVisibility(false);
-                        animeGrid.getChildren().addAll(animeBoxes);
+                .thenAccept(animeBoxes -> Platform.runLater(() -> {
+                    animeGrid.getChildren().clear();
+                    pagination.setPaginationButtonVisibility(false);
+                    animeGrid.getChildren().addAll(animeBoxes);
 
-                        new AnimationTimer() {
-                            @Override
-                            public void handle(long now) {
-                                Bounds paneBounds = scrollPane.localToScene(scrollPane.getBoundsInLocal());
-                                if (paneBounds.getWidth() > 0 && paneBounds.getHeight() > 0) {
+                    new AnimationTimer() {
+                        @Override
+                        public void handle(long now) {
+                            Bounds paneBounds = scrollPane.localToScene(scrollPane.getBoundsInLocal());
+                            if (paneBounds.getWidth() > 0 && paneBounds.getHeight() > 0) {
 
-                                    adjustGridItemHeights();
+                                adjustGridItemHeights();
 
-                                    // Wait one frame so JavaFX can actually set the real heights
-                                    // (For visibility intersection tests)
-                                    PauseTransition pause = new PauseTransition(Duration.millis(16));
-                                    pause.setOnFinished(e -> {
-                                        if (smoothScroll != null) {
-                                            scrollPane.setVvalue(0);
-                                            smoothScroll.resetAccumulatedVValue();
-                                        }
-                                        updateVisibleGridItems(scrollPane);
-                                        pagination.setPaginationButtonVisibility(true);
-                                    });
-                                    pause.play();
+                                // Wait one frame so JavaFX can actually set the real heights
+                                // (For visibility intersection tests)
+                                PauseTransition pause = new PauseTransition(Duration.millis(16));
+                                pause.setOnFinished(e -> {
+                                    if (smoothScroll != null) {
+                                        scrollPane.setVvalue(0);
+                                        smoothScroll.resetAccumulatedVValue();
+                                    }
+                                    updateVisibleGridItems(scrollPane);
+                                    pagination.setPaginationButtonVisibility(true);
+                                });
+                                pause.play();
 
 
-                                    stop();
-                                }
+                                stop();
                             }
-                        }.start();
-                    });
-                });
+                        }
+                    }.start();
+                }));
     }
 
 
-    private List<VBox> createAnimeGridItems(List<AnimeInfo> animeList) {
-        List<VBox> animeBoxes = new ArrayList<>();
+    private List<AnimeBox> createAnimeGridItems(List<AnimeInfo> animeList) {
+        List<AnimeBox> animeBoxes = new ArrayList<>();
         for (AnimeInfo anime : animeList) {
             AnimeInfo databaseAnime = databaseRequestListener.requestAnimeFromDatabase(anime.getId());
 
@@ -446,7 +431,7 @@ public class AnimeBrowseView implements PopupMakerView {
      */
     private void adjustGridItemHeights() {
         for (Node node : animeGrid.getChildren()) {
-            if (node instanceof VBox animeBox) {
+            if (node instanceof AnimeBox animeBox) {
                 double width = animeBox.getWidth();
                 double newHeight = width * AspectRatio.ANIME.getRatio();
                 animeBox.setMinHeight(newHeight);
@@ -458,6 +443,7 @@ public class AnimeBrowseView implements PopupMakerView {
 
     /**
      * Creates a PopupView for an anime (and a window darkener effect) when its VBox in the FlowPane is clicked.
+     *
      * @param parentBox The anime box that was clicked
      */
     private void createPopupScreen(AnimeBox parentBox) {
@@ -476,7 +462,7 @@ public class AnimeBrowseView implements PopupMakerView {
         darkBackground.setOpacity(0);
         popupBox.setOpacity(0);
 
-        stackPane.getChildren().addAll(darkBackground, popupBox);
+        this.getChildren().addAll(darkBackground, popupBox);
 
         // Fade-in animations
         FadeTransition fadeInBackground = new FadeTransition(Duration.seconds(0.2), darkBackground);
@@ -502,7 +488,7 @@ public class AnimeBrowseView implements PopupMakerView {
             fadeOutInfoBox.setToValue(0);
 
             // Destroy after fade-out
-            fadeOutInfoBox.setOnFinished(e -> stackPane.getChildren().removeAll(darkBackground, popupBox));
+            fadeOutInfoBox.setOnFinished(e -> this.getChildren().removeAll(darkBackground, popupBox));
             fadeOutBackground.play();
             fadeOutInfoBox.play();
         });
@@ -519,6 +505,7 @@ public class AnimeBrowseView implements PopupMakerView {
 
     /**
      * Creates a darkener full screen effect.
+     *
      * @return The finished background.
      */
     private VBox createSearchBackground() {
@@ -527,7 +514,7 @@ public class AnimeBrowseView implements PopupMakerView {
         VBox.setVgrow(darkBackground, Priority.ALWAYS);
         HBox.setHgrow(darkBackground, Priority.ALWAYS);
         darkBackground.setOpacity(0);
-        stackPane.getChildren().add(darkBackground);
+        this.getChildren().add(darkBackground);
         return darkBackground;
     }
 
@@ -544,7 +531,7 @@ public class AnimeBrowseView implements PopupMakerView {
         FadeTransition fadeOut = new FadeTransition(Duration.seconds(durationSeconds), node);
         fadeOut.setFromValue(fromValue);
         fadeOut.setToValue(0);
-        fadeOut.setOnFinished(e -> stackPane.getChildren().remove(node));
+        fadeOut.setOnFinished(e -> this.getChildren().remove(node));
         return fadeOut;
     }
 

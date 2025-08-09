@@ -25,13 +25,11 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
     private final HBox root;
     private final StackPane rootStack;
     private final Stage stage;
-
-    private boolean firstTimeStartup = true;
     private final APIController apiController;
     private final ConfigController configController;
     private final DatabaseController databaseController;
     public Region loadingBar;
-
+    private boolean firstTimeStartup = true;
     private LazyLoaderView currentLazyLoaderView = null;
 
     private String languagePreference = "Default";
@@ -50,7 +48,6 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
         // StackPane for full window darkener effect on view changes
         this.rootStack = new StackPane();
         rootStack.getChildren().add(root);
-
 
 
         // Fonts (loaded here before actual view items are made so they can be used properly)
@@ -111,6 +108,7 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
      * The thin separator-like Region between sidebar and main content view.
      * Serves as a separator and as a loading bar.
      * We use a Region instead of JavaFX's separator because the JavaFX implementation is annoying.
+     *
      * @return The finished UI element.
      */
     private Region createLoadingSeparator() {
@@ -141,195 +139,80 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
      * Removes the current main content view, then loads in the new main content view.
      *
      * <p>Loads a window darkener effect into the main stackPane as a "loading screen" when switching to a Browse view.</p>
+     *
      * @param mediaMode
      * @param browseMode
      */
     private void updateMainContent(String mediaMode, String browseMode) {
-
-        // Dark background to overlay when switching to a browse mode
-        VBox darkBackground = new VBox();
-        darkBackground.getStyleClass().add("grid-media-popup-background");
-        VBox.setVgrow(darkBackground, Priority.ALWAYS);
-        HBox.setHgrow(darkBackground, Priority.ALWAYS);
-        darkBackground.setOpacity(0);
-
         if (currentLazyLoaderView != null) {
             currentLazyLoaderView.shutdownLazyLoader();
+            currentLazyLoaderView = null;
         }
 
+        Region newContent = createContentView(mediaMode, browseMode);
+
+        boolean shouldAnimate = !firstTimeStartup && browseMode.equals("Browse");
+        if (shouldAnimate) {
+            VBox overlay = new VBox();
+            overlay.getStyleClass().add("grid-media-popup-background");
+            VBox.setVgrow(overlay, Priority.ALWAYS);
+            HBox.setHgrow(overlay, Priority.ALWAYS);
+            overlay.setOpacity(0);
+
+            darkenWindow(overlay, 0.8, () -> {
+                setMainContent(newContent);
+                undarkenWindow(overlay, 0.8);
+            });
+        } else {
+            setMainContent(newContent);
+        }
+
+        firstTimeStartup = false;
+    }
+
+    private Region createContentView(String mediaMode, String browseMode) {
         switch (mediaMode) {
-            case "Anime" -> {
-                if (browseMode.equals("Browse")) {
-
-
-                    if (firstTimeStartup) {
-
-                        AnimeBrowseView animeBrowseView = new AnimeBrowseView(stage, this, apiController, configController, databaseController, languagePreference); // TODO Give anime grid initial filters
-                        Region gridView = animeBrowseView.createGridView();
-                        currentLazyLoaderView = null;
-
-
-                        if (root.getChildren().size() > 2) { // Content pane exists, remove it and add new one
-                            root.getChildren().remove(2);
-                        }
-                        root.getChildren().add(gridView);
-
-
-                    } else {
-                        darkenWindow(darkBackground, 0.8, () -> {
-                            AnimeBrowseView animeBrowseView = new AnimeBrowseView(stage, this, apiController, configController, databaseController, languagePreference); // TODO Give anime grid initial filters
-                            Region gridView = animeBrowseView.createGridView();
-                            currentLazyLoaderView = null;
-
-                            if (root.getChildren().size() > 2) { // Content pane exists, remove it and add new one
-                                root.getChildren().remove(2);
-                            }
-                            root.getChildren().add(gridView);
-
-                            undarkdenWindow(darkBackground, 0.8);
-                        });
+            case "Anime", "Manga", "Games" -> { // TODO placeholder for two of these
+                return switch (browseMode) {
+                    case "Browse" -> new AnimeBrowseView(
+                            stage, this, apiController, configController, databaseController, languagePreference
+                    );
+                    case "Log" -> {
+                        AnimeLogView log = new AnimeLogView(stage, databaseController, languagePreference);
+                        currentLazyLoaderView = log;
+                        yield log;
                     }
-
-                    firstTimeStartup = false;
-
-                } else {
-                    AnimeLogView animeLogView = new AnimeLogView(stage, databaseController, languagePreference);
-                    Region gridView = animeLogView.createGridView();
-                    currentLazyLoaderView = animeLogView;
-
-                    if (root.getChildren().size() > 2) { // Content pane exists, remove it and add new one
-                        root.getChildren().remove(2);
-                    }
-                    root.getChildren().add(gridView);
-
-                    firstTimeStartup = false;
-                }
+                    default -> throw new IllegalArgumentException("Unknown browse mode: " + browseMode);
+                };
             }
-            case "Manga" -> {
-                if (browseMode.equals("Browse")) {
-
-                    System.out.println("Manga!");
-
-                    if (firstTimeStartup) {
-
-                        AnimeBrowseView animeBrowseView = new AnimeBrowseView(stage, this, apiController, configController, databaseController, languagePreference); // TODO Give anime grid initial filters
-                        Region gridView = animeBrowseView.createGridView();
-                        currentLazyLoaderView = null;
-
-                        if (root.getChildren().size() > 2) { // Content pane exists, remove it and add new one
-                            root.getChildren().remove(2);
-                        }
-                        root.getChildren().add(gridView);
-
-                    } else {
-                        darkenWindow(darkBackground, 0.8, () -> {
-                            AnimeBrowseView animeBrowseView = new AnimeBrowseView(stage, this, apiController, configController, databaseController, languagePreference); // TODO Give anime grid initial filters
-                            Region gridView = animeBrowseView.createGridView();
-                            currentLazyLoaderView = null;
-
-                            if (root.getChildren().size() > 2) { // Content pane exists, remove it and add new one
-                                root.getChildren().remove(2);
-                            }
-                            root.getChildren().add(gridView);
-
-                            undarkdenWindow(darkBackground, 0.8);
-                        });
-                    }
-
-                    firstTimeStartup = false;
-
-                } else {
-                    AnimeLogView animeLogView = new AnimeLogView(stage, databaseController, languagePreference);
-                    Region gridView = animeLogView.createGridView();
-                    currentLazyLoaderView = animeLogView;
-
-                    if (root.getChildren().size() > 2) { // Content pane exists, remove it and add new one
-                        root.getChildren().remove(2);
-                    }
-                    root.getChildren().add(gridView);
-
-                    firstTimeStartup = false;
-                }
-            }
-            case "Games" -> {
-                if (browseMode.equals("Browse")) {
-
-
-                    System.out.println("Games!!");
-
-                    if (firstTimeStartup) {
-
-                        AnimeBrowseView animeBrowseView = new AnimeBrowseView(stage, this, apiController, configController, databaseController, languagePreference); // TODO Give anime grid initial filters
-                        Region gridView = animeBrowseView.createGridView();
-                        currentLazyLoaderView = null;
-
-                        if (root.getChildren().size() > 2) { // Content pane exists, remove it and add new one
-                            root.getChildren().remove(2);
-                        }
-                        root.getChildren().add(gridView);
-
-                    } else {
-                        darkenWindow(darkBackground, 0.8, () -> {
-                            AnimeBrowseView animeBrowseView = new AnimeBrowseView(stage, this, apiController, configController, databaseController, languagePreference); // TODO Give anime grid initial filters
-                            Region gridView = animeBrowseView.createGridView();
-                            currentLazyLoaderView = null;
-
-                            if (root.getChildren().size() > 2) { // Content pane exists, remove it and add new one
-                                root.getChildren().remove(2);
-                            }
-                            root.getChildren().add(gridView);
-
-                            undarkdenWindow(darkBackground, 0.8);
-                        });
-                    }
-
-                    firstTimeStartup = false;
-
-                } else {
-                    AnimeLogView animeLogView = new AnimeLogView(stage, databaseController, languagePreference);
-                    Region gridView = animeLogView.createGridView();
-                    currentLazyLoaderView = animeLogView;
-
-                    if (root.getChildren().size() > 2) { // Content pane exists, remove it and add new one
-                        root.getChildren().remove(2);
-                    }
-                    root.getChildren().add(gridView);
-
-                    firstTimeStartup = false;
-                }
-            }
-            case "Profile" -> {
-                AnimeBrowseView animeBrowseView = new AnimeBrowseView(stage, this, apiController, configController, databaseController, languagePreference);
-                Region gridView = animeBrowseView.createGridView();
-                currentLazyLoaderView = null;
+            case "Profile" -> { // TODO placeholder
+                return new AnimeBrowseView(
+                        stage, this, apiController, configController, databaseController, languagePreference
+                );
             }
             case "Settings" -> {
-
-                // Get current settings
                 Map<String, Object> currentSettings = configController.getCurrentSettings();
-
-                SettingsView settingsView = new SettingsView(configController, currentSettings);
-                Region settingsViewRegion = settingsView.createSettingsView();
-
-
-                currentLazyLoaderView = null;
-
-                if (root.getChildren().size() > 2) { // Content pane exists, remove it and add new one
-                    root.getChildren().remove(2);
-                }
-                root.getChildren().add(settingsViewRegion);
-
-                firstTimeStartup = false;
+                return new SettingsView(configController, currentSettings);
             }
+            default -> throw new IllegalArgumentException("Unknown media mode: " + mediaMode);
         }
+    }
+
+
+    private void setMainContent(Region content) {
+        if (root.getChildren().size() > 2) {
+            root.getChildren().remove(2);
+        }
+        root.getChildren().add(content);
     }
 
 
     /**
      * Loads the fading in of the loading screen.
-     * @param node The loading screen node.
+     *
+     * @param node         The loading screen node.
      * @param finalOpacity Opacity of the loading screen.
-     * @param onFinished The actual content loading to be executed when the loading screen is loaded in.
+     * @param onFinished   The actual content loading to be executed when the loading screen is loaded in.
      */
     private void darkenWindow(Node node, double finalOpacity, Runnable onFinished) {
 
@@ -352,10 +235,11 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
 
     /**
      * Loads the fading out of the loading screen.
-     * @param node The loading screen node.
+     *
+     * @param node            The loading screen node.
      * @param startingOpacity Opacity of the loading screen.
      */
-    private void undarkdenWindow(Node node, double startingOpacity) {
+    private void undarkenWindow(Node node, double startingOpacity) {
         FadeTransition fadeOut = new FadeTransition(Duration.seconds(0.2), node);
         fadeOut.setFromValue(startingOpacity);
         fadeOut.setToValue(0);
@@ -366,7 +250,8 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
 
     /**
      * Animates the loading bar separator towards the next step (beginning at whatever it is currently at).
-     * @param toPercent Percentage of the loading bar to stop the animation at.
+     *
+     * @param toPercent       Percentage of the loading bar to stop the animation at.
      * @param durationSeconds Duration in seconds to take for the animation.
      */
     @Override
@@ -394,6 +279,7 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
 
     /**
      * Fades the loading bar separator out, then resets it to 0%.
+     *
      * @param durationSeconds Duration in seconds to take for the fading animation.
      */
     @Override
@@ -414,21 +300,18 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
     /**
      * Called when sidebar buttons are clicked. Invokes the logic to switch out the main content view.
      * Also called during the program startup, where it first creates the sidebar and loading bar separator too.
-     * @param mediaMode Active media mode (Anime, Games, Manga..) in sidebar.
+     *
+     * @param mediaMode  Active media mode (Anime, Games, Manga..) in sidebar.
      * @param browseMode Active browse mode (Browse / Log) in sidebar.
      */
     @Override
     public void onSidebarModesUpdated(String mediaMode, String browseMode) {
         if (firstTimeStartup) {
-            SidebarView sidebarView = new SidebarView(mediaMode, browseMode);
-            sidebarView.setSidebarListener(configController);
-            Region sidebar = sidebarView.createSidebar();
+            SidebarView sidebarView = new SidebarView(configController, mediaMode, browseMode);
 
             Region loadingSeparator = createLoadingSeparator();
 
-            root.getChildren().addAll(sidebar, loadingSeparator);
-
-            // firstTimeStartup = false;
+            root.getChildren().addAll(sidebarView, loadingSeparator);
         }
         updateMainContent(mediaMode, browseMode);
     }
@@ -436,6 +319,7 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
 
     /**
      * Setter for language preference setting.
+     *
      * @param language
      */
     @Override

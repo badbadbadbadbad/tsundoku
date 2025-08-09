@@ -5,7 +5,10 @@ import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Labeled;
-import javafx.scene.layout.*;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Screen;
@@ -18,11 +21,11 @@ import java.util.List;
 /**
  * The full sidebar component on the left of the main window.
  */
-public class SidebarView {
+public class SidebarView extends VBox {
 
     private static final double SIDEBAR_WIDTH = 0.11; // Percent of screen width, not scaling with window size (for now?)
 
-    private SidebarListener sidebarListener;
+    private final SidebarListener sidebarListener;
 
     private final List<Button> mediaModeButtons = new ArrayList<>();
     private final List<Button> browseModeButtons = new ArrayList<>();
@@ -30,27 +33,23 @@ public class SidebarView {
     private String currentMediaMode;
     private String currentBrowseMode;
 
-    public SidebarView(String mediaMode, String browseMode) {
+    public SidebarView(SidebarListener sidebarListener, String mediaMode, String browseMode) {
+        this.sidebarListener = sidebarListener;
         this.currentMediaMode = mediaMode;
         this.currentBrowseMode = browseMode;
+
+        initComponent();
     }
 
-
-    /**
-     * Called once by ViewsController, creates the whole sidebar
-     * @return The finished view
-     */
-    public Region createSidebar() {
-
+    private void initComponent() {
         Screen screen = Screen.getPrimary();
         double screenWidth = screen.getBounds().getWidth();
 
-        VBox sidebar = new VBox();
-        sidebar.setId("sidebar");
+        this.setId("sidebar");
 
         double adjustedSidebarWidth = screenWidth * SIDEBAR_WIDTH;
-        sidebar.setMinWidth(adjustedSidebarWidth);
-        sidebar.setMaxWidth(adjustedSidebarWidth);
+        this.setMinWidth(adjustedSidebarWidth);
+        this.setMaxWidth(adjustedSidebarWidth);
 
 
         // Label programLabel = new Label("tsundoku.");
@@ -113,11 +112,8 @@ public class SidebarView {
         });
 
         Collections.addAll(mediaModeButtons, gamesButton, mangaButton, animeButton, profileButton, settingsButton);
-        // sidebar.getChildren().addAll(programLabel, separator, browseModeButtonBox, gamesButton, mangaButton, animeButton, stretchRegion, profileButton, settingsButton);
-        sidebar.getChildren().addAll(programLabel, separator, browseModeButtonBox, animeButton, stretchRegion, settingsButton);
-        return sidebar;
+        this.getChildren().addAll(programLabel, separator, browseModeButtonBox, animeButton, stretchRegion, settingsButton);
     }
-
 
     private Button createBrowseModeButton(String label) {
         Button button = new Button(label);
@@ -179,17 +175,12 @@ public class SidebarView {
         sidebarListener.onSidebarMediaModeChanged(selectedButton.getText());
     }
 
-
-    public void setSidebarListener(SidebarListener sidebarListener) {
-        this.sidebarListener = sidebarListener;
-    }
-
-
     /**
      * Adjusts font size on the text of some Labeled (labels, buttons..) downwards until it fits into the rectangular
      * label container without overflow, both vertical and horizontal, padding included in the calculation.
-     * @param labeled The Labeled whose font is to be adjusted
-     * @param minFontSize A minimum font size at which point the routine is forced to stop
+     *
+     * @param labeled          The Labeled whose font is to be adjusted
+     * @param minFontSize      A minimum font size at which point the routine is forced to stop
      * @param startingFontSize An optional font size to start from instead of the font size the label currently has.
      *                         Ignored if not a positive number.
      * @return The final font size the Lebeled is set to
@@ -215,14 +206,14 @@ public class SidebarView {
 
 
         // Make smaller until no vertical overflow
-        while (text.getBoundsInLocal().getHeight() > containerHeight  && fontSize > minFontSize) {
+        while (text.getBoundsInLocal().getHeight() > containerHeight && fontSize > minFontSize) {
             fontSize--;
             text.setFont(Font.font(fontFamily, fontSize));
         }
 
 
         // Make smaller until no horizontal overflow
-        while (text.getBoundsInLocal().getWidth() > containerWidth  && fontSize > minFontSize) {
+        while (text.getBoundsInLocal().getWidth() > containerWidth && fontSize > minFontSize) {
             fontSize--;
             text.setFont(Font.font(fontFamily, fontSize));
         }

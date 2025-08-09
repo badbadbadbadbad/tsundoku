@@ -1,14 +1,18 @@
 package com.github.badbadbadbadbad.tsundoku.views;
 
-import com.github.badbadbadbadbad.tsundoku.controllers.*;
+import com.github.badbadbadbadbad.tsundoku.controllers.SettingsListener;
 import com.github.badbadbadbadbad.tsundoku.external.SmoothScroll;
-import javafx.animation.*;
+import javafx.animation.Animation;
+import javafx.animation.FadeTransition;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Bounds;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
-import javafx.scene.layout.*;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import javafx.stage.Popup;
 import javafx.util.Duration;
 
@@ -21,17 +25,14 @@ import java.util.stream.Collectors;
 /**
  * The full view component displayed in the main content pane for media mode "Settings".
  */
-public class SettingsView {
+public class SettingsView extends VBox {
 
     private final SettingsListener settingsListener;
-
+    private final Map<String, Object> settings;
     private boolean firstSettingsItemCreated;
-
     private ScrollPane scrollPane;
     private SmoothScroll smoothScroll;
     private Button saveButton;
-
-    private Map<String, Object> settings;
 
 
     public SettingsView(SettingsListener settingsListener, Map<String, Object> currentSettings) {
@@ -40,11 +41,57 @@ public class SettingsView {
         this.settings = currentSettings;
 
         this.firstSettingsItemCreated = false;
+
+        initComponent();
+    }
+
+    private void initComponent() {
+        VBox.setVgrow(this, Priority.ALWAYS);
+        HBox.setHgrow(this, Priority.ALWAYS);
+
+        HBox saveButtonElement = createSaveButtonElement();
+
+        this.scrollPane = createScrollableSettings();
+
+
+        // ScrollPane listener to give controls a bottom border when scrolling
+        Region separator = new Region();
+        separator.getStyleClass().add("separator");
+        separator.setOpacity(0.0);
+
+        FadeTransition fadeIn = new FadeTransition(Duration.seconds(0.2), separator);
+        fadeIn.setFromValue(0.0);
+        fadeIn.setToValue(1.0);
+
+        FadeTransition fadeOut = new FadeTransition(Duration.seconds(0.2), separator);
+        fadeOut.setFromValue(1.0);
+        fadeOut.setToValue(0.0);
+
+        scrollPane.vvalueProperty().addListener((obs, oldValue, newValue) -> {
+
+            // This is so the controls-bottom-border can't start showing if the pane scroll bar is fully vertical (no scrolling possible)
+            boolean canScroll = scrollPane.getContent().getBoundsInLocal().getHeight() > scrollPane.getViewportBounds().getHeight();
+            if (newValue.doubleValue() < 0.99 && canScroll) {
+                if (separator.getOpacity() == 0.0 || fadeOut.getStatus() == Animation.Status.RUNNING) {
+                    fadeOut.stop();
+                    fadeIn.playFromStart();
+                }
+            } else {
+                if (separator.getOpacity() == 1.0 || fadeIn.getStatus() == Animation.Status.RUNNING) {
+                    fadeIn.stop();
+                    fadeOut.playFromStart();
+                }
+            }
+        });
+
+
+        this.getChildren().addAll(scrollPane, separator, saveButtonElement);
     }
 
 
     /**
      * Called once by ViewsController, creates the whole View component
+     *
      * @return The finished view
      */
     public Region createSettingsView() {
@@ -52,7 +99,6 @@ public class SettingsView {
         VBox root = new VBox();
         VBox.setVgrow(root, Priority.ALWAYS);
         HBox.setHgrow(root, Priority.ALWAYS);
-
 
 
         HBox saveButtonElement = createSaveButtonElement();
@@ -98,6 +144,7 @@ public class SettingsView {
 
     /**
      * Save button component. When clicked, fires a settings update so other components of this program may be updated.
+     *
      * @return The finished component
      */
     private HBox createSaveButtonElement() {
@@ -133,6 +180,7 @@ public class SettingsView {
 
     /**
      * Wrapper scrollPane for all the settings (which also creates the settings)
+     *
      * @return The finished component
      */
     private ScrollPane createScrollableSettings() {
@@ -180,8 +228,6 @@ public class SettingsView {
         );
 
 
-
-
         ScrollPane scrollPane = new ScrollPane(wrapper);
         scrollPane.getStyleClass().add("grid-scroll-pane");
         VBox.setVgrow(scrollPane, Priority.ALWAYS);
@@ -197,9 +243,10 @@ public class SettingsView {
 
     /**
      * Creates the first type of setting component that we need, a combobox only allowing single items to be chosen.
-     * @param headerText Name of the setting
-     * @param descriptionText Description text for the setting
-     * @param comboBoxItems The choices for this setting
+     *
+     * @param headerText          Name of the setting
+     * @param descriptionText     Description text for the setting
+     * @param comboBoxItems       The choices for this setting
      * @param defaultSelectedItem Value to initialize this setting with (provided by config)
      * @return The finished component
      */
@@ -262,10 +309,11 @@ public class SettingsView {
      *
      * <p>JavaFX somehow does not have this, and the custom version by ControlsFX is horribly buggy.
      * Hence, we're making a custom version here as a "popup" of sorts (looks the same as normal comboboxes).</p>
-     * @param headerText Name of the setting
+     *
+     * @param headerText      Name of the setting
      * @param descriptionText Description text for the setting
      * @param settingsMapName The choices for this setting and their current true / false values
-     * @param desiredOrder Order of the choices for this setting (because the raw Map from the config file has jumbled order)
+     * @param desiredOrder    Order of the choices for this setting (because the raw Map from the config file has jumbled order)
      * @return The finished component
      */
     private VBox makeMultiInputComboboxSetting(String headerText, String descriptionText, String settingsMapName, List<String> desiredOrder) {
@@ -354,9 +402,10 @@ public class SettingsView {
 
     /**
      * Creates the fake dropdown created by makeMultiInputComboboxSetting.
-     * @param settingsMap The choices for this setting and their current true / false values
+     *
+     * @param settingsMap  The choices for this setting and their current true / false values
      * @param desiredOrder Order of the choices for this setting (because the raw Map from the config file has jumbled order)
-     * @param updateLabel A Runnable that changes the label of the dropdown invoker based on the settings currently set to "true"
+     * @param updateLabel  A Runnable that changes the label of the dropdown invoker based on the settings currently set to "true"
      * @return The finished dropdown popup
      */
     private VBox createPopupContent(Map<String, Boolean> settingsMap, List<String> desiredOrder, Runnable updateLabel) {
@@ -399,6 +448,7 @@ public class SettingsView {
     /**
      * Creates the third type of setting component that we need, a password-like text input.
      * Not used yet.
+     *
      * @return The finished component.
      */
     private VBox makeTextInputComboboxSetting() {

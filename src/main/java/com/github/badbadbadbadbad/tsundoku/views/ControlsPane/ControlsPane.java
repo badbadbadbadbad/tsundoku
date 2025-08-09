@@ -15,7 +15,8 @@ import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
-import static javafx.util.Duration.*;
+import static javafx.util.Duration.ZERO;
+import static javafx.util.Duration.millis;
 
 public class ControlsPane extends VBox {
 

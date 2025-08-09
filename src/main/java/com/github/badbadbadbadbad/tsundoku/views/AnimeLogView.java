@@ -10,10 +10,9 @@ import com.github.badbadbadbadbad.tsundoku.util.LazyLoader;
 import com.github.badbadbadbadbad.tsundoku.util.ListFinder;
 import com.github.badbadbadbadbad.tsundoku.views.ControlsPane.ControlsPane;
 import com.github.badbadbadbadbad.tsundoku.views.ControlsPane.FilterConfig;
-import javafx.animation.*;
+import javafx.animation.FadeTransition;
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
@@ -21,7 +20,8 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.*;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.*;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
@@ -39,24 +39,8 @@ import java.util.function.Consumer;
  * <p>It would be far cleaner to have some LogView superclass with this inheriting, but I don't want to overcomplicate things
  * before I know what quirks the main content views for other media modes may involve (due to relying on data from external APIs).</p>
  */
-public class AnimeLogView implements LazyLoaderView, PopupMakerView {
+public class AnimeLogView extends StackPane implements LazyLoaderView, PopupMakerView {
 
-    private final Stage stage;
-    private final DatabaseRequestListener databaseRequestListener;
-
-    private final List<List<VBox>> unfilteredAnimeLists;
-    private final List<ObservableList<VBox>> filteredAnimeLists;    // ObservableList so grid headers can watch for these being empty
-    private List<FlowGapPane> filteredGrids;                 // The actual grids used for UI
-
-
-    private ScrollPane scrollPane;
-    private StackPane stackPane;
-    private LazyLoader lazyLoader;
-    private ListFinder listFinder;
-    private SmoothScroll smoothScroll;
-
-
-    private final Map<String, Consumer<String>> filterUpdaters = new HashMap<>();
     public final StringProperty personalStatus = new SimpleStringProperty("Any");
     public final StringProperty personalRating = new SimpleStringProperty("Any");
     public final StringProperty releaseStatus = new SimpleStringProperty("Any");
@@ -67,10 +51,18 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
     public final StringProperty maxEpisodes = new SimpleStringProperty("");
     public final StringProperty startYear = new SimpleStringProperty("");
     public final StringProperty endYear = new SimpleStringProperty("");
-
-    private final BooleanProperty filtersHidden = new SimpleBooleanProperty(true);
+    private final Stage stage;
+    private final DatabaseRequestListener databaseRequestListener;
+    private final List<List<VBox>> unfilteredAnimeLists;
+    private final List<ObservableList<VBox>> filteredAnimeLists;    // ObservableList so grid headers can watch for these being empty
+    private final Map<String, Consumer<String>> filterUpdaters = new HashMap<>();
     private final StringProperty searchStringProperty = new SimpleStringProperty("");
     private final String languagePreference;
+    private List<FlowGapPane> filteredGrids;                 // The actual grids used for UI
+    private ScrollPane scrollPane;
+    private LazyLoader lazyLoader;
+    private ListFinder listFinder;
+    private SmoothScroll smoothScroll;
 
     public AnimeLogView(Stage stage, DatabaseRequestListener databaseRequestListener, String languagePreference) {
         this.stage = stage;
@@ -99,25 +91,19 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         this.filterUpdaters.put("Year ≤", endYear::set);
         this.filterUpdaters.put("Season", season::set);
         this.filterUpdaters.put("Type", type::set);
+
+        initComponent();
     }
 
-
-    /**
-     * Called once by ViewsController, creates the whole View component
-     * @return The finished view
-     */
-    public Region createGridView() {
+    private void initComponent() {
 
         VBox root = new VBox();
         VBox.setVgrow(root, Priority.ALWAYS);
         HBox.setHgrow(root, Priority.ALWAYS);
 
-
-        // StackPane wrapper to allow for popup functionality when grid element is clicked
-        stackPane = new StackPane();
-        VBox.setVgrow(stackPane, Priority.ALWAYS);
-        HBox.setHgrow(stackPane, Priority.ALWAYS);
-        stackPane.getChildren().add(root);
+        VBox.setVgrow(this, Priority.ALWAYS);
+        HBox.setHgrow(this, Priority.ALWAYS);
+        this.getChildren().add(root);
 
 
         List<FilterConfig> filterConfigs = List.of(
@@ -218,15 +204,15 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
 
         root.getChildren().addAll(controls, separator, scrollPane);
-        return stackPane;
     }
 
 
     /**
      * Creates a header component used for one of the log grids (to show which grid this is, e.g. the Backlog grid).
      * The header automatically hides if the corresponding grid is empty.
+     *
      * @param labelText The text used for the header
-     * @param animeList The list of items (filtered) which the header listens to to know if it should be hidden
+     * @param animeList The list of items (filtered) which the header listens to in order to know if it should be hidden
      * @return The finished component
      */
     private HBox createGridHeader(String labelText, ObservableList<VBox> animeList) {
@@ -281,7 +267,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
             headerBox.setManaged(hasItems && shouldDisplay);
             headerBox.setVisible(hasItems && shouldDisplay);
 
-            label.setText(labelText + " (" + animeList.size() +")");
+            label.setText(labelText + " (" + animeList.size() + ")");
         });
 
         return headerBox;
@@ -290,7 +276,8 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
     /**
      * Creates a FlowPane of anime.
-     * Does not actually create the child elements themselves, that is done seperately to work with the filtering.
+     * Does not actually create the child elements themselves, that is done separately to work with the filtering.
+     *
      * @return The finished component
      */
     private FlowGapPane createGrid() {
@@ -385,30 +372,27 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         );
 
         // Once all content is loaded, call onFiltersChanged so the UI grids load the content in
-        allGridsLoaded.thenRun(() -> {
-            Platform.runLater(() -> {
-                onFiltersChanged();     // First call here also initializes the lazyLoader
-                this.listFinder = new ListFinder(unfilteredAnimeLists);
-            });
-        });
+        allGridsLoaded.thenRun(() -> Platform.runLater(() -> {
+            onFiltersChanged();     // First call here also initializes the lazyLoader
+            this.listFinder = new ListFinder(unfilteredAnimeLists);
+        }));
     }
 
 
     /**
      * Invoked by loadDatabaseIntoGridsAsync.
      * Async call to create grid elements from a List of anime info.
+     *
      * @param animeGrid The grid to fill with the finished elements
      * @param animeList The information to turn into grid elements
      * @return A CompletableFuture call so loadDatabaseIntoGridsAsync can track when all grids have finished this async call
      */
     private CompletableFuture<Void> reloadAnimeGridAsync(List<VBox> animeGrid, List<AnimeInfo> animeList) {
         return CompletableFuture.supplyAsync(() -> createAnimeGridItems(animeList))
-                .thenAccept(animeBoxes -> {
-                    Platform.runLater(() -> {
-                        animeGrid.clear();
-                        animeGrid.addAll(animeBoxes);
-                    });
-                });
+                .thenAccept(animeBoxes -> Platform.runLater(() -> {
+                    animeGrid.clear();
+                    animeGrid.addAll(animeBoxes);
+                }));
     }
 
 
@@ -428,6 +412,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
     /**
      * Creates a PopupView for an anime (and a window darkener effect) when its VBox in the FlowPane is clicked.
+     *
      * @param parentBox The anime box that was clicked
      */
     private void createPopupScreen(AnimeBox parentBox) {
@@ -445,7 +430,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         darkBackground.setOpacity(0);
         popupBox.setOpacity(0);
 
-        stackPane.getChildren().addAll(darkBackground, popupBox);
+        this.getChildren().addAll(darkBackground, popupBox);
 
         // Fade-in animations
         FadeTransition fadeInBackground = new FadeTransition(Duration.seconds(0.2), darkBackground);
@@ -471,7 +456,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
             fadeOutInfoBox.setToValue(0);
 
             // Destroy after fade-out
-            fadeOutInfoBox.setOnFinished(e -> stackPane.getChildren().removeAll(darkBackground, popupBox));
+            fadeOutInfoBox.setOnFinished(e -> this.getChildren().removeAll(darkBackground, popupBox));
             fadeOutBackground.play();
             fadeOutInfoBox.play();
         });
@@ -483,6 +468,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
      * If the anime was set to Untracked in the PopupView, it is deleted from the corresponding grid.
      * Else, its position in the grids is adjusted (depending on the new personal status and rating).
      * At the end, onFiltersChanged is invoked to update visibilities correctly.
+     *
      * @param popupParent The parent PopupView whose closing invoked this function call
      */
     @Override
@@ -523,7 +509,8 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
                 case "Completed" -> unfilteredAnimeLists.get(2);
                 case "Paused" -> unfilteredAnimeLists.get(3);
                 case "Dropped" -> unfilteredAnimeLists.get(4);
-                default -> throw new IllegalArgumentException("Invalid status trying to insert new animeBox into log: " + newAnimeInfo.getOwnStatus());
+                default ->
+                        throw new IllegalArgumentException("Invalid status trying to insert new animeBox into log: " + newAnimeInfo.getOwnStatus());
             };
 
             // ownRating sort
@@ -557,7 +544,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
                     continue;
                 }
 
-                VBox box = (VBox) targetGrid.get(insertIndex);
+                VBox box = targetGrid.get(insertIndex);
                 AnimeInfo existingAnimeInfo = (AnimeInfo) box.getUserData();
 
 
@@ -573,7 +560,6 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
                         sortedByRating = true;
                         continue;
                     }
-                    insertIndex++;
                 }
 
                 // Once rating-sorted, keep going until name-sorted
@@ -583,8 +569,8 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
                     if (nameComparison <= 0) {
                         break;
                     }
-                    insertIndex++;
                 }
+                insertIndex++;
 
             }
 
@@ -671,7 +657,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
                             if (animeInfo.getEpisodesTotal() < minEpisodesInt) {
                                 continue;
                             }
-                        } catch (NumberFormatException e) {
+                        } catch (NumberFormatException ignored) {
                         }
                     }
 
@@ -681,7 +667,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
                             if (animeInfo.getEpisodesTotal() > maxEpisodesInt) {
                                 continue;
                             }
-                        } catch (NumberFormatException e) {
+                        } catch (NumberFormatException ignored) {
                         }
                     }
 
@@ -720,7 +706,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
                     if (!"Any".equals(season.get())) {
                         String release = animeInfo.getRelease();
                         if (!"Not yet provided".equals(release)) {
-                            String seasonStr = release.substring(0, release.length() - 5); // Trim spacebar and four-digit release year
+                            String seasonStr = release.substring(0, release.length() - 5); // Trim space bar and four-digit release year
                             if (!season.get().equals(seasonStr)) {
                                 continue;
                             }
@@ -795,6 +781,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
     /**
      * Creates the wrapping scrollPane for the different grids used (so they all become one long scrollable content view),
      * together with the headers and empty grids it is filled with.
+     *
      * @return The finished component
      */
     private ScrollPane createScrollPane() {
@@ -843,9 +830,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
 
         scrollPane.heightProperty().addListener((obs, oldValue, newValue) -> {
             if (lazyLoader != null) {
-                Platform.runLater(() -> {
-                    lazyLoader.updateVisibilityFull();
-                });
+                Platform.runLater(() -> lazyLoader.updateVisibilityFull());
 
             }
         });
@@ -858,9 +843,7 @@ public class AnimeLogView implements LazyLoaderView, PopupMakerView {
         // Not quite sure why, probably due to _when_ exactly rendering of pane size happens in the render pipeline etc.
         PauseTransition pause = new PauseTransition(Duration.seconds(0.3));
         scrollPane.widthProperty().addListener((obs, oldValue, newValue) -> {
-            pause.setOnFinished(e -> {
-                smoothScroll.adjustAccumulatedVValue();
-            });
+            pause.setOnFinished(e -> smoothScroll.adjustAccumulatedVValue());
             pause.playFromStart();
         });
 
