@@ -57,7 +57,7 @@ public class AnimeBrowseView extends StackPane implements PopupMakerView {
     private FlowGapPane animeGrid;
     private Pagination pagination;
     private SmoothScroll smoothScroll;
-    private String searchMode = "SEASON";  // Changes between SEASON, TOP, and SEARCH depending on last mode selected (so pagination calls "current mode")
+    private SearchMode searchMode = SearchMode.SEARCH;
     private boolean apiLock = false;
 
 
@@ -71,15 +71,15 @@ public class AnimeBrowseView extends StackPane implements PopupMakerView {
         this.languagePreference = languagePreference;
 
         // Filters must know which internal variable to update with the chosen setting
-        this.filterUpdaters.put("Order by", gridFilterListener::onAnimeOrderByChanged);
-        this.filterUpdaters.put("Release status", gridFilterListener::onAnimeStatusChanged);
-        this.filterUpdaters.put("Year ≥", gridFilterListener::onAnimeStartYearChanged);
-        this.filterUpdaters.put("Year ≤", gridFilterListener::onAnimeEndYearChanged);
+        this.filterUpdaters.put(AnimeFilters.ORDER_BY.getLabel(), gridFilterListener::onAnimeOrderByChanged);
+        this.filterUpdaters.put(AnimeFilters.RELEASE_STATUS.getLabel(), gridFilterListener::onAnimeStatusChanged);
+        this.filterUpdaters.put(AnimeFilters.YEAR_MIN.getLabel(), gridFilterListener::onAnimeStartYearChanged);
+        this.filterUpdaters.put(AnimeFilters.YEAR_MAX.getLabel(), gridFilterListener::onAnimeEndYearChanged);
 
-        this.filterDefaults.put("Order by", gridFilterListener.getAnimeOrderByDefault());
-        this.filterDefaults.put("Release status", gridFilterListener.getAnimeStatusDefault());
-        this.filterDefaults.put("Year ≥", gridFilterListener.getAnimeStartYearDefault());
-        this.filterDefaults.put("Year ≤", gridFilterListener.getAnimeEndYearDefault());
+        this.filterDefaults.put(AnimeFilters.ORDER_BY.getLabel(), gridFilterListener.getAnimeOrderByDefault());
+        this.filterDefaults.put(AnimeFilters.RELEASE_STATUS.getLabel(), gridFilterListener.getAnimeStatusDefault());
+        this.filterDefaults.put(AnimeFilters.YEAR_MIN.getLabel(), gridFilterListener.getAnimeStartYearDefault());
+        this.filterDefaults.put(AnimeFilters.YEAR_MAX.getLabel(), gridFilterListener.getAnimeEndYearDefault());
 
         initComponent();
     }
@@ -93,44 +93,35 @@ public class AnimeBrowseView extends StackPane implements PopupMakerView {
         HBox.setHgrow(this, Priority.ALWAYS);
         this.getChildren().add(root);
 
-        // TODO Put these naked strings into an enum?
-
-        List<String> orderByOptions = List.of(
-                "Default",
-                "Title: Ascending", "Title: Descending",
-                "Rating: Highest", "Rating: Lowest",
-                "Popular: Most", "Popular: Least"
-        );
         FilterConfig orderByFilter = FilterConfig.dropdown(
-                "Order by",
-                orderByOptions,
-                List.of(filterUpdaters.get("Order by")),
-                filterDefaults.get("Order by")
+                AnimeFilters.ORDER_BY.getLabel(),
+                AnimeFilters.ORDER_BY.getOptions(),
+                List.of(filterUpdaters.get(AnimeFilters.ORDER_BY.getLabel())),
+                filterDefaults.get(AnimeFilters.ORDER_BY.getLabel())
         );
 
-        List<String> releaseStatusOptions = List.of("Any", "Complete", "Airing", "Upcoming");
         FilterConfig releaseStatusFilter = FilterConfig.dropdown(
-                "Release status",
-                releaseStatusOptions,
-                List.of(filterUpdaters.get("Release status")),
-                filterDefaults.get("Release status")
+                AnimeFilters.RELEASE_STATUS.getLabel(),
+                AnimeFilters.RELEASE_STATUS.getOptions(),
+                List.of(filterUpdaters.get(AnimeFilters.RELEASE_STATUS.getLabel())),
+                filterDefaults.get(AnimeFilters.RELEASE_STATUS.getLabel())
         );
 
         FilterConfig yearFilter = FilterConfig.doubleNumber(
-                "Year ≥", "Year ≤",
-                List.of(filterUpdaters.get("Year ≥")), List.of(filterUpdaters.get("Year ≤")),
-                fireApiCall("SEARCH"),
-                filterDefaults.get("Year ≥"), filterDefaults.get("Year ≤")
+                AnimeFilters.YEAR_MIN.getLabel(), AnimeFilters.YEAR_MAX.getLabel(),
+                List.of(filterUpdaters.get(AnimeFilters.YEAR_MIN.getLabel())), List.of(filterUpdaters.get(AnimeFilters.YEAR_MAX.getLabel())),
+                fireApiCall(SearchMode.SEARCH),
+                filterDefaults.get(AnimeFilters.YEAR_MIN.getLabel()), filterDefaults.get(AnimeFilters.YEAR_MAX.getLabel())
         );
 
         List<FilterConfig> animeFilters = List.of(orderByFilter, releaseStatusFilter, yearFilter);
 
 
         List<ButtonConfig> animeButtons = List.of(
-                new ButtonConfig("Season", fireApiCall("SEASON")),
-                new ButtonConfig("Upcoming", fireApiCall("UPCOMING")),
-                new ButtonConfig("Top", fireApiCall("TOP")),
-                new ButtonConfig("Search", fireApiCall("SEARCH")
+                new ButtonConfig(SearchMode.SEASON.getLabel(), fireApiCall(SearchMode.SEASON)),
+                new ButtonConfig(SearchMode.UPCOMING.getLabel(), fireApiCall(SearchMode.UPCOMING)),
+                new ButtonConfig(SearchMode.TOP.getLabel(), fireApiCall(SearchMode.TOP)),
+                new ButtonConfig(SearchMode.SEARCH.getLabel(), fireApiCall(SearchMode.SEARCH)
                 )
         );
 
@@ -143,7 +134,7 @@ public class AnimeBrowseView extends StackPane implements PopupMakerView {
         ControlsPane controls = new ControlsPane(
                 animeFilters,
                 animeButtons,
-                fireApiCall("SEARCH"),
+                fireApiCall(SearchMode.SEARCH),
                 () -> updateVisibleGridItems(scrollPane),
                 stage.widthProperty(),
                 layoutStrategy
@@ -358,11 +349,10 @@ public class AnimeBrowseView extends StackPane implements PopupMakerView {
 
     private CompletableFuture<AnimeListInfo> getPageForCurrentQuery(int page) {
         return switch (searchMode) {
-            case "SEASON" -> apiRequestListener.getCurrentAnimeSeason(page);
-            case "UPCOMING" -> apiRequestListener.getUpcomingAnime(page);
-            case "TOP" -> apiRequestListener.getTopAnime(page);
-            default ->  // Default mode: SEARCH
-                    apiRequestListener.getAnimeSearch(searchStringProperty.get(), page);
+            case SEASON -> apiRequestListener.getCurrentAnimeSeason(page);
+            case UPCOMING -> apiRequestListener.getUpcomingAnime(page);
+            case TOP -> apiRequestListener.getTopAnime(page);
+            case SEARCH -> apiRequestListener.getAnimeSearch(searchStringProperty.get(), page);
         };
     }
 
@@ -535,9 +525,9 @@ public class AnimeBrowseView extends StackPane implements PopupMakerView {
         return fadeOut;
     }
 
-    private Runnable fireApiCall(String mode) {
+    private Runnable fireApiCall(SearchMode mode) {
         return () -> {
-            if (!apiLock && (!mode.equals("SEARCH") || !searchStringProperty.get().isEmpty())) {
+            if (!apiLock && (!mode.equals(SearchMode.SEARCH) || !searchStringProperty.get().isEmpty())) {
                 searchMode = mode;
                 apiLock = true;
                 invokeAnimatedAPICall(1);

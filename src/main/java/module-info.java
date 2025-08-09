@@ -10,6 +10,7 @@ module com.github.badbadbadbadbad.tsundoku {
     requires org.kordamp.ikonli.dashicons;
     requires java.desktop;
     requires java.net.http;
+    requires static org.jetbrains.annotations;
 
     opens com.github.badbadbadbadbad.tsundoku to javafx.fxml;
     exports com.github.badbadbadbadbad.tsundoku;
