@@ -15,6 +15,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Popup;
 import javafx.util.Duration;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.List;
@@ -27,15 +28,15 @@ import java.util.stream.Collectors;
  */
 public class SettingsView extends VBox {
 
-    private final SettingsListener settingsListener;
-    private final Map<String, Object> settings;
+    private final @NotNull SettingsListener settingsListener;
+    private final @NotNull Map<String, Object> settings;
     private boolean firstSettingsItemCreated;
-    private ScrollPane scrollPane;
+    private @NotNull ScrollPane scrollPane;
     private SmoothScroll smoothScroll;
     private Button saveButton;
 
 
-    public SettingsView(SettingsListener settingsListener, Map<String, Object> currentSettings) {
+    public SettingsView(@NotNull SettingsListener settingsListener, @NotNull Map<String, Object> currentSettings) {
         this.settingsListener = settingsListener;
 
         this.settings = currentSettings;
@@ -93,7 +94,7 @@ public class SettingsView extends VBox {
      *
      * @return The finished component
      */
-    private HBox createSaveButtonElement() {
+    private @NotNull HBox createSaveButtonElement() {
         HBox saveButtonWrapper = new HBox();
         HBox.setHgrow(saveButtonWrapper, Priority.ALWAYS);
         saveButtonWrapper.setMaxWidth(Double.MAX_VALUE);
@@ -129,7 +130,7 @@ public class SettingsView extends VBox {
      *
      * @return The finished component
      */
-    private ScrollPane createScrollableSettings() {
+    private @NotNull ScrollPane createScrollableSettings() {
 
         VBox wrapper = new VBox();
         wrapper.setMaxWidth(Double.MAX_VALUE);
@@ -203,7 +204,8 @@ public class SettingsView extends VBox {
      * @param defaultSelectedItem Value to initialize this setting with (provided by config)
      * @return The finished component
      */
-    private VBox makeSingleInputComboboxSetting(String headerText, String descriptionText, List<String> comboBoxItems, String defaultSelectedItem) {
+    private @NotNull VBox makeSingleInputComboboxSetting(@NotNull String headerText, @NotNull String descriptionText,
+                                                         @NotNull List<String> comboBoxItems, @NotNull String defaultSelectedItem) {
         VBox wrapper = new VBox(5);
         wrapper.setMaxWidth(Double.MAX_VALUE);
         wrapper.setStyle("-fx-padding: 0 0 10 0;");
@@ -269,7 +271,8 @@ public class SettingsView extends VBox {
      * @param desiredOrder    Order of the choices for this setting (because the raw Map from the config file has jumbled order)
      * @return The finished component
      */
-    private VBox makeMultiInputComboboxSetting(String headerText, String descriptionText, String settingsMapName, List<String> desiredOrder) {
+    private @NotNull VBox makeMultiInputComboboxSetting(@NotNull String headerText, @NotNull String descriptionText,
+                                                        @NotNull String settingsMapName, @NotNull List<String> desiredOrder) {
 
         VBox wrapper = new VBox(5);
         wrapper.setMaxWidth(Double.MAX_VALUE);
@@ -361,7 +364,8 @@ public class SettingsView extends VBox {
      * @param updateLabel  A Runnable that changes the label of the dropdown invoker based on the settings currently set to "true"
      * @return The finished dropdown popup
      */
-    private VBox createPopupContent(Map<String, Boolean> settingsMap, List<String> desiredOrder, Runnable updateLabel) {
+    private @NotNull VBox createPopupContent(@NotNull Map<String, Boolean> settingsMap,
+                                             @NotNull List<String> desiredOrder, @NotNull Runnable updateLabel) {
         VBox popupContent = new VBox();
         popupContent.getStyleClass().add("settings-multi-combo-box-popup");
 
@@ -402,7 +406,7 @@ public class SettingsView extends VBox {
      *
      * @return The finished component.
      */
-    private VBox makeTextInputComboboxSetting() {
+    private @NotNull VBox makeTextInputComboboxSetting() {
         VBox wrapper = new VBox();
         wrapper.setMaxWidth(Double.MAX_VALUE);
 

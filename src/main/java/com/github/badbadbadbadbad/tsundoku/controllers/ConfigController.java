@@ -1,6 +1,7 @@
 package com.github.badbadbadbadbad.tsundoku.controllers;
 
 import com.github.badbadbadbadbad.tsundoku.models.ConfigModel;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 
@@ -10,18 +11,22 @@ import java.util.Map;
 public class ConfigController implements GridFilterListener, SidebarListener, SettingsListener {
     private final ConfigModel configModel;
 
-    public ConfigController(ConfigModel configModel) {
+    public ConfigController(@NotNull ConfigModel configModel) {
         this.configModel = configModel;
     }
 
     /**
      * Getter for full collection of current settings. Used to initialize the SettingsView.
+     *
      * @return The full collection of current settings.
      */
-    public Map<String, Object> getCurrentSettings() {return configModel.getCurrentSettings();}
+    public Map<String, Object> getCurrentSettings() {
+        return configModel.getCurrentSettings();
+    }
 
     /**
      * Invoked when the sidebar's media mode (Anime, Games, Manga..) is changed.
+     *
      * @param mode The String name of the new mode.
      */
     @Override
@@ -31,6 +36,7 @@ public class ConfigController implements GridFilterListener, SidebarListener, Se
 
     /**
      * Invoked when the sidebar's browse mode (Browse / Log) is changed.
+     *
      * @param mode The String name of the new mode.
      */
     @Override
@@ -40,13 +46,17 @@ public class ConfigController implements GridFilterListener, SidebarListener, Se
 
     /**
      * Invoked when settings are changed in the settings view.
+     *
      * @param settings The collection of new values to use for settings.
      */
     @Override
-    public void onSettingsChanged(Map<String, Object> settings) {configModel.updateSettings(settings);}
+    public void onSettingsChanged(Map<String, Object> settings) {
+        configModel.updateSettings(settings);
+    }
 
     /**
      * Invoked when "Order by" setting in Anime Browse view is changed. Forwards it to config model.
+     *
      * @param orderBy The new value of the "Order by" setting.
      */
     @Override
@@ -56,6 +66,7 @@ public class ConfigController implements GridFilterListener, SidebarListener, Se
 
     /**
      * Invoked when "Status" setting in Anime Browse view is changed. Forwards it to config model.
+     *
      * @param status The new value of the "Status" setting.
      */
     @Override
@@ -65,6 +76,7 @@ public class ConfigController implements GridFilterListener, SidebarListener, Se
 
     /**
      * Invoked when "Start Year" setting in Anime Browse view is changed. Forwards it to config model.
+     *
      * @param startYear The new value of the "Start Year" setting.
      */
     @Override
@@ -74,6 +86,7 @@ public class ConfigController implements GridFilterListener, SidebarListener, Se
 
     /**
      * Invoked when "End Year" setting in Anime Browse view is changed. Forwards it to config model.
+     *
      * @param endYear The new value of the "End Year" setting.
      */
     @Override

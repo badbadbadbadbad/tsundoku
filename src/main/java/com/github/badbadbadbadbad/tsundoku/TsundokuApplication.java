@@ -10,12 +10,23 @@ import com.github.badbadbadbadbad.tsundoku.models.DatabaseModel;
 import javafx.application.Application;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.util.Objects;
 
 public class TsundokuApplication extends Application {
 
     private ViewsController viewsController;
+
+    /**
+     * JavaFX default. Main entry point (in case default entry point does not work).
+     *
+     * @param args JavaFX default
+     */
+    public static void main(String[] args) {
+        launch();
+    }
 
     /**
      * JavaFX main application entrypoint.
@@ -24,7 +35,7 @@ public class TsundokuApplication extends Application {
      * @throws IOException JavaFX default.
      */
     @Override
-    public void start(Stage stage) throws IOException {
+    public void start(@NotNull Stage stage) throws IOException {
 
         // Make sure data folder for settings and database exist
         Initializer.init();
@@ -41,9 +52,9 @@ public class TsundokuApplication extends Application {
         // Window top left icon(s)
         String os = System.getProperty("os.name").toLowerCase();
         if (os.contains("win")) {
-            stage.getIcons().add(new Image(getClass().getResourceAsStream("/assets/windows/tsundoku.ico")));
+            stage.getIcons().add(new Image(Objects.requireNonNull(getClass().getResourceAsStream("/assets/windows/tsundoku.ico"))));
         } else {
-            stage.getIcons().add(new Image(getClass().getResourceAsStream("/assets/linux/32_crop.png")));
+            stage.getIcons().add(new Image(Objects.requireNonNull(getClass().getResourceAsStream("/assets/linux/32_crop.png"))));
         }
 
         // Window top bar name
@@ -59,13 +70,5 @@ public class TsundokuApplication extends Application {
     @Override
     public void stop() {
         viewsController.shutdownLazyLoader();
-    }
-
-    /**
-     * JavaFX default. Main entry point (in case default entry point does not work).
-     * @param args JavaFX default
-     */
-    public static void main(String[] args) {
-        launch();
     }
 }

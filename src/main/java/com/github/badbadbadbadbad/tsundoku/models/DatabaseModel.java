@@ -1,6 +1,7 @@
 package com.github.badbadbadbadbad.tsundoku.models;
 
 import com.github.badbadbadbadbad.tsundoku.controllers.APIRequestListener;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,7 +31,7 @@ public class DatabaseModel {
     private final String databaseFilePath;
     private final APIRequestListener apiRequestListener;
 
-    public DatabaseModel(APIRequestListener apiRequestListener) {
+    public DatabaseModel(@NotNull APIRequestListener apiRequestListener) {
         this.apiRequestListener = apiRequestListener;
         this.databaseFilePath = Paths.get(getAppDataPath(), "profiles", "Default.db").toString();
 
@@ -61,6 +62,7 @@ public class DatabaseModel {
     /**
      * Inserts data of a single anime into the database.
      * This is done as an upsert operation - if an anime with that ID is already present, we overwrite its values.
+     *
      * @param anime The data of the anime to be inserted into the database.
      */
     public void updateAnimeDatabaseWithEntry(AnimeInfo anime) {
@@ -72,27 +74,27 @@ public class DatabaseModel {
 
         String sqlDelete = "DELETE FROM anime WHERE id = ?";
         String sqlUpsert = """
-        INSERT INTO anime (id, ownRating, ownStatus, episodesProgress, title, titleJapanese, titleEnglish, imageUrl, smallImageUrl,
-                           publicationStatus, episodesTotal, source, ageRating, synopsis, release, studios, type, lastUpdate)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(id) DO UPDATE SET
-            ownRating = excluded.ownRating,
-            ownStatus = excluded.ownStatus,
-            episodesProgress = excluded.episodesProgress,
-            title = excluded.title,
-            titleJapanese = excluded.titleJapanese,
-            titleEnglish = excluded.titleEnglish,
-            imageUrl = excluded.imageUrl,
-            smallImageUrl = excluded.smallImageUrl,
-            publicationStatus = excluded.publicationStatus,
-            episodesTotal = excluded.episodesTotal,
-            source = excluded.source,
-            ageRating = excluded.ageRating,
-            synopsis = excluded.synopsis,
-            release = excluded.release,
-            studios = excluded.studios,
-            type = excluded.type,
-            lastUpdate = excluded.lastUpdate;""";
+                INSERT INTO anime (id, ownRating, ownStatus, episodesProgress, title, titleJapanese, titleEnglish, imageUrl, smallImageUrl,
+                                   publicationStatus, episodesTotal, source, ageRating, synopsis, release, studios, type, lastUpdate)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(id) DO UPDATE SET
+                    ownRating = excluded.ownRating,
+                    ownStatus = excluded.ownStatus,
+                    episodesProgress = excluded.episodesProgress,
+                    title = excluded.title,
+                    titleJapanese = excluded.titleJapanese,
+                    titleEnglish = excluded.titleEnglish,
+                    imageUrl = excluded.imageUrl,
+                    smallImageUrl = excluded.smallImageUrl,
+                    publicationStatus = excluded.publicationStatus,
+                    episodesTotal = excluded.episodesTotal,
+                    source = excluded.source,
+                    ageRating = excluded.ageRating,
+                    synopsis = excluded.synopsis,
+                    release = excluded.release,
+                    studios = excluded.studios,
+                    type = excluded.type,
+                    lastUpdate = excluded.lastUpdate;""";
 
         try (Connection conn = DriverManager.getConnection(url)) {
             if (anime.getOwnStatus().equals("Untracked")) {
@@ -132,6 +134,7 @@ public class DatabaseModel {
 
     /**
      * Reads data of a single anime from the database.
+     *
      * @param id The ID of the anime to be read from the database.
      */
     public AnimeInfo getAnimeEntryFromDatabase(int id) {
@@ -213,6 +216,7 @@ public class DatabaseModel {
      *
      * <p>We filter anime entries that were updated somewhat recently from this updating process, and also
      * assign a lower priority to entries that are not releasing right now or upcoming.</p>
+     *
      * @param animeList The anime information to be filtered in List form.
      * @return The same List, but filtered and sorted by importance.
      */
@@ -257,8 +261,9 @@ public class DatabaseModel {
      * The actual "update this database entry with updated information" function for the background updater service.
      * Forwards the request for current data on some anime to the API communication service, then invokes a database update with the returned data.
      * If the API call returns a null (API issues, internet timeout..), we just skip that iteration.
+     *
      * @param animeList The full list of anime to be updated.
-     * @param index Current index of the list to update. Updates when the update is finished and a timeout has passed.
+     * @param index     Current index of the list to update. Updates when the update is finished and a timeout has passed.
      */
     private void processNextAnime(List<AnimeInfo> animeList, int index) {
 
@@ -325,6 +330,7 @@ public class DatabaseModel {
      * Checks the database folder for an existing backup.
      * If multiple backups exist (because the user added some to the folder), we just take the first one found.
      * This is slightly lazy, but oh well.
+     *
      * @return The backup file, if it exists. Else null.
      */
     private File getExistingBackup() {
@@ -339,6 +345,7 @@ public class DatabaseModel {
 
     /**
      * For some backup file, reads the date in its filename to a LocalDate object.
+     *
      * @param fileName The provided backup file
      * @return The corresponding LocalDote object
      */
@@ -353,6 +360,7 @@ public class DatabaseModel {
 
     /**
      * Gets file path to use for a new backup file with today's date.
+     *
      * @return The finished path
      */
     private Path getBackupFilePath() {

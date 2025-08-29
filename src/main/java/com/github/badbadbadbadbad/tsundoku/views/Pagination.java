@@ -4,14 +4,15 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Consumer;
 
 public class Pagination extends HBox {
-    private final Consumer<Integer> onPageSelected;
-    private final HBox paginationButtons;
+    private final @NotNull Consumer<Integer> onPageSelected;
+    private final @NotNull HBox paginationButtons;
 
-    public Pagination(int totalPages, Consumer<Integer> onPageSelected) {
+    public Pagination(int totalPages, @NotNull Consumer<Integer> onPageSelected) {
         super();
         this.onPageSelected = onPageSelected;
 
@@ -30,9 +31,10 @@ public class Pagination extends HBox {
     /**
      * Refreshes the pagination buttons of the pagination component.
      * Runs on pagination component creating and after any API call.
+     *
      * @param selectedPage The clicked page of the API call (set to 1 on component creation and on API call of a new type
      *                     e.g. switching from Browse - Season to Browse - Top)
-     * @param pages Total amount of pages
+     * @param pages        Total amount of pages
      */
     public void updatePaginationButtons(int selectedPage, int pages) {
         paginationButtons.getChildren().clear();
@@ -70,13 +72,14 @@ public class Pagination extends HBox {
 
     /**
      * Creates a numbered page button for the pagination component.
-     * @param ownPage The number set as the String for this button's text
+     *
+     * @param ownPage      The number set as the String for this button's text
      * @param selectedPage The selected page number that triggered the pagination component's refresh
      *                     (so this button knows if it's already the clicked button or not)
      * @return The finished Button
      */
-    private Button createPageButton(int ownPage, int selectedPage) {
-        Button pageButton =  new Button(String.valueOf(ownPage));
+    private @NotNull Button createPageButton(int ownPage, int selectedPage) {
+        Button pageButton = new Button(String.valueOf(ownPage));
         pageButton.getStyleClass().add("pagination-button");
 
         if (!(ownPage == selectedPage)) {
@@ -90,12 +93,13 @@ public class Pagination extends HBox {
      * Creates an ellipsis page button for the pagination component (that's a "...").
      * Ellipsis buttons bridge gaps between large amount of pages (so the pagination only shows the first, current, and last pages).
      * They can also be clicked to change into a "page search" number input field.
+     *
      * @param paginationButtons The pagination component
-     * @param pages Amount of max pages of the pagination component
+     * @param pages             Amount of max pages of the pagination component
      * @return The finished Button
      */
-    private Button createEllipsisButton(HBox paginationButtons, int pages) {
-        Button ellipsisButton =  new Button("...");
+    private @NotNull Button createEllipsisButton(@NotNull HBox paginationButtons, int pages) {
+        Button ellipsisButton = new Button("...");
         ellipsisButton.getStyleClass().add("pagination-button");
 
         // On click, turn the ellipsis button into a number input to get to specific pages
@@ -112,11 +116,12 @@ public class Pagination extends HBox {
     /**
      * Creates a number input text field, used to replace an ellipsis button of the pagination component when it's clicked.
      * On focus loss, replaces itself with an ellipsis button again.
+     *
      * @param paginationButtons The pagination component
-     * @param pages Amount of max pages of the pagination component
+     * @param pages             Amount of max pages of the pagination component
      * @return The finished number input field
      */
-    private TextField createPageInputField(HBox paginationButtons, int pages) {
+    private @NotNull TextField createPageInputField(@NotNull HBox paginationButtons, int pages) {
         TextField pageInputField = new TextField();
         pageInputField.getStyleClass().add("pagination-input-field");
 
@@ -143,11 +148,12 @@ public class Pagination extends HBox {
     /**
      * Triggers when a number input text field (the replacement for an activated ellipsis pagination button) is activated.
      * Invokes an API call for reasonable input.
+     *
      * @param paginationButtons The pagination component
-     * @param pageInputField The number input field whose input is considered
-     * @param pages Amount of max pages of the pagination component
+     * @param pageInputField    The number input field whose input is considered
+     * @param pages             Amount of max pages of the pagination component
      */
-    private void handlePageInput(HBox paginationButtons, TextField pageInputField, int pages) {
+    private void handlePageInput(@NotNull HBox paginationButtons, @NotNull TextField pageInputField, int pages) {
         String input = pageInputField.getText();
         int index = paginationButtons.getChildren().indexOf(pageInputField);
 

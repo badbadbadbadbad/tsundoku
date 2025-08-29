@@ -12,6 +12,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Screen;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,15 +26,15 @@ public class SidebarView extends VBox {
 
     private static final double SIDEBAR_WIDTH = 0.11; // Percent of screen width, not scaling with window size (for now?)
 
-    private final SidebarListener sidebarListener;
+    private final @NotNull SidebarListener sidebarListener;
 
-    private final List<Button> mediaModeButtons = new ArrayList<>();
-    private final List<Button> browseModeButtons = new ArrayList<>();
+    private final @NotNull List<Button> mediaModeButtons = new ArrayList<>();
+    private final @NotNull List<Button> browseModeButtons = new ArrayList<>();
 
-    private String currentMediaMode;
-    private String currentBrowseMode;
+    private @NotNull String currentMediaMode;
+    private @NotNull String currentBrowseMode;
 
-    public SidebarView(SidebarListener sidebarListener, String mediaMode, String browseMode) {
+    public SidebarView(@NotNull SidebarListener sidebarListener, @NotNull String mediaMode, @NotNull String browseMode) {
         this.sidebarListener = sidebarListener;
         this.currentMediaMode = mediaMode;
         this.currentBrowseMode = browseMode;
@@ -115,7 +116,7 @@ public class SidebarView extends VBox {
         this.getChildren().addAll(programLabel, separator, browseModeButtonBox, animeButton, stretchRegion, settingsButton);
     }
 
-    private Button createBrowseModeButton(String label) {
+    private @NotNull Button createBrowseModeButton(@NotNull String label) {
         Button button = new Button(label);
         button.getStyleClass().add("sidebar-browse-mode-button");
 
@@ -135,7 +136,7 @@ public class SidebarView extends VBox {
     }
 
 
-    private void setActiveBrowseModeButton(Button selectedButton) {
+    private void setActiveBrowseModeButton(@NotNull Button selectedButton) {
         for (Button button : browseModeButtons) {
             button.getStyleClass().removeAll("sidebar-browse-mode-button-active");
         }
@@ -145,7 +146,7 @@ public class SidebarView extends VBox {
     }
 
 
-    private Button createMediaModeButton(String label) {
+    private @NotNull Button createMediaModeButton(@NotNull String label) {
         Button button = new Button(label);
         button.setMaxWidth(Double.MAX_VALUE);
         button.getStyleClass().add("sidebar-media-button");
@@ -166,7 +167,7 @@ public class SidebarView extends VBox {
     }
 
 
-    private void setActiveMediaModeButton(Button selectedButton) {
+    private void setActiveMediaModeButton(@NotNull Button selectedButton) {
         for (Button button : mediaModeButtons) {
             button.getStyleClass().removeAll("sidebar-media-button-active");
         }
@@ -185,7 +186,7 @@ public class SidebarView extends VBox {
      *                         Ignored if not a positive number.
      * @return The final font size the Lebeled is set to
      */
-    private double adjustFontSizeToContainer(Labeled labeled, double minFontSize, double startingFontSize) {
+    private double adjustFontSizeToContainer(@NotNull Labeled labeled, double minFontSize, double startingFontSize) {
         Font font = labeled.getFont();
         double fontSize = font.getSize();
         String fontFamily = font.getFamily();

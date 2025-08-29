@@ -10,8 +10,11 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.util.Pair;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
@@ -20,17 +23,17 @@ import static javafx.util.Duration.millis;
 
 public class ControlsPane extends VBox {
 
-    private final FlowGridPane filterGrid = new FlowGridPane(3, 1);
-    private final BooleanProperty filtersHidden = new SimpleBooleanProperty(true);
-    private final StringProperty searchStringProperty = new SimpleStringProperty("");
+    private final @NotNull FlowGridPane filterGrid = new FlowGridPane(3, 1);
+    private final @NotNull BooleanProperty filtersHidden = new SimpleBooleanProperty(true);
+    private final @NotNull StringProperty searchStringProperty = new SimpleStringProperty("");
 
     public ControlsPane(
-            List<FilterConfig> filters,
-            List<ButtonConfig> buttons,
-            Runnable onSearch,
-            Runnable onFiltersToggled,
-            ReadOnlyDoubleProperty stageWidth,
-            BiFunction<Double, Integer, Pair<Integer, Integer>> layoutCalculator
+            @NotNull List<FilterConfig> filters,
+            @NotNull List<ButtonConfig> buttons,
+            @Nullable Runnable onSearch,
+            @NotNull Runnable onFiltersToggled,
+            @NotNull ReadOnlyDoubleProperty stageWidth,
+            @NotNull BiFunction<Double, Integer, Pair<Integer, Integer>> layoutCalculator
     ) {
         getStyleClass().add("content-pane-controls");
         setMinHeight(Control.USE_PREF_SIZE);
@@ -45,7 +48,7 @@ public class ControlsPane extends VBox {
         if (buttonBox != null) getChildren().add(buttonBox);
     }
 
-    private HBox createSearchAndFilterToggle(Runnable onSearch, Runnable onFiltersToggled) {
+    private @NotNull HBox createSearchAndFilterToggle(@Nullable Runnable onSearch, @NotNull Runnable onFiltersToggled) {
         HBox box = new HBox();
         box.getStyleClass().add("search-bar-and-filter-toggle");
 
@@ -79,7 +82,7 @@ public class ControlsPane extends VBox {
         return box;
     }
 
-    private void createFilterGrid(List<FilterConfig> filters) {
+    private void createFilterGrid(@NotNull List<FilterConfig> filters) {
         filterGrid.setHgap(10);
         filterGrid.setVgap(10);
         filterGrid.setMaxWidth(Double.MAX_VALUE);
@@ -96,20 +99,22 @@ public class ControlsPane extends VBox {
         }
     }
 
-    private VBox createDropdownFilter(FilterConfig config) {
-        Label label = new Label(config.label());
+    private @NotNull VBox createDropdownFilter(@NotNull FilterConfig config) {
+        Label label = new Label(config.key().getLabel());
         label.getStyleClass().add("filter-label");
 
         ComboBox<String> combo = new ComboBox<>();
-        combo.getItems().addAll(config.options());
-        combo.setValue(config.initialValue() != null ? config.initialValue() : config.options().getFirst());
+        combo.getItems().addAll(Objects.requireNonNull(config.key().getOptions()));
+        combo.setValue(config.initialValue() != null ? config.initialValue() : config.key().getOptions().getFirst());
         combo.getStyleClass().add("filter-combo-box");
         combo.setMaxWidth(Double.MAX_VALUE);
         VBox.setVgrow(combo, Priority.ALWAYS);
 
         combo.valueProperty().addListener((obs, oldVal, newVal) -> {
-            for (Consumer<String> consumer : config.onChange()) {
-                consumer.accept(newVal);
+            if (config.onChange() != null) {
+                for (Consumer<String> consumer : config.onChange()) {
+                    consumer.accept(newVal);
+                }
             }
         });
 
@@ -119,8 +124,8 @@ public class ControlsPane extends VBox {
         return new VBox(5, label, combo);
     }
 
-    private VBox createNumberFilter(FilterConfig config) {
-        Label label = new Label(config.label());
+    private @NotNull VBox createNumberFilter(@NotNull FilterConfig config) {
+        Label label = new Label(config.key().getLabel());
         label.getStyleClass().add("filter-label");
 
         TextField field = new TextField();
@@ -156,16 +161,17 @@ public class ControlsPane extends VBox {
         return container;
     }
 
-    private HBox createDoubleNumberFilter(FilterConfig config) {
-        VBox filter1 = createNumberFilter(FilterConfig.number(config.label(), config.onChange(), config.onEnter(), config.initialValue()));
-        VBox filter2 = createNumberFilter(FilterConfig.number(config.label2(), config.onChange2(), config.onEnter(), config.initialValue2()));
+    private @NotNull HBox createDoubleNumberFilter(@NotNull FilterConfig config) {
+        VBox filter1 = createNumberFilter(FilterConfig.number(config.key(), config.onChange(), config.onEnter(), config.initialValue()));
+        assert config.key2() != null;
+        VBox filter2 = createNumberFilter(FilterConfig.number(config.key2(), config.onChange2(), config.onEnter(), config.initialValue2()));
 
         HBox container = new HBox(10, filter1, filter2);
         container.setPrefWidth(200);
         return container;
     }
 
-    private HBox createButtons(List<ButtonConfig> buttons) {
+    private @NotNull HBox createButtons(@NotNull List<ButtonConfig> buttons) {
         HBox left = new HBox(10);
         HBox right = new HBox();
 
@@ -199,7 +205,7 @@ public class ControlsPane extends VBox {
         return wrapper;
     }
 
-    private void hideFilters(FlowGridPane filters, ToggleButton toggle, Runnable after) {
+    private void hideFilters(@NotNull FlowGridPane filters, @NotNull ToggleButton toggle, @NotNull Runnable after) {
         filtersHidden.set(true);
 
         FadeTransition fade = new FadeTransition(millis(150), filters);
@@ -225,7 +231,7 @@ public class ControlsPane extends VBox {
         all.play();
     }
 
-    private void showFilters(FlowGridPane filters, ToggleButton toggle, Runnable after) {
+    private void showFilters(@NotNull FlowGridPane filters, @NotNull ToggleButton toggle, @NotNull Runnable after) {
         filtersHidden.set(false);
 
         FadeTransition fade = new FadeTransition(millis(150), filters);
@@ -252,8 +258,8 @@ public class ControlsPane extends VBox {
         all.play();
     }
 
-    private void setupResponsiveFilterGrid(ReadOnlyDoubleProperty widthProperty,
-                                           BiFunction<Double, Integer, Pair<Integer, Integer>> layoutCalculator) {
+    private void setupResponsiveFilterGrid(@NotNull ReadOnlyDoubleProperty widthProperty,
+                                           @NotNull BiFunction<Double, Integer, Pair<Integer, Integer>> layoutCalculator) {
         int filterCount = filterGrid.getChildren().size();
 
         widthProperty.addListener((obs, oldVal, newVal) -> applyResponsiveLayout(newVal.doubleValue(), filterCount, layoutCalculator));
@@ -263,7 +269,7 @@ public class ControlsPane extends VBox {
 
     private void applyResponsiveLayout(double windowWidth,
                                        int filterCount,
-                                       BiFunction<Double, Integer, Pair<Integer, Integer>> layoutCalculator) {
+                                       @NotNull BiFunction<Double, Integer, Pair<Integer, Integer>> layoutCalculator) {
         Pair<Integer, Integer> layout = layoutCalculator.apply(windowWidth, filterCount);
 
         int cols = layout.getKey();
@@ -277,7 +283,7 @@ public class ControlsPane extends VBox {
         }
     }
 
-    public StringProperty getSearchStringProperty() {
+    public @NotNull StringProperty getSearchStringProperty() {
         return searchStringProperty;
     }
 }

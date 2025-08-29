@@ -1,15 +1,18 @@
 package com.github.badbadbadbadbad.tsundoku;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.*;
-import java.util.HashMap;
-import java.util.Map;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Responsible for making sure the background settings and database file used by the application are present.
@@ -18,23 +21,16 @@ import java.sql.Statement;
  * <p>Used once on program startup in main entry point.</p>
  */
 public class Initializer {
-    private static final String appName = "tsundoku";
+    private static final @NotNull String appName = "tsundoku";
     private static String appDataPath;
 
 
     /**
      * The overall "main" function calling everything else.
+     *
      * @throws IOException
      */
     public static void init() throws IOException {
-        verifyFileIntegrity();
-    }
-
-    /**
-     * "Main" function calling all functions making sure that files exist.
-     * @throws IOException
-     */
-    private static void verifyFileIntegrity() throws IOException {
         getFolderLocation();
         createProgramFolder();
         createSettingsFile();
@@ -45,7 +41,7 @@ public class Initializer {
      * Determines folder location for this program's files, depending on user's operating system.
      */
     private static void getFolderLocation() {
-        String homeDir  = System.getProperty("user.home");
+        String homeDir = System.getProperty("user.home");
         String os = System.getProperty("os.name").toLowerCase();
 
         if (os.contains("win")) {
@@ -62,6 +58,7 @@ public class Initializer {
 
     /**
      * Checks if program file folder already exists. If not, creates it.
+     *
      * @throws IOException
      */
     private static void createProgramFolder() throws IOException {
@@ -78,6 +75,7 @@ public class Initializer {
     /**
      * Checks if a settings file already exists in program file folder.
      * If not, creates it and initializes with default settings.
+     *
      * @throws IOException
      */
     private static void createSettingsFile() throws IOException {
@@ -139,6 +137,7 @@ public class Initializer {
     /**
      * Checks if a database already exists in program file folder.
      * If not, creates a default empty database.
+     *
      * @throws IOException
      */
     private static void createDefaultProfile() throws IOException {

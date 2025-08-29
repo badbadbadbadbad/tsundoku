@@ -1,4 +1,6 @@
 package com.github.badbadbadbadbad.tsundoku.views.ControlsPane;
 
-public record ButtonConfig(String label, Runnable onClick) {
+import org.jetbrains.annotations.NotNull;
+
+public record ButtonConfig(@NotNull String label, @NotNull Runnable onClick) {
 }

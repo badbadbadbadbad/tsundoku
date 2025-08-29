@@ -12,8 +12,10 @@ import javafx.scene.text.Font;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
+import java.util.Objects;
 
 
 /**
@@ -35,7 +37,8 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
     private String languagePreference = "Default";
 
 
-    public ViewsController(Stage stage, APIController apiController, ConfigController configController, ConfigModel configModel, DatabaseController databaseController) {
+    public ViewsController(@NotNull Stage stage, @NotNull APIController apiController, @NotNull ConfigController configController,
+                           @NotNull ConfigModel configModel, @NotNull DatabaseController databaseController) {
         this.apiController = apiController;
         this.configController = configController;
         this.databaseController = databaseController;
@@ -51,10 +54,10 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
 
 
         // Fonts (loaded here before actual view items are made so they can be used properly)
-        Font.loadFont(getClass().getResource("/fonts/NotoSerifJP-Bold.ttf").toExternalForm(), -1);
-        Font.loadFont(getClass().getResource("/fonts/NotoSansJP-Regular.ttf").toExternalForm(), -1);
-        Font.loadFont(getClass().getResource("/fonts/Montserrat-Medium.ttf").toExternalForm(), -1);
-        Font.loadFont(getClass().getResource("/fonts/Montserrat-Italic.ttf").toExternalForm(), -1);
+        Font.loadFont(Objects.requireNonNull(getClass().getResource("/fonts/NotoSerifJP-Bold.ttf")).toExternalForm(), -1);
+        Font.loadFont(Objects.requireNonNull(getClass().getResource("/fonts/NotoSansJP-Regular.ttf")).toExternalForm(), -1);
+        Font.loadFont(Objects.requireNonNull(getClass().getResource("/fonts/Montserrat-Medium.ttf")).toExternalForm(), -1);
+        Font.loadFont(Objects.requireNonNull(getClass().getResource("/fonts/Montserrat-Italic.ttf")).toExternalForm(), -1);
 
         // Figuring out the internal names used for the fonts by JavaFX
         // Font font1 = Font.loadFont(getClass().getResource("/fonts/Montserrat-Medium.ttf").toExternalForm(), -1);
@@ -71,7 +74,7 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
 
 
         // CSS
-        scene.getStylesheets().add(getClass().getResource("/CSS/styles.css").toExternalForm());
+        scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/CSS/styles.css")).toExternalForm());
 
 
         // To prevent white flicker on expanding resize
@@ -143,7 +146,7 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
      * @param mediaMode
      * @param browseMode
      */
-    private void updateMainContent(String mediaMode, String browseMode) {
+    private void updateMainContent(@NotNull String mediaMode, @NotNull String browseMode) {
         if (currentLazyLoaderView != null) {
             currentLazyLoaderView.shutdownLazyLoader();
             currentLazyLoaderView = null;
@@ -170,7 +173,7 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
         firstTimeStartup = false;
     }
 
-    private Region createContentView(String mediaMode, String browseMode) {
+    private @NotNull Region createContentView(@NotNull String mediaMode, @NotNull String browseMode) {
         switch (mediaMode) {
             case "Anime", "Manga", "Games" -> { // TODO placeholder for two of these
                 return switch (browseMode) {
@@ -199,7 +202,7 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
     }
 
 
-    private void setMainContent(Region content) {
+    private void setMainContent(@NotNull Region content) {
         if (root.getChildren().size() > 2) {
             root.getChildren().remove(2);
         }
@@ -214,7 +217,7 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
      * @param finalOpacity Opacity of the loading screen.
      * @param onFinished   The actual content loading to be executed when the loading screen is loaded in.
      */
-    private void darkenWindow(Node node, double finalOpacity, Runnable onFinished) {
+    private void darkenWindow(@NotNull Node node, double finalOpacity, Runnable onFinished) {
 
         rootStack.getChildren().add(node);
 
@@ -239,7 +242,7 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
      * @param node            The loading screen node.
      * @param startingOpacity Opacity of the loading screen.
      */
-    private void undarkenWindow(Node node, double startingOpacity) {
+    private void undarkenWindow(@NotNull Node node, double startingOpacity) {
         FadeTransition fadeOut = new FadeTransition(Duration.seconds(0.2), node);
         fadeOut.setFromValue(startingOpacity);
         fadeOut.setToValue(0);
@@ -305,7 +308,7 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
      * @param browseMode Active browse mode (Browse / Log) in sidebar.
      */
     @Override
-    public void onSidebarModesUpdated(String mediaMode, String browseMode) {
+    public void onSidebarModesUpdated(@NotNull String mediaMode, @NotNull String browseMode) {
         if (firstTimeStartup) {
             SidebarView sidebarView = new SidebarView(configController, mediaMode, browseMode);
 
@@ -323,7 +326,7 @@ public class ViewsController implements LoadingBarListener, ConfigListener {
      * @param language
      */
     @Override
-    public void onLanguagePreferenceUpdated(String language) {
+    public void onLanguagePreferenceUpdated(@NotNull String language) {
         this.languagePreference = language;
     }
 

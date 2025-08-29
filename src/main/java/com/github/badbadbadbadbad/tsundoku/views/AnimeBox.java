@@ -12,6 +12,8 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Consumer;
 
@@ -19,7 +21,7 @@ public class AnimeBox extends VBox {
 
     private final double RATIO = 318.0 / 225.0;
 
-    public AnimeBox(AnimeInfo anime, String languagePreference) {
+    public AnimeBox(@NotNull AnimeInfo anime, @NotNull String languagePreference) {
         super();
 
         setAlignment(Pos.CENTER);
@@ -100,11 +102,11 @@ public class AnimeBox extends VBox {
         setVisible(false);
     }
 
-    public void setOnMouseClick(Consumer<AnimeBox> callback) {
+    public void setOnMouseClick(@NotNull Consumer<AnimeBox> callback) {
         setOnMouseClicked(e -> callback.accept(this));
     }
 
-    public void setRatingBorder(AnimeInfo databaseAnime, boolean useBlueFallback) {
+    public void setRatingBorder(@Nullable AnimeInfo databaseAnime, boolean useBlueFallback) {
         this.getStyleClass().removeAll(
                 "grid-media-box-gold",
                 "grid-media-box-green",

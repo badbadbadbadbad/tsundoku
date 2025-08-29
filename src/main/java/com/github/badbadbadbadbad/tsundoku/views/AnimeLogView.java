@@ -27,8 +27,12 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import javafx.util.Pair;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.EnumMap;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -41,30 +45,31 @@ import java.util.function.Consumer;
  */
 public class AnimeLogView extends StackPane implements LazyLoaderView, PopupMakerView {
 
-    public final StringProperty personalStatus = new SimpleStringProperty("Any");
-    public final StringProperty personalRating = new SimpleStringProperty("Any");
-    public final StringProperty releaseStatus = new SimpleStringProperty("Any");
-    public final StringProperty ageRating = new SimpleStringProperty("Any");
-    public final StringProperty season = new SimpleStringProperty("Any");
-    public final StringProperty type = new SimpleStringProperty("Any");
-    public final StringProperty minEpisodes = new SimpleStringProperty("");
-    public final StringProperty maxEpisodes = new SimpleStringProperty("");
-    public final StringProperty startYear = new SimpleStringProperty("");
-    public final StringProperty endYear = new SimpleStringProperty("");
-    private final Stage stage;
-    private final DatabaseRequestListener databaseRequestListener;
-    private final List<List<VBox>> unfilteredAnimeLists;
-    private final List<ObservableList<VBox>> filteredAnimeLists;    // ObservableList so grid headers can watch for these being empty
-    private final Map<String, Consumer<String>> filterUpdaters = new HashMap<>();
-    private final StringProperty searchStringProperty = new SimpleStringProperty("");
-    private final String languagePreference;
+    public final @NotNull StringProperty personalStatus = new SimpleStringProperty("Any");
+    public final @NotNull StringProperty personalRating = new SimpleStringProperty("Any");
+    public final @NotNull StringProperty releaseStatus = new SimpleStringProperty("Any");
+    public final @NotNull StringProperty ageRating = new SimpleStringProperty("Any");
+    public final @NotNull StringProperty season = new SimpleStringProperty("Any");
+    public final @NotNull StringProperty type = new SimpleStringProperty("Any");
+    public final @NotNull StringProperty minEpisodes = new SimpleStringProperty("");
+    public final @NotNull StringProperty maxEpisodes = new SimpleStringProperty("");
+    public final @NotNull StringProperty startYear = new SimpleStringProperty("");
+    public final @NotNull StringProperty endYear = new SimpleStringProperty("");
+    private final @NotNull Stage stage;
+    private final @NotNull DatabaseRequestListener databaseRequestListener;
+    private final @NotNull List<List<VBox>> unfilteredAnimeLists;
+    private final @NotNull List<ObservableList<VBox>> filteredAnimeLists;    // ObservableList so grid headers can watch for these being empty
+    private final @NotNull EnumMap<AnimeFilters, Consumer<String>> filterUpdaters = new EnumMap<>(AnimeFilters.class);
+    private final @NotNull StringProperty searchStringProperty = new SimpleStringProperty("");
+    private final @NotNull String languagePreference;
     private List<FlowGapPane> filteredGrids;                 // The actual grids used for UI
-    private ScrollPane scrollPane;
+    private @NotNull ScrollPane scrollPane;
     private LazyLoader lazyLoader;
     private ListFinder listFinder;
     private SmoothScroll smoothScroll;
 
-    public AnimeLogView(Stage stage, DatabaseRequestListener databaseRequestListener, String languagePreference) {
+    public AnimeLogView(@NotNull Stage stage, @NotNull DatabaseRequestListener databaseRequestListener,
+                        @NotNull String languagePreference) {
         this.stage = stage;
         this.databaseRequestListener = databaseRequestListener;
         this.languagePreference = languagePreference;
@@ -81,16 +86,16 @@ public class AnimeLogView extends StackPane implements LazyLoaderView, PopupMake
         ));
 
         // Filters must know which internal variable to update with the chosen setting
-        this.filterUpdaters.put("Personal status", personalStatus::set);
-        this.filterUpdaters.put("Personal rating", personalRating::set);
-        this.filterUpdaters.put("Release status", releaseStatus::set);
-        this.filterUpdaters.put("Age rating", ageRating::set);
-        this.filterUpdaters.put("Episodes ≥", minEpisodes::set);
-        this.filterUpdaters.put("Episodes ≤", maxEpisodes::set);
-        this.filterUpdaters.put("Year ≥", startYear::set);
-        this.filterUpdaters.put("Year ≤", endYear::set);
-        this.filterUpdaters.put("Season", season::set);
-        this.filterUpdaters.put("Type", type::set);
+        this.filterUpdaters.put(AnimeFilters.PERSONAL_STATUS, personalStatus::set);
+        this.filterUpdaters.put(AnimeFilters.PERSONAL_RATING, personalRating::set);
+        this.filterUpdaters.put(AnimeFilters.RELEASE_STATUS, releaseStatus::set);
+        this.filterUpdaters.put(AnimeFilters.AGE_RATING, ageRating::set);
+        this.filterUpdaters.put(AnimeFilters.EPISODES_MIN, minEpisodes::set);
+        this.filterUpdaters.put(AnimeFilters.EPISODES_MAX, maxEpisodes::set);
+        this.filterUpdaters.put(AnimeFilters.YEAR_MIN, startYear::set);
+        this.filterUpdaters.put(AnimeFilters.YEAR_MAX, endYear::set);
+        this.filterUpdaters.put(AnimeFilters.SEASON, season::set);
+        this.filterUpdaters.put(AnimeFilters.TYPE, type::set);
 
         initComponent();
     }
@@ -105,39 +110,46 @@ public class AnimeLogView extends StackPane implements LazyLoaderView, PopupMake
         HBox.setHgrow(this, Priority.ALWAYS);
         this.getChildren().add(root);
 
-
         List<FilterConfig> filterConfigs = List.of(
-                FilterConfig.dropdown("Personal status",
-                        List.of("Any", "In progress", "Backlog", "Completed", "Paused", "Dropped"),
-                        List.of(personalStatus::set, s -> onFiltersChangedRunnable().run()), null),
+                FilterConfig.dropdown(
+                        AnimeFilters.PERSONAL_STATUS,
+                        List.of(filterUpdaters.get(AnimeFilters.PERSONAL_STATUS), s -> onFiltersChangedRunnable().run()),
+                        null),
 
-                FilterConfig.dropdown("Personal rating",
-                        List.of("Any", "Heart", "Liked", "Disliked", "Unscored"),
-                        List.of(personalRating::set, s -> onFiltersChangedRunnable().run()), null),
+                FilterConfig.dropdown(
+                        AnimeFilters.PERSONAL_RATING,
+                        List.of(filterUpdaters.get(AnimeFilters.PERSONAL_RATING), s -> onFiltersChangedRunnable().run()),
+                        null),
 
-                FilterConfig.dropdown("Release status",
-                        List.of("Any", "Complete", "Airing", "Upcoming"),
-                        List.of(releaseStatus::set, s -> onFiltersChangedRunnable().run()), null),
+                FilterConfig.dropdown(
+                        AnimeFilters.RELEASE_STATUS,
+                        List.of(filterUpdaters.get(AnimeFilters.RELEASE_STATUS), s -> onFiltersChangedRunnable().run()),
+                        null),
 
-                FilterConfig.dropdown("Age rating",
-                        List.of("Any", "G", "PG", "PG13", "R17+", "R+", "Rx"),
-                        List.of(ageRating::set, s -> onFiltersChangedRunnable().run()), null),
+                FilterConfig.dropdown(
+                        AnimeFilters.AGE_RATING,
+                        List.of(filterUpdaters.get(AnimeFilters.AGE_RATING), s -> onFiltersChangedRunnable().run()),
+                        null),
 
-                FilterConfig.dropdown("Season",
-                        List.of("Any", "Winter", "Spring", "Summer", "Fall"),
-                        List.of(season::set, s -> onFiltersChangedRunnable().run()), null),
+                FilterConfig.dropdown(
+                        AnimeFilters.SEASON,
+                        List.of(filterUpdaters.get(AnimeFilters.SEASON), s -> onFiltersChangedRunnable().run()),
+                        null),
 
-                FilterConfig.doubleNumber("Year ≥", "Year ≤",
-                        List.of(startYear::set, s -> onFiltersChangedRunnable().run()),
-                        List.of(endYear::set, s -> onFiltersChangedRunnable().run()), null, null, null),
+                FilterConfig.doubleNumber(AnimeFilters.YEAR_MIN, AnimeFilters.YEAR_MAX,
+                        List.of(filterUpdaters.get(AnimeFilters.YEAR_MIN), s -> onFiltersChangedRunnable().run()),
+                        List.of(filterUpdaters.get(AnimeFilters.YEAR_MAX), s -> onFiltersChangedRunnable().run()),
+                        null, null, null),
 
-                FilterConfig.doubleNumber("Episodes ≥", "Episodes ≤",
-                        List.of(minEpisodes::set, s -> onFiltersChangedRunnable().run()),
-                        List.of(maxEpisodes::set, s -> onFiltersChangedRunnable().run()), null, null, null),
+                FilterConfig.doubleNumber(AnimeFilters.EPISODES_MIN, AnimeFilters.EPISODES_MAX,
+                        List.of(filterUpdaters.get(AnimeFilters.EPISODES_MIN), s -> onFiltersChangedRunnable().run()),
+                        List.of(filterUpdaters.get(AnimeFilters.EPISODES_MAX), s -> onFiltersChangedRunnable().run()),
+                        null, null, null),
 
-                FilterConfig.dropdown("Type",
-                        List.of("Any", "TV", "Movie", "OVA", "Special", "ONA", "Music", "CM", "PV", "TV Special"),
-                        List.of(type::set, s -> onFiltersChangedRunnable().run()), null)
+                FilterConfig.dropdown(
+                        AnimeFilters.TYPE,
+                        List.of(filterUpdaters.get(AnimeFilters.TYPE), s -> onFiltersChangedRunnable().run()),
+                        null)
         );
 
 
@@ -215,7 +227,7 @@ public class AnimeLogView extends StackPane implements LazyLoaderView, PopupMake
      * @param animeList The list of items (filtered) which the header listens to in order to know if it should be hidden
      * @return The finished component
      */
-    private HBox createGridHeader(String labelText, ObservableList<VBox> animeList) {
+    private @NotNull HBox createGridHeader(@NotNull String labelText, @NotNull ObservableList<VBox> animeList) {
         HBox headerBox = new HBox(5);
         headerBox.setPrefHeight(40);
         headerBox.setPadding(new Insets(0, 0, 10, 0));
@@ -280,7 +292,7 @@ public class AnimeLogView extends StackPane implements LazyLoaderView, PopupMake
      *
      * @return The finished component
      */
-    private FlowGapPane createGrid() {
+    private @NotNull FlowGapPane createGrid() {
         Screen screen = Screen.getPrimary();
         double screenWidth = screen.getBounds().getWidth();
 
@@ -387,7 +399,7 @@ public class AnimeLogView extends StackPane implements LazyLoaderView, PopupMake
      * @param animeList The information to turn into grid elements
      * @return A CompletableFuture call so loadDatabaseIntoGridsAsync can track when all grids have finished this async call
      */
-    private CompletableFuture<Void> reloadAnimeGridAsync(List<VBox> animeGrid, List<AnimeInfo> animeList) {
+    private @NotNull CompletableFuture<Void> reloadAnimeGridAsync(@NotNull List<VBox> animeGrid, @NotNull List<AnimeInfo> animeList) {
         return CompletableFuture.supplyAsync(() -> createAnimeGridItems(animeList))
                 .thenAccept(animeBoxes -> Platform.runLater(() -> {
                     animeGrid.clear();
@@ -396,7 +408,7 @@ public class AnimeLogView extends StackPane implements LazyLoaderView, PopupMake
     }
 
 
-    private List<VBox> createAnimeGridItems(List<AnimeInfo> animeList) {
+    private @NotNull List<VBox> createAnimeGridItems(@NotNull List<AnimeInfo> animeList) {
         List<VBox> animeBoxes = new ArrayList<>();
         for (AnimeInfo anime : animeList) {
             AnimeBox animeBox = new AnimeBox(anime, languagePreference);
@@ -415,7 +427,7 @@ public class AnimeLogView extends StackPane implements LazyLoaderView, PopupMake
      *
      * @param parentBox The anime box that was clicked
      */
-    private void createPopupScreen(AnimeBox parentBox) {
+    private void createPopupScreen(@NotNull AnimeBox parentBox) {
         // Fake darkener effect
         VBox darkBackground = new VBox();
         darkBackground.getStyleClass().add("grid-media-popup-background");
@@ -472,7 +484,7 @@ public class AnimeLogView extends StackPane implements LazyLoaderView, PopupMake
      * @param popupParent The parent PopupView whose closing invoked this function call
      */
     @Override
-    public void onPopupClosed(AnimeBox popupParent) {
+    public void onPopupClosed(@NotNull AnimeBox popupParent) {
         // Old info of popup spawner
         AnimeInfo animeOld = (AnimeInfo) popupParent.getUserData();
 
@@ -753,12 +765,7 @@ public class AnimeLogView extends StackPane implements LazyLoaderView, PopupMake
 
             }
 
-
-            if (scrollPane != null) {
-                // scrollPane.setVvalue(0);
-                smoothScroll.adjustAccumulatedVValue();
-            }
-
+            smoothScroll.adjustAccumulatedVValue();
 
             if (totalNodes == 0) {
                 return;
@@ -784,7 +791,7 @@ public class AnimeLogView extends StackPane implements LazyLoaderView, PopupMake
      *
      * @return The finished component
      */
-    private ScrollPane createScrollPane() {
+    private @NotNull ScrollPane createScrollPane() {
 
         // Grid headers
         List<HBox> headers = List.of(
@@ -858,7 +865,7 @@ public class AnimeLogView extends StackPane implements LazyLoaderView, PopupMake
     }
 
 
-    private Runnable onFiltersChangedRunnable() {
+    private @NotNull Runnable onFiltersChangedRunnable() {
         return () -> {
             scrollPane.setVvalue(0);
             smoothScroll.resetAccumulatedVValue();

@@ -1,6 +1,10 @@
 package com.github.badbadbadbadbad.tsundoku.controllers;
 
-import com.github.badbadbadbadbad.tsundoku.models.*;
+import com.github.badbadbadbadbad.tsundoku.models.AnimeAPIModel;
+import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
+import com.github.badbadbadbadbad.tsundoku.models.AnimeListInfo;
+import com.github.badbadbadbadbad.tsundoku.models.ConfigModel;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -13,17 +17,19 @@ public class APIController implements ConfigListener, APIRequestListener {
 
     /**
      * Constructor.
+     *
      * @param animeAPIModel The API used for anime data.
-     * @param configModel The model taking care of settings. APIController receives updated data
-     *                    from here on settings changes.
+     * @param configModel   The model taking care of settings. APIController receives updated data
+     *                      from here on settings changes.
      */
-    public APIController(AnimeAPIModel animeAPIModel, ConfigModel configModel) {
+    public APIController(@NotNull AnimeAPIModel animeAPIModel, @NotNull ConfigModel configModel) {
         this.animeAPIModel = animeAPIModel;
         configModel.addConfigListener(this);
     }
 
     /**
      * Gets data on anime for the current season. Runs async.
+     *
      * @param page The API we currently use uses a "page" parameter with a hardcoded amount of anime per page. This specifies the page to get.
      * @return A list of retrieved anime data, and the page number that was called.
      */
@@ -34,6 +40,7 @@ public class APIController implements ConfigListener, APIRequestListener {
 
     /**
      * Gets data on anime for the upcoming seasons. Runs async.
+     *
      * @param page The API we currently use uses a "page" parameter with a hardcoded amount of anime per page. This specifies the page to get.
      * @return A list of retrieved anime data, and the page number that was called.
      */
@@ -45,6 +52,7 @@ public class APIController implements ConfigListener, APIRequestListener {
 
     /**
      * Gets data on top rated anime. Runs async.
+     *
      * @param page The API we currently use uses a "page" parameter with a hardcoded amount of anime per page. This specifies the page to get.
      * @return A list of retrieved anime data, and the page number that was called.
      */
@@ -56,8 +64,9 @@ public class APIController implements ConfigListener, APIRequestListener {
 
     /**
      * Gets data on anime based on a search query. Runs async.
+     *
      * @param query The String search query used for the API call.
-     * @param page The API we currently use uses a "page" parameter with a hardcoded amount of anime per page. This specifies the page to get.
+     * @param page  The API we currently use uses a "page" parameter with a hardcoded amount of anime per page. This specifies the page to get.
      * @return A list of retrieved anime data, and the page number that was called.
      */
     @Override
@@ -68,6 +77,7 @@ public class APIController implements ConfigListener, APIRequestListener {
 
     /**
      * Gets data on a single anime based on its MyAnimeList ID. Runs async.
+     *
      * @param id The ID used internally by MyAnimeList (and hence, the API we use).
      * @return The retrieved anime data.
      */
@@ -79,7 +89,8 @@ public class APIController implements ConfigListener, APIRequestListener {
 
     /**
      * Updates specific filters in the anime API model when they are changed in the settings.
-     * @param animeTypeFilters A collection of boolean filters (show / don't) for types of anime (TV, OVA, Movie..)
+     *
+     * @param animeTypeFilters   A collection of boolean filters (show / don't) for types of anime (TV, OVA, Movie..)
      * @param animeRatingFilters A collection of boolean filters (show / don't) for age ratings of anime (G, PG, R17+..)
      */
     @Override
@@ -90,10 +101,11 @@ public class APIController implements ConfigListener, APIRequestListener {
 
     /**
      * Updates specific filters in the anime API model when they are changed in the anime Browse view.
-     * @param animeOrderBy Sort function used internally by the Anime API we use.
-     * @param animeStatus Anime completion status filter for API calls (Any, In Progress, Completed..)
+     *
+     * @param animeOrderBy   Sort function used internally by the Anime API we use.
+     * @param animeStatus    Anime completion status filter for API calls (Any, In Progress, Completed..)
      * @param animeStartYear Anime start year filter for API calls.
-     * @param animeEndYear Anime end year filter for API calls.
+     * @param animeEndYear   Anime end year filter for API calls.
      */
     @Override
     public void onAnimeSearchFiltersUpdated(String animeOrderBy, String animeStatus, String animeStartYear, String animeEndYear) {

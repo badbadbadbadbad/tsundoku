@@ -1,5 +1,7 @@
 package com.github.badbadbadbadbad.tsundoku.views;
 
+import org.jetbrains.annotations.NotNull;
+
 public enum SearchMode {
     SEASON("Season"), //
     UPCOMING("Upcoming"), //
@@ -7,13 +9,13 @@ public enum SearchMode {
     SEARCH("Search"), //
     ;
 
-    private final String label;
+    private final @NotNull String label;
 
-    SearchMode(String label) {
+    SearchMode(@NotNull String label) {
         this.label = label;
     }
 
-    public String getLabel() {
+    public @NotNull String getLabel() {
         return label;
     }
 }
