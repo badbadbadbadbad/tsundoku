@@ -1,18 +1,27 @@
 package com.github.badbadbadbadbad.tsundoku.views;
 
 import com.github.badbadbadbadbad.tsundoku.controllers.DatabaseRequestListener;
+import com.github.badbadbadbadbad.tsundoku.enums.AnimeFilters;
+import com.github.badbadbadbadbad.tsundoku.enums.anime.AgeRating;
+import com.github.badbadbadbadbad.tsundoku.enums.anime.ReleaseStatus;
+import com.github.badbadbadbadbad.tsundoku.enums.anime.Season;
+import com.github.badbadbadbadbad.tsundoku.enums.anime.Type;
+import com.github.badbadbadbadbad.tsundoku.enums.generic.AspectRatio;
+import com.github.badbadbadbadbad.tsundoku.enums.generic.PersonalRating;
+import com.github.badbadbadbadbad.tsundoku.enums.generic.PersonalStatus;
 import com.github.badbadbadbadbad.tsundoku.external.FlowGapPane;
 import com.github.badbadbadbadbad.tsundoku.external.SmoothScroll;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeListInfo;
-import com.github.badbadbadbadbad.tsundoku.util.AspectRatio;
 import com.github.badbadbadbadbad.tsundoku.util.LazyLoader;
 import com.github.badbadbadbadbad.tsundoku.util.ListFinder;
-import com.github.badbadbadbadbad.tsundoku.views.ControlsPane.ControlsPane;
-import com.github.badbadbadbadbad.tsundoku.views.ControlsPane.FilterConfig;
+import com.github.badbadbadbadbad.tsundoku.views.components.ControlsPane.ControlsPane;
+import com.github.badbadbadbadbad.tsundoku.views.components.ControlsPane.FilterConfig;
 import javafx.animation.FadeTransition;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
@@ -37,24 +46,20 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
-/**
- * The full view component displayed in the main content pane for browse mode "Log" and media mode "Anime".
- *
- * <p>It would be far cleaner to have some LogView superclass with this inheriting, but I don't want to overcomplicate things
- * before I know what quirks the main content views for other media modes may involve (due to relying on data from external APIs).</p>
- */
+
 public class AnimeLogView extends StackPane implements LazyLoaderView, PopupMakerView {
 
-    public final @NotNull StringProperty personalStatus = new SimpleStringProperty("Any");
-    public final @NotNull StringProperty personalRating = new SimpleStringProperty("Any");
-    public final @NotNull StringProperty releaseStatus = new SimpleStringProperty("Any");
-    public final @NotNull StringProperty ageRating = new SimpleStringProperty("Any");
-    public final @NotNull StringProperty season = new SimpleStringProperty("Any");
-    public final @NotNull StringProperty type = new SimpleStringProperty("Any");
-    public final @NotNull StringProperty minEpisodes = new SimpleStringProperty("");
-    public final @NotNull StringProperty maxEpisodes = new SimpleStringProperty("");
-    public final @NotNull StringProperty startYear = new SimpleStringProperty("");
-    public final @NotNull StringProperty endYear = new SimpleStringProperty("");
+    private final @NotNull ObjectProperty<PersonalStatus> personalStatus = new SimpleObjectProperty<>(PersonalStatus.ANY);
+    private final @NotNull ObjectProperty<PersonalRating> personalRating = new SimpleObjectProperty<>(PersonalRating.ANY);
+    private final @NotNull ObjectProperty<ReleaseStatus> releaseStatus = new SimpleObjectProperty<>(ReleaseStatus.ANY);
+    private final @NotNull ObjectProperty<AgeRating> ageRating = new SimpleObjectProperty<>(AgeRating.ANY);
+    private final @NotNull ObjectProperty<Season> season = new SimpleObjectProperty<>(Season.ANY);
+    private final @NotNull ObjectProperty<Type> type = new SimpleObjectProperty<>(Type.ANY);
+    private final @NotNull StringProperty minEpisodes = new SimpleStringProperty("");
+    private final @NotNull StringProperty maxEpisodes = new SimpleStringProperty("");
+    private final @NotNull StringProperty startYear = new SimpleStringProperty("");
+    private final @NotNull StringProperty endYear = new SimpleStringProperty("");
+
     private final @NotNull Stage stage;
     private final @NotNull DatabaseRequestListener databaseRequestListener;
     private final @NotNull List<List<VBox>> unfilteredAnimeLists;
@@ -74,7 +79,6 @@ public class AnimeLogView extends StackPane implements LazyLoaderView, PopupMake
         this.databaseRequestListener = databaseRequestListener;
         this.languagePreference = languagePreference;
 
-        // Initialize empty lists
         this.unfilteredAnimeLists = new ArrayList<>(List.of(
                 new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>()
         ));
@@ -85,17 +89,16 @@ public class AnimeLogView extends StackPane implements LazyLoaderView, PopupMake
                 FXCollections.observableArrayList()
         ));
 
-        // Filters must know which internal variable to update with the chosen setting
-        this.filterUpdaters.put(AnimeFilters.PERSONAL_STATUS, personalStatus::set);
-        this.filterUpdaters.put(AnimeFilters.PERSONAL_RATING, personalRating::set);
-        this.filterUpdaters.put(AnimeFilters.RELEASE_STATUS, releaseStatus::set);
-        this.filterUpdaters.put(AnimeFilters.AGE_RATING, ageRating::set);
+        this.filterUpdaters.put(AnimeFilters.PERSONAL_STATUS, s -> personalStatus.set(PersonalStatus.fromDisplay(s)));
+        this.filterUpdaters.put(AnimeFilters.PERSONAL_RATING, s -> personalRating.set(PersonalRating.fromDisplay(s)));
+        this.filterUpdaters.put(AnimeFilters.RELEASE_STATUS, s -> releaseStatus.set(ReleaseStatus.fromDisplay(s)));
+        this.filterUpdaters.put(AnimeFilters.AGE_RATING, s -> ageRating.set(AgeRating.fromDisplay(s)));
         this.filterUpdaters.put(AnimeFilters.EPISODES_MIN, minEpisodes::set);
         this.filterUpdaters.put(AnimeFilters.EPISODES_MAX, maxEpisodes::set);
         this.filterUpdaters.put(AnimeFilters.YEAR_MIN, startYear::set);
         this.filterUpdaters.put(AnimeFilters.YEAR_MAX, endYear::set);
-        this.filterUpdaters.put(AnimeFilters.SEASON, season::set);
-        this.filterUpdaters.put(AnimeFilters.TYPE, type::set);
+        this.filterUpdaters.put(AnimeFilters.SEASON, s -> season.set(Season.fromDisplay(s)));
+        this.filterUpdaters.put(AnimeFilters.TYPE, s -> type.set(Type.fromDisplay(s)));
 
         initComponent();
     }
@@ -223,11 +226,11 @@ public class AnimeLogView extends StackPane implements LazyLoaderView, PopupMake
      * Creates a header component used for one of the log grids (to show which grid this is, e.g. the Backlog grid).
      * The header automatically hides if the corresponding grid is empty.
      *
-     * @param labelText The text used for the header
+     * @param status    The text used for the header
      * @param animeList The list of items (filtered) which the header listens to in order to know if it should be hidden
      * @return The finished component
      */
-    private @NotNull HBox createGridHeader(@NotNull String labelText, @NotNull ObservableList<VBox> animeList) {
+    private @NotNull HBox createGridHeader(@NotNull PersonalStatus status, @NotNull ObservableList<VBox> animeList) {
         HBox headerBox = new HBox(5);
         headerBox.setPrefHeight(40);
         headerBox.setPadding(new Insets(0, 0, 10, 0));
@@ -247,7 +250,7 @@ public class AnimeLogView extends StackPane implements LazyLoaderView, PopupMake
 
 
         // Middle label
-        Label label = new Label(labelText + "(0)");
+        Label label = new Label(status.toDisplay() + "(0)");
         label.getStyleClass().add("log-grid-header-text");
 
 
@@ -265,8 +268,8 @@ public class AnimeLogView extends StackPane implements LazyLoaderView, PopupMake
         animeList.addListener((ListChangeListener<VBox>) change -> {
 
             boolean hasItems = !animeList.isEmpty();
-            boolean shouldDisplay = personalStatus.get().equals("Any") ||
-                    personalStatus.get().substring(0, 2).equals(labelText.substring(0, 2));
+            boolean shouldDisplay = personalStatus.get() == PersonalStatus.ANY ||
+                    personalStatus.get() == status;
 
             if (hasItems) {
                 headerBox.setMinHeight(40);
@@ -279,7 +282,7 @@ public class AnimeLogView extends StackPane implements LazyLoaderView, PopupMake
             headerBox.setManaged(hasItems && shouldDisplay);
             headerBox.setVisible(hasItems && shouldDisplay);
 
-            label.setText(labelText + " (" + animeList.size() + ")");
+            label.setText(status.toDisplay() + " (" + animeList.size() + ")");
         });
 
         return headerBox;
@@ -315,11 +318,11 @@ public class AnimeLogView extends StackPane implements LazyLoaderView, PopupMake
         AnimeListInfo fullDatabase = databaseRequestListener.requestFullAnimeDatabase();
 
         Comparator<AnimeInfo> byRating = Comparator.comparingInt(anime -> switch (anime.getOwnRating()) {
-            case "Heart" -> 1;
-            case "Liked" -> 2;
-            case "Disliked" -> 3;
-            case "Unscored" -> 4;
-            default -> Integer.MAX_VALUE; // fallback, in case of unexpected value
+            case PersonalRating.HEART -> 1;
+            case PersonalRating.LIKED -> 2;
+            case PersonalRating.DISLIKED -> 3;
+            case PersonalRating.UNSCORED -> 4;
+            default -> Integer.MAX_VALUE;
         });
 
         // Alphanumerical title sort
@@ -339,35 +342,35 @@ public class AnimeLogView extends StackPane implements LazyLoaderView, PopupMake
         // Split the full database into disjunct subsets based on the personal status
         ObservableList<AnimeInfo> inProgressAnimeList = FXCollections.observableArrayList(
                 fullDatabase.getAnimeList().stream()
-                        .filter(anime -> "In progress".equals(anime.getOwnStatus()))
+                        .filter(anime -> PersonalStatus.IN_PROGRESS.equals(anime.getOwnStatus()))
                         .sorted(combinedComparator)
                         .toList()
         );
 
         ObservableList<AnimeInfo> backlogAnimeList = FXCollections.observableArrayList(
                 fullDatabase.getAnimeList().stream()
-                        .filter(anime -> "Backlog".equals(anime.getOwnStatus()))
+                        .filter(anime -> PersonalStatus.BACKLOG.equals(anime.getOwnStatus()))
                         .sorted(combinedComparator)
                         .toList()
         );
 
         ObservableList<AnimeInfo> completedAnimeList = FXCollections.observableArrayList(
                 fullDatabase.getAnimeList().stream()
-                        .filter(anime -> "Completed".equals(anime.getOwnStatus()))
+                        .filter(anime -> PersonalStatus.COMPLETED.equals(anime.getOwnStatus()))
                         .sorted(combinedComparator)
                         .toList()
         );
 
         ObservableList<AnimeInfo> pausedAnimeList = FXCollections.observableArrayList(
                 fullDatabase.getAnimeList().stream()
-                        .filter(anime -> "Paused".equals(anime.getOwnStatus()))
+                        .filter(anime -> PersonalStatus.PAUSED.equals(anime.getOwnStatus()))
                         .sorted(combinedComparator)
                         .toList()
         );
 
         ObservableList<AnimeInfo> droppedAnimeList = FXCollections.observableArrayList(
                 fullDatabase.getAnimeList().stream()
-                        .filter(anime -> "Dropped".equals(anime.getOwnStatus()))
+                        .filter(anime -> PersonalStatus.DROPPED.equals(anime.getOwnStatus()))
                         .sorted(combinedComparator)
                         .toList()
         );
@@ -516,22 +519,22 @@ public class AnimeLogView extends StackPane implements LazyLoaderView, PopupMake
 
             // Get correct grid to insert in
             List<VBox> targetGrid = switch (newAnimeInfo.getOwnStatus()) {
-                case "In progress" -> unfilteredAnimeLists.get(0);
-                case "Backlog" -> unfilteredAnimeLists.get(1);
-                case "Completed" -> unfilteredAnimeLists.get(2);
-                case "Paused" -> unfilteredAnimeLists.get(3);
-                case "Dropped" -> unfilteredAnimeLists.get(4);
+                case PersonalStatus.IN_PROGRESS -> unfilteredAnimeLists.get(0);
+                case PersonalStatus.BACKLOG -> unfilteredAnimeLists.get(1);
+                case PersonalStatus.COMPLETED -> unfilteredAnimeLists.get(2);
+                case PersonalStatus.PAUSED -> unfilteredAnimeLists.get(3);
+                case PersonalStatus.DROPPED -> unfilteredAnimeLists.get(4);
                 default ->
                         throw new IllegalArgumentException("Invalid status trying to insert new animeBox into log: " + newAnimeInfo.getOwnStatus());
             };
 
             // ownRating sort
             Comparator<AnimeInfo> byRating = Comparator.comparingInt(anime -> switch (anime.getOwnRating()) {
-                case "Heart" -> 1;
-                case "Liked" -> 2;
-                case "Disliked" -> 3;
-                case "Unscored" -> 4;
-                default -> Integer.MAX_VALUE; // fallback, in case of unexpected value
+                case PersonalRating.HEART -> 1;
+                case PersonalRating.LIKED -> 2;
+                case PersonalRating.DISLIKED -> 3;
+                case PersonalRating.UNSCORED -> 4;
+                default -> Integer.MAX_VALUE;
             });
 
             // Alphanumerical title sort
@@ -643,22 +646,22 @@ public class AnimeLogView extends StackPane implements LazyLoaderView, PopupMake
                     }
 
                     // Personal status filter
-                    if (!"Any".equals(personalStatus.get()) && !personalStatus.get().equals(animeInfo.getOwnStatus())) {
+                    if (!PersonalStatus.ANY.equals(personalStatus.get()) && !personalStatus.get().equals(animeInfo.getOwnStatus())) {
                         continue;
                     }
 
                     // Personal rating filter
-                    if (!"Any".equals(personalRating.get()) && !personalRating.get().equals(animeInfo.getOwnRating())) {
+                    if (!PersonalRating.ANY.equals(personalRating.get()) && !personalRating.get().equals(animeInfo.getOwnRating())) {
                         continue;
                     }
 
                     // Release status filter
-                    if (!"Any".equals(releaseStatus.get()) && !releaseStatus.get().equals(animeInfo.getPublicationStatus())) {
+                    if (!ReleaseStatus.ANY.equals(releaseStatus.get()) && !releaseStatus.get().equals(animeInfo.getPublicationStatus())) {
                         continue;
                     }
 
                     // Age rating filter
-                    if (!"Any".equals(ageRating.get()) && !ageRating.get().equals(animeInfo.getAgeRating())) {
+                    if (!AgeRating.ANY.equals(ageRating.get()) && !ageRating.get().equals(animeInfo.getAgeRating())) {
                         continue;
                     }
 
@@ -715,11 +718,11 @@ public class AnimeLogView extends StackPane implements LazyLoaderView, PopupMake
                     }
 
                     // Release season filter
-                    if (!"Any".equals(season.get())) {
+                    if (!Season.ANY.equals(season.get())) {
                         String release = animeInfo.getRelease();
                         if (!"Not yet provided".equals(release)) {
                             String seasonStr = release.substring(0, release.length() - 5); // Trim space bar and four-digit release year
-                            if (!season.get().equals(seasonStr)) {
+                            if (!season.get().toDisplay().equals(seasonStr)) {
                                 continue;
                             }
                         } else {
@@ -728,7 +731,7 @@ public class AnimeLogView extends StackPane implements LazyLoaderView, PopupMake
                     }
 
                     // Type filter
-                    if (!"Any".equals(type.get()) && !type.get().equals(animeInfo.getType())) {
+                    if (!Type.ANY.equals(type.get()) && !type.get().equals(animeInfo.getType())) {
                         continue;
                     }
 
@@ -795,11 +798,11 @@ public class AnimeLogView extends StackPane implements LazyLoaderView, PopupMake
 
         // Grid headers
         List<HBox> headers = List.of(
-                createGridHeader("In progress", filteredAnimeLists.get(0)),
-                createGridHeader("Backlog", filteredAnimeLists.get(1)),
-                createGridHeader("Completed", filteredAnimeLists.get(2)),
-                createGridHeader("Paused", filteredAnimeLists.get(3)),
-                createGridHeader("Dropped", filteredAnimeLists.get(4))
+                createGridHeader(PersonalStatus.IN_PROGRESS, filteredAnimeLists.get(0)),
+                createGridHeader(PersonalStatus.BACKLOG, filteredAnimeLists.get(1)),
+                createGridHeader(PersonalStatus.COMPLETED, filteredAnimeLists.get(2)),
+                createGridHeader(PersonalStatus.PAUSED, filteredAnimeLists.get(3)),
+                createGridHeader(PersonalStatus.DROPPED, filteredAnimeLists.get(4))
         );
 
 

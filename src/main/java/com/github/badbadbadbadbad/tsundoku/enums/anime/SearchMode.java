@@ -1,4 +1,4 @@
-package com.github.badbadbadbadbad.tsundoku.views;
+package com.github.badbadbadbadbad.tsundoku.enums.anime;
 
 import org.jetbrains.annotations.NotNull;
 

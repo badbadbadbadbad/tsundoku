@@ -1,5 +1,12 @@
 package com.github.badbadbadbadbad.tsundoku.models;
 
+import com.github.badbadbadbadbad.tsundoku.enums.anime.AgeRating;
+import com.github.badbadbadbadbad.tsundoku.enums.anime.ReleaseStatus;
+import com.github.badbadbadbadbad.tsundoku.enums.anime.Type;
+import com.github.badbadbadbadbad.tsundoku.enums.generic.PersonalRating;
+import com.github.badbadbadbadbad.tsundoku.enums.generic.PersonalStatus;
+import org.jetbrains.annotations.NotNull;
+
 /**
  * A container object for data on a single anime. The data is provided by Jikan.Moe API,
  * <a href="https://docs.api.jikan.moe/#tag/anime/operation/getAnimeById">see example here</a>.
@@ -7,29 +14,28 @@ package com.github.badbadbadbadbad.tsundoku.models;
  * <p>We specifically do not use a Java Record class because this class also contains the user's progress data for this anime, which is mutable.</p>
  */
 public class AnimeInfo {
-    private String ownRating = "Unscored";                  // Rating of "Unscored", "Heart", "Liked", "Disliked"
-    private String ownStatus = "Untracked";                 // Own progress status of "Untracked", "Backlog", "In progress", "Completed", "Paused", "Dropped"
-    private int episodesProgress = 0;                       // Amount of episodes watched
-
     private final int id;                                   // MyAnimeList ID
     private final String title;                             // "Default" title used by MyAnimeList (usually roumaji)
     private final String titleJapanese;                     // "Japanese" title used by MyAnimeList, or "Not yet provided"
     private final String titleEnglish;                      // "English" title used by MyAnimeList, or "Not yet provided"
     private final String imageUrl;                          // URL pointing to cover art used on MyAnimeList, or "Not yet provided"
     private final String smallImageUrl;                     // URL pointing to smaller cover art used on MyAnimeList, or "Not yet provided"
-    private final String publicationStatus;                 // Current status of an anime of "Airing", "Complete", "Upcoming", or "Not yet provided"
+    private final ReleaseStatus publicationStatus;
     private final int episodesTotal;                        // Total episodes of this anime. May be 0, which we keep as a "not yet known".
     private final String source;                            // Original source of this anime, like "Manga", "Light Novel", "Original".
-    private final String ageRating;                         // Age rating, includes both nudity and gore (thanks MAL for having a shit system), or "Not yet provided"
+    private final AgeRating ageRating;                         // Age rating, includes both nudity and gore (thanks MAL for having a shit system), or "Not yet provided"
     private final String synopsis;                          // Synopsis / description text, or "Not yet provided"
     private final String release;                           // We attempt to calculate a "<Season> <Year>" String from provided data, else "Not yet provided"
     private final String studios;                           // Studios involved in creating, or "Not yet provided"
-    private final String type;                              // Enum of "TV", "Movie", "OVA", "Special", "ONA", "Music", "CM", "PV", "TV Special", or "Not yet provided"
+    private final Type type;                              // Enum of "TV", "Movie", "OVA", "Special", "ONA", "Music", "CM", "PV", "TV Special", or "Not yet provided"
     private final String lastUpdated;                       // Last update of this information container in YYYY-MM-DD format, UTC time zone (because SQLite uses that)
+    private @NotNull PersonalRating ownRating = PersonalRating.UNSCORED;
+    private @NotNull PersonalStatus ownStatus = PersonalStatus.UNTRACKED;
+    private int episodesProgress = 0;
 
     public AnimeInfo(int id, String title, String titleJapanese, String titleEnglish, String imageUrl,
-                     String smallImageUrl, String publicationStatus, int episodesTotal, String source,
-                     String ageRating, String synopsis, String release, String studios, String type, String lastUpdated) {
+                     String smallImageUrl, ReleaseStatus publicationStatus, int episodesTotal, String source,
+                     AgeRating ageRating, String synopsis, String release, String studios, Type type, String lastUpdated) {
         this.id = id;
         this.title = title;
         this.titleJapanese = titleJapanese;
@@ -47,30 +53,29 @@ public class AnimeInfo {
         this.lastUpdated = lastUpdated;
     }
 
-    public void setOwnRating(String newRating) {
-        this.ownRating = newRating;
-    }
-
-    public String getOwnRating() {
+    public @NotNull PersonalRating getOwnRating() {
         return ownRating;
     }
 
-    public void setOwnStatus(String newStatus) {
-        this.ownStatus = newStatus;
+    public void setOwnRating(@NotNull PersonalRating newRating) {
+        this.ownRating = newRating;
     }
 
-    public String getOwnStatus() {
+    public @NotNull PersonalStatus getOwnStatus() {
         return ownStatus;
     }
 
-    public void setEpisodesProgress(int newEpisodes) {
-        this.episodesProgress = newEpisodes;
+    public void setOwnStatus(@NotNull PersonalStatus newStatus) {
+        this.ownStatus = newStatus;
     }
 
     public int getEpisodesProgress() {
         return episodesProgress;
     }
 
+    public void setEpisodesProgress(int newEpisodes) {
+        this.episodesProgress = newEpisodes;
+    }
 
     public int getId() {
         return id;
@@ -96,7 +101,7 @@ public class AnimeInfo {
         return smallImageUrl;
     }
 
-    public String getPublicationStatus() {
+    public ReleaseStatus getPublicationStatus() {
         return publicationStatus;
     }
 
@@ -108,7 +113,7 @@ public class AnimeInfo {
         return source;
     }
 
-    public String getAgeRating() {
+    public AgeRating getAgeRating() {
         return ageRating;
     }
 
@@ -124,9 +129,11 @@ public class AnimeInfo {
         return studios;
     }
 
-    public String getType() {
+    public Type getType() {
         return type;
     }
 
-    public String getLastUpdated() { return lastUpdated; }
+    public String getLastUpdated() {
+        return lastUpdated;
+    }
 }

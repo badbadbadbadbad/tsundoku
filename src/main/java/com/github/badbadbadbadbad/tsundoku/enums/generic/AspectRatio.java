@@ -1,4 +1,4 @@
-package com.github.badbadbadbadbad.tsundoku.util;
+package com.github.badbadbadbadbad.tsundoku.enums.generic;
 
 public enum AspectRatio {
     ANIME(318.0, 225.0), //

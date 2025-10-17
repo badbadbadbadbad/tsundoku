@@ -1,5 +1,7 @@
 package com.github.badbadbadbadbad.tsundoku.util;
 
+import com.github.badbadbadbadbad.tsundoku.enums.generic.PersonalRating;
+import com.github.badbadbadbadbad.tsundoku.enums.generic.PersonalStatus;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 
 public class StyleUtils {
@@ -14,19 +16,23 @@ public class StyleUtils {
      *     <li>Red: In Log, rated with Disliked</li>
      * </ul>
      * This is done by altering CSS classes of the anime's VBox component in the FlowPane.
-     * @param anime The box to change the border for
+     *
+     * @param anime           The box to change the border for
      * @param useBlueFallback Default should be blue in Browse view, grey in Log view
      */
     public static String computeBorderClass(AnimeInfo anime, boolean useBlueFallback) {
         if (anime == null) return "grid-media-box-grey";
 
         switch (anime.getOwnRating()) {
-            case "Heart": return "grid-media-box-gold";
-            case "Liked": return "grid-media-box-green";
-            case "Disliked": return "grid-media-box-red";
+            case PersonalRating.HEART:
+                return "grid-media-box-gold";
+            case PersonalRating.LIKED:
+                return "grid-media-box-green";
+            case PersonalRating.DISLIKED:
+                return "grid-media-box-red";
         }
 
-        if (useBlueFallback && !anime.getOwnStatus().equals("Untracked")) {
+        if (useBlueFallback && !anime.getOwnStatus().equals(PersonalStatus.UNTRACKED)) {
             return "grid-media-box-blue";
         }
 

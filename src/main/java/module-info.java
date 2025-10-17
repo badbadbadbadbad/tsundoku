@@ -20,4 +20,12 @@ module com.github.badbadbadbadbad.tsundoku {
     opens com.github.badbadbadbadbad.tsundoku.models to javafx.fxml;
     exports com.github.badbadbadbadbad.tsundoku.controllers;
     opens com.github.badbadbadbadbad.tsundoku.controllers to javafx.fxml;
+    exports com.github.badbadbadbadbad.tsundoku.enums;
+    opens com.github.badbadbadbadbad.tsundoku.enums to javafx.fxml;
+    exports com.github.badbadbadbadbad.tsundoku.enums.generic;
+    opens com.github.badbadbadbadbad.tsundoku.enums.generic to javafx.fxml;
+    exports com.github.badbadbadbadbad.tsundoku.enums.anime;
+    opens com.github.badbadbadbadbad.tsundoku.enums.anime to javafx.fxml;
+    exports com.github.badbadbadbadbad.tsundoku.views.components;
+    opens com.github.badbadbadbadbad.tsundoku.views.components to javafx.fxml;
 }

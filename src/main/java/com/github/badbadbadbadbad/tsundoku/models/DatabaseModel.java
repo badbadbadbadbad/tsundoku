@@ -1,6 +1,11 @@
 package com.github.badbadbadbadbad.tsundoku.models;
 
 import com.github.badbadbadbadbad.tsundoku.controllers.APIRequestListener;
+import com.github.badbadbadbadbad.tsundoku.enums.anime.AgeRating;
+import com.github.badbadbadbadbad.tsundoku.enums.anime.ReleaseStatus;
+import com.github.badbadbadbadbad.tsundoku.enums.anime.Type;
+import com.github.badbadbadbadbad.tsundoku.enums.generic.PersonalRating;
+import com.github.badbadbadbadbad.tsundoku.enums.generic.PersonalStatus;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -68,7 +73,7 @@ public class DatabaseModel {
     public void updateAnimeDatabaseWithEntry(AnimeInfo anime) {
         String url = "jdbc:sqlite:" + databaseFilePath;
 
-        if (anime.getOwnStatus().equals("Completed")) {
+        if (anime.getOwnStatus().equals(PersonalStatus.COMPLETED)) {
             anime.setEpisodesProgress(anime.getEpisodesTotal());
         }
 
@@ -97,7 +102,7 @@ public class DatabaseModel {
                     lastUpdate = excluded.lastUpdate;""";
 
         try (Connection conn = DriverManager.getConnection(url)) {
-            if (anime.getOwnStatus().equals("Untracked")) {
+            if (anime.getOwnStatus().equals(PersonalStatus.UNTRACKED)) {
                 try (PreparedStatement pstmt = conn.prepareStatement(sqlDelete)) {
                     pstmt.setInt(1, anime.getId());
                     pstmt.executeUpdate();
@@ -105,22 +110,22 @@ public class DatabaseModel {
             } else {
                 try (PreparedStatement pstmt = conn.prepareStatement(sqlUpsert)) {
                     pstmt.setInt(1, anime.getId());
-                    pstmt.setString(2, anime.getOwnRating());
-                    pstmt.setString(3, anime.getOwnStatus());
+                    pstmt.setString(2, anime.getOwnRating().toDisplay());
+                    pstmt.setString(3, anime.getOwnStatus().toDisplay());
                     pstmt.setInt(4, anime.getEpisodesProgress());
                     pstmt.setString(5, anime.getTitle());
                     pstmt.setString(6, anime.getTitleJapanese());
                     pstmt.setString(7, anime.getTitleEnglish());
                     pstmt.setString(8, anime.getImageUrl());
                     pstmt.setString(9, anime.getSmallImageUrl());
-                    pstmt.setString(10, anime.getPublicationStatus());
+                    pstmt.setString(10, anime.getPublicationStatus().toDisplay());
                     pstmt.setInt(11, anime.getEpisodesTotal());
                     pstmt.setString(12, anime.getSource());
-                    pstmt.setString(13, anime.getAgeRating());
+                    pstmt.setString(13, anime.getAgeRating().toDisplay());
                     pstmt.setString(14, anime.getSynopsis());
                     pstmt.setString(15, anime.getRelease());
                     pstmt.setString(16, anime.getStudios());
-                    pstmt.setString(17, anime.getType());
+                    pstmt.setString(17, anime.getType().toDisplay());
                     pstmt.setString(18, anime.getLastUpdated());
                     pstmt.executeUpdate();
                 }
@@ -151,11 +156,11 @@ public class DatabaseModel {
             if (rs.next()) {
 
                 AnimeInfo animeInfo = new AnimeInfo(rs.getInt("id"), rs.getString("title"), rs.getString("titleJapanese"), rs.getString("titleEnglish"),
-                        rs.getString("imageUrl"), rs.getString("smallImageUrl"), rs.getString("publicationStatus"), rs.getInt("episodesTotal"), rs.getString("source"),
-                        rs.getString("ageRating"), rs.getString("synopsis"), rs.getString("release"), rs.getString("studios"), rs.getString("type"), rs.getString("lastUpdate")
+                        rs.getString("imageUrl"), rs.getString("smallImageUrl"), ReleaseStatus.fromDisplay(rs.getString("publicationStatus")), rs.getInt("episodesTotal"), rs.getString("source"),
+                        AgeRating.fromDisplay(rs.getString("ageRating")), rs.getString("synopsis"), rs.getString("release"), rs.getString("studios"), Type.fromDisplay(rs.getString("type")), rs.getString("lastUpdate")
                 );
-                animeInfo.setOwnRating(rs.getString("ownRating"));
-                animeInfo.setOwnStatus(rs.getString("ownStatus"));
+                animeInfo.setOwnRating(PersonalRating.fromDisplay(rs.getString("ownRating")));
+                animeInfo.setOwnStatus(PersonalStatus.fromDisplay(rs.getString("ownStatus")));
                 animeInfo.setEpisodesProgress(rs.getInt("episodesProgress"));
 
                 return animeInfo;
@@ -183,11 +188,11 @@ public class DatabaseModel {
 
             while (rs.next()) {
                 AnimeInfo animeInfo = new AnimeInfo(rs.getInt("id"), rs.getString("title"), rs.getString("titleJapanese"), rs.getString("titleEnglish"),
-                        rs.getString("imageUrl"), rs.getString("smallImageUrl"), rs.getString("publicationStatus"), rs.getInt("episodesTotal"), rs.getString("source"),
-                        rs.getString("ageRating"), rs.getString("synopsis"), rs.getString("release"), rs.getString("studios"), rs.getString("type"), rs.getString("lastUpdate")
+                        rs.getString("imageUrl"), rs.getString("smallImageUrl"), ReleaseStatus.fromDisplay(rs.getString("publicationStatus")), rs.getInt("episodesTotal"), rs.getString("source"),
+                        AgeRating.fromDisplay(rs.getString("ageRating")), rs.getString("synopsis"), rs.getString("release"), rs.getString("studios"), Type.fromDisplay(rs.getString("type")), rs.getString("lastUpdate")
                 );
-                animeInfo.setOwnRating(rs.getString("ownRating"));
-                animeInfo.setOwnStatus(rs.getString("ownStatus"));
+                animeInfo.setOwnRating(PersonalRating.fromDisplay(rs.getString("ownRating")));
+                animeInfo.setOwnStatus(PersonalStatus.fromDisplay(rs.getString("ownStatus")));
                 animeInfo.setEpisodesProgress(rs.getInt("episodesProgress"));
 
                 animeList.add(animeInfo);
@@ -230,7 +235,7 @@ public class DatabaseModel {
                 // All other entries that were updated today
                 .filter(anime -> {
                     LocalDate lastUpdated = LocalDate.parse(anime.getLastUpdated(), DATE_FORMATTER);
-                    if ("Complete".equals(anime.getPublicationStatus())) {
+                    if (ReleaseStatus.COMPLETE.equals(anime.getPublicationStatus())) {
                         return lastUpdated.isBefore(currentDate.minusDays(30));
                     } else {
                         return !lastUpdated.isEqual(currentDate);
@@ -239,19 +244,13 @@ public class DatabaseModel {
 
                 // Sort by publication status and last updated
                 .sorted(Comparator
-                        .comparing((AnimeInfo anime) -> {
-                            switch (anime.getPublicationStatus()) {
-                                case "Upcoming":
-                                case "Not yet provided":
-                                    return 0;
-                                case "Airing":
-                                    return 1;
-                                case "Complete":
-                                    return 2;
-                                default:
-                                    return Integer.MAX_VALUE;
-                            }
-                        })
+                        .comparing((AnimeInfo anime) ->
+                                switch (anime.getPublicationStatus()) {
+                                    case ReleaseStatus.UPCOMING, ReleaseStatus.NOT_YET_PROVIDED -> 0;
+                                    case ReleaseStatus.AIRING -> 1;
+                                    case ReleaseStatus.COMPLETE -> 2;
+                                    default -> Integer.MAX_VALUE;
+                                })
                         .thenComparing(anime -> LocalDate.parse(anime.getLastUpdated(), DATE_FORMATTER)))
                 .collect(Collectors.toList());
     }

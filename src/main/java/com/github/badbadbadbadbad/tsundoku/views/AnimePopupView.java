@@ -1,6 +1,9 @@
 package com.github.badbadbadbadbad.tsundoku.views;
 
 import com.github.badbadbadbadbad.tsundoku.controllers.DatabaseRequestListener;
+import com.github.badbadbadbadbad.tsundoku.enums.anime.ReleaseStatus;
+import com.github.badbadbadbadbad.tsundoku.enums.generic.PersonalRating;
+import com.github.badbadbadbadbad.tsundoku.enums.generic.PersonalStatus;
 import com.github.badbadbadbadbad.tsundoku.external.SmoothScroll;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
 import javafx.geometry.Insets;
@@ -46,8 +49,8 @@ public class AnimePopupView {
     private final VBox popupBox;
 
     private final String languagePreference;
-    private String activeRatingButton = "none";
     private final List<Button> ratingButtons = new ArrayList<>();
+    private String activeRatingButton = "none";
 
     public AnimePopupView(AnimeBox parentBox, PopupMakerView parentView, DatabaseRequestListener databaseRequestListener,
                           VBox darkBackground, String languagePreference) {
@@ -81,6 +84,7 @@ public class AnimePopupView {
 
     /**
      * Called once by the parentBox, creates the whole View component
+     *
      * @return The finished view
      */
     public VBox createPopup() {
@@ -112,6 +116,7 @@ public class AnimePopupView {
     /**
      * Title for the full View depending on the preferred language.
      * Some titles can be veeery long, so we attempt to adjust the font size down to make it fit.
+     *
      * @return The finished component
      */
     private Label createPopupTitle() {
@@ -165,8 +170,9 @@ public class AnimePopupView {
     /**
      * Adjusts font size on the text of some Labeled (labels, buttons..) downwards until it fits into the rectangular
      * label container without overflow, both vertical and horizontal, padding included in the calculation.
-     * @param labeled The Labeled whose font is to be adjusted
-     * @param minFontSize A minimum font size at which point the routine is forced to stop
+     *
+     * @param labeled          The Labeled whose font is to be adjusted
+     * @param minFontSize      A minimum font size at which point the routine is forced to stop
      * @param startingFontSize An optional font size to start from instead of the font size the label currently has.
      *                         Ignored if not a positive number.
      * @return The final font size the Lebeled is set to
@@ -192,14 +198,14 @@ public class AnimePopupView {
 
 
         // Make smaller until no vertical overflow
-        while (text.getBoundsInLocal().getHeight() > containerHeight  && fontSize > minFontSize) {
+        while (text.getBoundsInLocal().getHeight() > containerHeight && fontSize > minFontSize) {
             fontSize--;
             text.setFont(Font.font(fontFamily, fontSize));
         }
 
 
         // Make smaller until no horizontal overflow
-        while (text.getBoundsInLocal().getWidth() > containerWidth  && fontSize > minFontSize) {
+        while (text.getBoundsInLocal().getWidth() > containerWidth && fontSize > minFontSize) {
             fontSize--;
             text.setFont(Font.font(fontFamily, fontSize));
         }
@@ -231,6 +237,7 @@ public class AnimePopupView {
      *     <li>Rating buttons</li>
      *     <li>Progress tracker</li>
      * </ul>
+     *
      * @return The finished component
      */
     private VBox createLeftPopupContent() {
@@ -253,8 +260,9 @@ public class AnimePopupView {
 
     /**
      * Cover image box, created much the same way as in the main Views (but without hover functionality).
+     *
      * @param wrapper The parent this image will be put into (so the image box can scale to its width).
-     * @return
+     * @return finished box
      */
     private VBox createCoverImage(VBox wrapper) {
         VBox imageBox = new VBox();
@@ -287,6 +295,7 @@ public class AnimePopupView {
      * Dropdown component for the personal status types of the anime.
      * Note that some personal status types are only put here if the corresponding anime could actually have them
      * (e.g. an anime that hasn't aired yet cannot be set to "finished").
+     *
      * @return The finished component
      */
     private ComboBox<String> createStatusBox() {
@@ -299,24 +308,24 @@ public class AnimePopupView {
         status.getItems().addAll("Untracked", "Backlog");
 
         // Can be completed as long as it finished releasing. Include "Not yet provided" for entries with missing data
-        if (anime.getPublicationStatus().equals("Complete") || anime.getPublicationStatus().equals("Not yet provided"))
+        if (anime.getPublicationStatus().equals(ReleaseStatus.COMPLETE) || anime.getPublicationStatus().equals(ReleaseStatus.NOT_YET_PROVIDED))
             status.getItems().add("Completed");
 
         // Can be watched as long as it started releasing. Include "Not yet provided" for entries with missing data
-        if (!anime.getPublicationStatus().equals("Upcoming"))
+        if (!anime.getPublicationStatus().equals(ReleaseStatus.UPCOMING))
             status.getItems().addAll("In progress", "Paused", "Dropped");
 
 
         if (databaseAnime != null) {
-            status.setValue(databaseAnime.getOwnStatus());
+            status.setValue(databaseAnime.getOwnStatus().toDisplay());
             anime.setOwnStatus(databaseAnime.getOwnStatus());
         } else {
-            status.setValue("Untracked");
-            anime.setOwnStatus("Untracked");
+            status.setValue(PersonalStatus.UNTRACKED.toDisplay());
+            anime.setOwnStatus(PersonalStatus.UNTRACKED);
         }
 
 
-        status.setOnAction(e -> anime.setOwnStatus(status.getValue()));
+        status.setOnAction(e -> anime.setOwnStatus(PersonalStatus.fromDisplay(status.getValue())));
 
 
         return status;
@@ -325,6 +334,7 @@ public class AnimePopupView {
 
     /**
      * Box of rating buttons. Lots of boilerplate to get modern functionality of colouring in the selected rating etc.
+     *
      * @return The finished component
      */
     private HBox createRatingBox() {
@@ -361,17 +371,15 @@ public class AnimePopupView {
         thumbsDownButton.setOnAction(event -> handleRatingButtonClick(thumbsDownButton));
 
 
-
-        anime.setOwnRating("Unscored");
-
+        anime.setOwnRating(PersonalRating.UNSCORED);
 
         if (databaseAnime != null) {
-            String ownRating = databaseAnime.getOwnRating();
-            if (ownRating.equals("Heart")) {
+            PersonalRating ownRating = databaseAnime.getOwnRating();
+            if (ownRating.equals(PersonalRating.HEART)) {
                 heartButton.fire();
-            } else if (ownRating.equals("Liked")) {
+            } else if (ownRating.equals(PersonalRating.LIKED)) {
                 thumbsUpButton.fire();
-            } else if (ownRating.equals("Disliked")) {
+            } else if (ownRating.equals(PersonalRating.DISLIKED)) {
                 thumbsDownButton.fire();
             }
         }
@@ -383,6 +391,7 @@ public class AnimePopupView {
     /**
      * Used by createRatingBox.
      * Invoked when one of the rating buttons is clicked to update button colourings and parent anime rating.
+     *
      * @param clickedButton The button this function listens to
      */
     private void handleRatingButtonClick(Button clickedButton) {
@@ -398,7 +407,7 @@ public class AnimePopupView {
         // If so, we set none as active after
         if (clickedButton.getStyleClass().contains(activeRatingButton)) {
             activeRatingButton = "none";
-            anime.setOwnRating("Unscored");
+            anime.setOwnRating(PersonalRating.UNSCORED);
             return;
         }
 
@@ -407,15 +416,15 @@ public class AnimePopupView {
         if (clickedButton.getStyleClass().contains("heart")) {
             clickedButton.getStyleClass().add("ikonli-heart-active");
             activeRatingButton = "heart";
-            anime.setOwnRating("Heart");
+            anime.setOwnRating(PersonalRating.HEART);
         } else if (clickedButton.getStyleClass().contains("like")) {
             clickedButton.getStyleClass().add("ikonli-thumb-up-active");
             activeRatingButton = "like";
-            anime.setOwnRating("Liked");
+            anime.setOwnRating(PersonalRating.LIKED);
         } else if (clickedButton.getStyleClass().contains("dislike")) {
             clickedButton.getStyleClass().add("ikonli-thumb-down-active");
             activeRatingButton = "dislike";
-            anime.setOwnRating("Disliked");
+            anime.setOwnRating(PersonalRating.DISLIKED);
         }
 
     }
@@ -423,6 +432,7 @@ public class AnimePopupView {
 
     /**
      * A number input field to track episode progress for the parent anime.
+     *
      * @param unit The unit in which the media type is counted, which is only "episodes" for anime.
      * @return The finished component
      */
@@ -456,7 +466,7 @@ public class AnimePopupView {
 
 
             int number;
-            if (numberInput.getText().equals("")) // Interpret empty field as "0"
+            if (numberInput.getText().isEmpty()) // Interpret empty field as "0"
                 number = 0;
             else
                 number = Integer.parseInt(numberInput.getText());
@@ -484,6 +494,7 @@ public class AnimePopupView {
      *     <li>Synopsis</li>
      *     <li>Save button</li>
      * </ul>
+     *
      * @return The finished component
      */
     private VBox createRightPopupContent() {
@@ -524,6 +535,7 @@ public class AnimePopupView {
     /**
      * Meta info of the anime, put into a GridPane.
      * Font sizes are also adjusted here since some fields like "Studios" can again be very long.
+     *
      * @return The finished component
      */
     private GridPane createMetaInfo() {
@@ -556,8 +568,6 @@ public class AnimePopupView {
         row2.setPercentHeight(50);
 
 
-
-
         BiFunction<String, String, VBox> createPropertyBox = (labelText, contentText) -> {
 
             Label label = new Label(labelText);
@@ -588,20 +598,17 @@ public class AnimePopupView {
             });
 
 
-
-
             return wrapper;
         };
 
 
         metaInfo.add(createPropertyBox.apply("Release", anime.getRelease()), 0, 0);
-        metaInfo.add(createPropertyBox.apply("Type", anime.getType()), 1, 0);
+        metaInfo.add(createPropertyBox.apply("Type", anime.getType().toDisplay()), 1, 0);
         metaInfo.add(createPropertyBox.apply("Source", anime.getSource()), 2, 0);
 
-        metaInfo.add(createPropertyBox.apply("Status", anime.getPublicationStatus()), 0, 1);
-        metaInfo.add(createPropertyBox.apply("Age Rating", anime.getAgeRating()), 1, 1);
+        metaInfo.add(createPropertyBox.apply("Status", anime.getPublicationStatus().toDisplay()), 0, 1);
+        metaInfo.add(createPropertyBox.apply("Age Rating", anime.getAgeRating().toDisplay()), 1, 1);
         metaInfo.add(createPropertyBox.apply("Studios", anime.getStudios()), 2, 1);
-
 
 
         return metaInfo;
@@ -611,6 +618,7 @@ public class AnimePopupView {
     /**
      * Save button component. When pressed, invokes an update in the database and the parent of this PopupView,
      * then closes this PopupView.
+     *
      * @param wrapper Wrapper this component is a child of (passed so height-binding is possible)
      * @return The finished component
      */
@@ -640,7 +648,7 @@ public class AnimePopupView {
 
             // Destroy darkener background and popup after invoking changes saved
             darkBackground.fireEvent(new MouseEvent(MouseEvent.MOUSE_CLICKED, 0, 0, 0, 0, MouseButton.PRIMARY, 1,
-                true, true, true, true, true, true, true, true, true, true, null));
+                    true, true, true, true, true, true, true, true, true, true, null));
         });
 
         saveButtonWrapper.getChildren().add(saveButton);

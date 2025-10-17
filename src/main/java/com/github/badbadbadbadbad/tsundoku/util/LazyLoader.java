@@ -1,21 +1,22 @@
 package com.github.badbadbadbadbad.tsundoku.util;
 
+import com.github.badbadbadbadbad.tsundoku.enums.generic.AspectRatio;
 import com.github.badbadbadbadbad.tsundoku.external.FlowGapPane;
 import com.github.badbadbadbadbad.tsundoku.models.AnimeInfo;
+import javafx.animation.AnimationTimer;
 import javafx.animation.FadeTransition;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.geometry.Bounds;
-import javafx.scene.control.ScrollPane;
 import javafx.scene.Node;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 import javafx.util.Pair;
-import java.util.*;
-import java.util.concurrent.*;
 
-import javafx.animation.AnimationTimer;
+import java.util.List;
+import java.util.concurrent.*;
 
 
 /**
@@ -28,25 +29,22 @@ public class LazyLoader {
 
     // Threads dedicated to image loading
     private final ExecutorService imageLoaderExecutor = Executors.newFixedThreadPool(3);
-
-    // Simple background timer taking loaded images and setting them as backgrounds, once per frame
-    // (Somewhat hacky JavaFX way to have a timed background service in the JavaFX thread without Platform.runLater)
-    private AnimationTimer batchImageUpdaterTimer;
     private final ConcurrentLinkedQueue<Pair<Node, String>> pendingImageUpdates = new ConcurrentLinkedQueue<>();
-
     private final AspectRatio aspectRatio;
     private final PaneFinder paneFinder;
     private final ScrollPane scrollPane;
     private final List<FlowGapPane> flowPanes;
-    private int firstVisibleIndex;
-    private int lastVisibleIndex;
-
     // There's some slight issues if the image loader / image setter services run all the time;
     // it's possible for actions to "overwrite" each other in a way.
     // Hence, we pause the services on scroll events, and resume them when the scrolling ends.
     // May have to tinker with the timers still.
     private final PauseTransition loaderPause = new PauseTransition(Duration.seconds(0.1));
     private final PauseTransition imagePause = new PauseTransition(Duration.seconds(0.1));
+    // Simple background timer taking loaded images and setting them as backgrounds, once per frame
+    // (Somewhat hacky JavaFX way to have a timed background service in the JavaFX thread without Platform.runLater)
+    private AnimationTimer batchImageUpdaterTimer;
+    private int firstVisibleIndex;
+    private int lastVisibleIndex;
 
     public LazyLoader(ScrollPane scrollPane, List<FlowGapPane> flowPanes, AspectRatio aspectRatio) {
         this.aspectRatio = aspectRatio;
@@ -87,9 +85,7 @@ public class LazyLoader {
                             // And a nested Platform.runLater because adjustGridItemHeights sets min/max/pref height
                             // This is needed so JavaFX can actually set the _true_ height, which this function needs
                             // Thanks, JavaFX
-                            Platform.runLater(() -> {
-                                updateVisibilityFull();
-                            });
+                            Platform.runLater(() -> updateVisibilityFull());
 
                             stop();
                         }
@@ -108,7 +104,7 @@ public class LazyLoader {
      * JavaFX and item heights in our Log grids are janky, hence we enforce them according to our wanted aspect ratio.
      */
     private void adjustGridItemHeights() {
-        for (FlowGapPane pane: flowPanes) {
+        for (FlowGapPane pane : flowPanes) {
             for (Node node : pane.getChildren()) {
                 if (node instanceof VBox animeBox) {
                     double width = animeBox.getWidth();
@@ -224,7 +220,7 @@ public class LazyLoader {
         // Check upwards for new visible items
         int index = firstVisibleIndex - 1;
         while (index >= 0) {
-            
+
             Pair<FlowGapPane, Integer> nodePair = paneFinder.findPaneAndChildIndex(index);
             if (nodePair == null) {
                 break;
@@ -270,6 +266,7 @@ public class LazyLoader {
     /**
      * Basic binary search to identify some child of the Log which is currently in the viewport.
      * The test performed in each search step is just an intersection test between the currently chosen item and the viewport.
+     *
      * @param paneBounds The viewport bounds of the scrollPane containing the Log.
      */
     void identifyNewVisibleNode(Bounds paneBounds) {
@@ -301,7 +298,6 @@ public class LazyLoader {
     }
 
 
-
     private boolean isItemInViewport(Node n, Bounds paneBounds) {
         Bounds nodeBounds = n.localToScene(n.getBoundsInLocal());
         return paneBounds.intersects(nodeBounds);
@@ -330,10 +326,11 @@ public class LazyLoader {
 
     /**
      * Adds a background thread task to the queue of image loader tasks so this image will be loaded eventually.
+     *
      * @param n The Log grid node for which an image needs to be loaded.
      */
     private void makeItemVisible(Node n) {
-        if (!n.isVisible()){
+        if (!n.isVisible()) {
             AnimeInfo anime = (AnimeInfo) n.getUserData();
 
             Future<?> future = CompletableFuture.runAsync(() -> {
@@ -360,22 +357,21 @@ public class LazyLoader {
         }
     }
 
-    public void setFirstVisibleIndex(int index) {
-        this.firstVisibleIndex = index;
-    }
-
     public int getFirstVisibleIndex() {
         return this.firstVisibleIndex;
     }
 
-    public void setLastVisibleIndex(int index) {
-        this.lastVisibleIndex = index;
+    public void setFirstVisibleIndex(int index) {
+        this.firstVisibleIndex = index;
     }
 
     public int getLastVisibleIndex() {
         return this.lastVisibleIndex;
     }
 
+    public void setLastVisibleIndex(int index) {
+        this.lastVisibleIndex = index;
+    }
 
     /**
      * Initialization for the background image setter timer running once per frame.

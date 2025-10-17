@@ -1,4 +1,4 @@
-package com.github.badbadbadbadbad.tsundoku.views.ControlsPane;
+package com.github.badbadbadbadbad.tsundoku.views.components.ControlsPane;
 
 import com.github.badbadbadbadbad.tsundoku.external.FlowGridPane;
 import javafx.animation.*;

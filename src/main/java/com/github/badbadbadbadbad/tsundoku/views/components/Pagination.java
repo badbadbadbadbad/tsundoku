@@ -1,4 +1,4 @@
-package com.github.badbadbadbadbad.tsundoku.views;
+package com.github.badbadbadbadbad.tsundoku.views.components;
 
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
